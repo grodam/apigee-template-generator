@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Reference files and temp
+apigee-templates-ref/
+e-invoicing-v3/
+e-invoicing-v3.zip
+nul
+*.png
+test-*.js
+test-*.json
+.claude/
+
+# Documentation from old version
+DOCUMENTATION_COMPLETE.*
+PROMPT_REACT_APIGEE_GENERATOR_V2.md

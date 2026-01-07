@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="false" enabled="true" name="SC-GetTokenCC">
+    <DisplayName>SC-GetTokenCC</DisplayName>
+    <Request>
+        <Set>
+            <Headers>
+                <Header name="Content-Type">application/x-www-form-urlencoded</Header>
+            </Headers>
+            <Payload contentType="application/x-www-form-urlencoded">grant_type=client_credentials&amp;client_id={private.backend_id}&amp;client_secret={private.backend_secret}</Payload>
+            <Verb>POST</Verb>
+        </Set>
+    </Request>
+    <Response>token.response</Response>
+    <HTTPTargetConnection>
+        <URL>{private.backend.host_auth}{private.backend.path_auth}</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

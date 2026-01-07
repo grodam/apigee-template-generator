@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PopulateCache async="false" continueOnError="false" enabled="true" name="PC-PopulateToken">
+    <DisplayName>PC-PopulateToken</DisplayName>
+    <CacheKey>
+        <Prefix/>
+        <KeyFragment>token</KeyFragment>
+    </CacheKey>
+    <Scope>Exclusive</Scope>
+    <ExpirySettings>
+        <TimeoutInSec ref="private.expires_in">3600</TimeoutInSec>
+    </ExpirySettings>
+    <Source>private.access_token</Source>
+</PopulateCache>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LookupCache async="false" continueOnError="true" enabled="true" name="LC-LookupToken">
+    <DisplayName>LC-LookupToken</DisplayName>
+    <CacheKey>
+        <Prefix/>
+        <KeyFragment>token</KeyFragment>
+    </CacheKey>
+    <CacheLookupTimeoutInSeconds>30</CacheLookupTimeoutInSeconds>
+    <Scope>Exclusive</Scope>
+    <AssignTo>private.access_token</AssignTo>
+</LookupCache>

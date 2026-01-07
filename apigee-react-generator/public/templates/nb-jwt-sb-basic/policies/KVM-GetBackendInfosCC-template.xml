@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<KeyValueMapOperations continueOnError="false" enabled="true" name="KVM-GetBackendInfosCC" mapIdentifier="{{kvmName}}">
+    <DisplayName>KVM-GetBackendInfosCC</DisplayName>
+    <Properties/>
+    <ExclusiveCache>false</ExclusiveCache>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="private.backend_id">
+        <Key>
+            <Parameter>backend_id</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="private.backend_secret">
+        <Key>
+            <Parameter>backend_secret</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="private.backend.host_auth">
+        <Key>
+            <Parameter>host_auth</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="private.backend.path_auth">
+        <Key>
+            <Parameter>path_auth</Parameter>
+        </Key>
+    </Get>
+    <Scope>environment</Scope>
+</KeyValueMapOperations>

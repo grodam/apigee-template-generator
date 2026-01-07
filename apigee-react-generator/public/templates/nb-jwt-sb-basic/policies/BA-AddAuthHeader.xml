@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<BasicAuthentication continueOnError="false" enabled="true" name="BA-AddAuthHeader" async="false">
+    <DisplayName>BA-AddAuthHeader</DisplayName>
+    <Operation>Encode</Operation>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+    <User ref="private.backend_id"/>
+    <Password ref="private.backend_secret"/>
+    <AssignTo createNew="true">request.header.Authorization</AssignTo>
+</BasicAuthentication>

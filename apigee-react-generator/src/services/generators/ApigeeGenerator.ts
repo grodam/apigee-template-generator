@@ -1,0 +1,678 @@
+import type { ApiConfiguration } from '../../models/ApiConfiguration';
+import type { GeneratedProject } from '../../models/GeneratedProject';
+import { TemplateLoader } from '../templates/TemplateLoader';
+import { FlowGenerator } from './FlowGenerator';
+import { PolicyGenerator } from './PolicyGenerator';
+import { ConfigGenerator } from './ConfigGenerator';
+import { DEFAULT_GROUP_ID, DEFAULT_VERSION, ENVIRONMENTS } from '../../utils/constants';
+
+export class ApigeeProjectGenerator {
+  private config: ApiConfiguration;
+  private openAPI: any;
+  private templateLoader: TemplateLoader;
+
+  constructor(config: ApiConfiguration, openAPI: any) {
+    this.config = config;
+    this.openAPI = openAPI;
+    this.templateLoader = new TemplateLoader();
+  }
+
+  async generate(): Promise<GeneratedProject> {
+    const project: GeneratedProject = {
+      rootDir: this.config.proxyName,
+      files: new Map(),
+    };
+
+    // 1. Générer le POM racine
+    await this.generateRootPom(project);
+
+    // 2. Générer le proxy XML principal
+    await this.generateProxyRoot(project);
+
+    // 3. Générer les proxy endpoints (flows)
+    await this.generateProxyEndpoints(project);
+
+    // 4. Générer les target endpoints
+    await this.generateTargetEndpoints(project);
+
+    // 5. Générer les policies
+    await this.generatePolicies(project);
+
+    // 6. Générer les configurations environnements
+    this.generateEnvironmentConfigs(project);
+
+    // 7. Générer le POM gateway
+    await this.generateGatewayPom(project);
+
+    // 8. Copier les fichiers de linting
+    await this.copyLintingFiles(project);
+
+    // 9. Générer apigee-configuration.json
+    this.generateApigeeConfiguration(project);
+
+    // 10. Copier la spec OpenAPI
+    this.copyOpenAPISpec(project);
+
+    // 11. Générer les fichiers Git et CI/CD
+    this.generateGitFiles(project);
+
+    // 12. Générer le README
+    this.generateReadme(project);
+
+    // 13. Générer les fichiers Maven wrapper
+    this.generateMavenWrapper(project);
+
+    return project;
+  }
+
+  private async generateRootPom(project: GeneratedProject): Promise<void> {
+    try {
+      const template = await this.templateLoader.load('root-pom-template.xml');
+
+      const pom = template
+        .replace(/{{groupId}}/g, DEFAULT_GROUP_ID)
+        .replace(/{{artifactId}}/g, this.config.proxyName)
+        .replace(/{{version}}/g, DEFAULT_VERSION)
+        .replace(/{{projectName}}/g, this.config.proxyName);
+
+      project.files.set('pom.xml', pom);
+    } catch (error) {
+      console.error('Error generating root POM:', error);
+      throw error;
+    }
+  }
+
+  private async generateGatewayPom(project: GeneratedProject): Promise<void> {
+    try {
+      const template = await this.templateLoader.load('gateway-pom-template.xml');
+
+      const pom = template
+        .replace(/{{artifactId}}/g, this.config.proxyName)
+        .replace(/{{name}}/g, this.config.proxyName);
+
+      project.files.set('src/main/apigee/gateway/pom.xml', pom);
+    } catch (error) {
+      console.error('Error generating gateway POM:', error);
+      throw error;
+    }
+  }
+
+  private async generateProxyRoot(project: GeneratedProject): Promise<void> {
+    try {
+      const template = await this.templateLoader.load('proxy-template.xml');
+
+      const proxyXml = template
+        .replace(/{{proxyName}}/g, this.config.proxyName)
+        .replace(/{{displayName}}/g, `${this.config.apiname} - ${this.config.version}`)
+        .replace(/{{description}}/g, this.config.description)
+        .replace(/{{basepath}}/g, this.config.proxyBasepath);
+
+      project.files.set(
+        `src/main/apigee/gateway/apiproxy/${this.config.proxyName}.xml`,
+        proxyXml
+      );
+    } catch (error) {
+      console.error('Error generating proxy root:', error);
+      throw error;
+    }
+  }
+
+  private async generateProxyEndpoints(project: GeneratedProject): Promise<void> {
+    const flowGenerator = new FlowGenerator(this.config, this.openAPI);
+    const flows = flowGenerator.generateFlows();
+
+    try {
+      const template = await this.templateLoader.load('proxies/default-template.xml');
+
+      // Remplacer les placeholders
+      let proxyEndpoint = template
+        .replace(/{{basepath}}/g, this.config.proxyBasepath)
+        .replace(/{{flows}}/g, flows);
+
+      // Gérer les conditions Handlebars-like
+      proxyEndpoint = this.processConditionals(proxyEndpoint);
+
+      project.files.set(
+        'src/main/apigee/gateway/apiproxy/proxies/default.xml',
+        proxyEndpoint
+      );
+    } catch (error) {
+      console.error('Error generating proxy endpoints:', error);
+      throw error;
+    }
+  }
+
+  private async generateTargetEndpoints(project: GeneratedProject): Promise<void> {
+    try {
+      // Target principal
+      const defaultTemplate = await this.templateLoader.load('targets/default-template.xml');
+      const targetServerName = `${this.config.proxyName}.backend`;
+
+      const defaultTarget = defaultTemplate
+        .replace(/{{targetServerName}}/g, targetServerName)
+        .replace(/{{targetPath}}/g, this.config.targetPath);
+
+      project.files.set(
+        'src/main/apigee/gateway/apiproxy/targets/default.xml',
+        defaultTarget
+      );
+
+      // Target mock (si URL mock définie)
+      if (this.config.mockUrl) {
+        const mockTemplate = await this.templateLoader.load('targets/mock-template.xml');
+        const mockTarget = mockTemplate.replace(/{{mockUrl}}/g, this.config.mockUrl);
+
+        project.files.set(
+          'src/main/apigee/gateway/apiproxy/targets/mock.xml',
+          mockTarget
+        );
+      }
+    } catch (error) {
+      console.error('Error generating target endpoints:', error);
+      throw error;
+    }
+  }
+
+  private async generatePolicies(project: GeneratedProject): Promise<void> {
+    const policyGen = new PolicyGenerator(this.config, this.openAPI);
+    const policies = await policyGen.generateAllPolicies();
+
+    for (const [filename, content] of policies) {
+      project.files.set(
+        `src/main/apigee/gateway/apiproxy/policies/${filename}`,
+        content
+      );
+    }
+  }
+
+  private generateEnvironmentConfigs(project: GeneratedProject): void {
+    const configGen = new ConfigGenerator(this.config, this.openAPI);
+
+    for (const env of ENVIRONMENTS) {
+      const envConfig = this.config.environments[env];
+
+      // edge-env.json
+      const edgeEnv = configGen.generateEdgeEnvJson(env, envConfig);
+      const edgeEnvStr = JSON.stringify(edgeEnv, null, 2);
+
+      project.files.set(
+        `src/main/apigee/gateway/config/${env}/edge-env.json`,
+        edgeEnvStr
+      );
+      project.files.set(
+        `src/main/resources/api-config/config/${env}/edge-env.json`,
+        edgeEnvStr
+      );
+
+      // edge-org.json
+      const edgeOrg = configGen.generateEdgeOrgJson(env, envConfig);
+      const edgeOrgStr = JSON.stringify(edgeOrg, null, 2);
+
+      project.files.set(
+        `src/main/apigee/gateway/config/${env}/edge-org.json`,
+        edgeOrgStr
+      );
+      project.files.set(
+        `src/main/resources/api-config/config/${env}/edge-org.json`,
+        edgeOrgStr
+      );
+    }
+  }
+
+  // Eclipse files are not needed for Apigee deployment via Maven
+  // Keeping this method commented in case it's needed in the future
+  /*
+  private async generateEclipseFiles(project: GeneratedProject): Promise<void> {
+    try {
+      const classpath = await this.templateLoader.load('eclipse/.classpath');
+      project.files.set('.classpath', classpath);
+
+      const projectFile = await this.templateLoader.load('eclipse/.project');
+      project.files.set('.project', projectFile.replace(/{{projectName}}/g, this.config.proxyName));
+
+      const jdtPrefs = await this.templateLoader.load('eclipse/.settings/org.eclipse.jdt.core.prefs');
+      project.files.set('.settings/org.eclipse.jdt.core.prefs', jdtPrefs);
+
+      const m2ePrefs = await this.templateLoader.load('eclipse/.settings/org.eclipse.m2e.core.prefs');
+      project.files.set('.settings/org.eclipse.m2e.core.prefs', m2ePrefs);
+    } catch (error) {
+      console.error('Error generating Eclipse files:', error);
+    }
+  }
+  */
+
+  private async copyLintingFiles(project: GeneratedProject): Promise<void> {
+    try {
+      // EX-ODM002-NamingConventions.js - Full linting plugin for Apigee policy naming conventions
+      const namingConventions = `const plugin = {
+  ruleId: "EX-ODM002",
+  name: "Policy Naming Conventions - Type Indication",
+  message: "It is recommended that the policy name include an indicator of the policy type.",
+  fatal: false,
+  severity: 2, //error
+  nodeType: "Policy",
+  enabled: true
+},
+policyMetaData = {
+  //Traffic Management
+  Quota: { indications: ["QO-"] },
+  SpikeArrest: { indications: ["SA-"] },
+  ConcurrentRateLimit: { indications: ["CRL-"] },
+  ResponseCache: { indications: ["RC-"] },
+  LookupCache: { indications: ["LC-"] },
+  PopulateCache: { indications: ["PC-"] },
+  InvalidateCache: { indications: ["IC-"] },
+  ResetQuota: { indications: ["RQ-"] },
+  //Security
+  BasicAuthentication: {indications: ["BA-"] },
+  XMLThreatProtection: { indications: ["XTP-"] },
+  JSONThreatProtection: { indications: ["JTP-"] },
+  RegularExpressionProtection: { indications: ["REP-"] },
+  OAuthV1: { indications: ["OA-"]},
+  GetOAuthV1Info:{indications: ["OA1-"]},
+  DeleteOAuthV1Info:{indications: ["O1-"]},
+  OAuthV2: {indications: ["O2-"]},
+  GetOAuthV2Info: {indications: ["O2-"]},
+  SetOAuthV2Info: {indications: ["O2-"]},
+  DeleteOAuthV2Info: {indications: ["O2-"]},
+  VerifyAPIKey: { indications: ["VK-"] },
+  AccessControl: { indications: ["AC-"] },
+  Ldap: { indications: ["LD-"] },
+  GenerateSAMLAssertion: { indications: ["GEN-"] },
+  ValidateSAMLAssertion: { indications: ["SAML-"] },
+  GenerateJWT: { indications: ["JW1-"] },
+  VerifyJWT: { indications: ["JW1-"] },
+  DecodeJWT: { indications: ["JWT-"] },
+  GenerateJWS: { indications: ["JWS-"] },
+  VerifyJWS: { indications: ["JWS-"] },
+  DecodeJWS: { indications: ["JWS-"] },
+  //Mediation
+  JSONToXML: { indications: ["JX-"] },
+  XMLToJSON: { indications: ["XTJ-"] },
+  RaiseFault: { indications: ["RF-"] },
+  XSL: { indications: ["XSL-"] },
+  MessageValidation: { indications: ["MV-"] },
+  AssignMessage: { indications: ["AM-"] },
+  ExtractVariables: { indications: ["EV-"] },
+  AccessEntity: { indications: ["AE-"] },
+  KeyValueMapOperations: { indications: ["KVM-"] },
+  //Extension
+  JavaCallout: { indications: ["JC-"] },
+  Javascript: { indications: ["JS-"] },
+  Script: { indications: ["PY-"] },
+  ServiceCallout: { indications: ["SC-"] },
+  FlowCallout: { indications: ["FC-"] },
+  StatisticsCollector: { indications: ["SC-"] },
+  MessageLogging: { indications: ["ML-"] },
+  "": { indications: [] }
+};
+
+const onPolicy = function(policy, cb) {
+  let displayName = policy.getDisplayName(),
+    policyType = policy.getType(),
+    prefixes = policyMetaData[policyType],
+    hadWarn = false;
+
+  if (prefixes && prefixes.indications.length > 0) {
+    if (
+      !prefixes.indications.some(function(indication) {
+        return displayName.startsWith(indication);
+      })
+    ) {
+      hadWarn = true;
+      policy.addMessage({
+        plugin,
+        message:
+          "Non-standard name for policy (" +
+          policy.getDisplayName() +
+          "). Valid prefixes include: { " +
+          prefixes.indications.join(", ") +
+          " }"
+      });
+    }
+  }
+  if (typeof cb == "function") {
+    cb(null, hadWarn);
+  }
+};
+
+module.exports = {
+  plugin,
+  onPolicy
+};`;
+      project.files.set('src/main/apigee/apigee-lint/EX-ODM002-NamingConventions.js', namingConventions);
+
+      // .spectral.yaml - OpenAPI linting with OWASP security rules
+      const spectral = `formats:
+  - oas3
+extends:
+  - 'https://cdn.jsdelivr.net/npm/@stoplight/spectral-owasp-ruleset@1.4.3/dist/ruleset.min.js'`;
+      project.files.set('src/main/apigee/spectral-lint/.spectral.yaml', spectral);
+    } catch (error) {
+      console.error('Error copying linting files:', error);
+    }
+  }
+
+  private generateApigeeConfiguration(project: GeneratedProject): void {
+    const configGen = new ConfigGenerator(this.config, this.openAPI);
+    const config = configGen.generateApigeConfiguration();
+
+    project.files.set(
+      'src/main/resources/api-config/apigee-configuration.json',
+      JSON.stringify(config, null, 2)
+    );
+  }
+
+  private copyOpenAPISpec(project: GeneratedProject): void {
+    // backend.json - spec backend (spec originale telle quelle)
+    const backendContent = JSON.stringify(this.openAPI, null, 2);
+    project.files.set('src/main/resources/api-config/backend.json', backendContent);
+
+    // swagger.json - spec publique Apigee avec URLs Apigee (pas backend)
+    const publicSpec = JSON.parse(JSON.stringify(this.openAPI)); // Deep copy
+
+    // Remplacer les servers par les URLs Apigee (pas les URLs backend)
+    publicSpec.servers = [
+      { url: 'https://dev-api.elis.com', description: 'DEV Env' },
+      { url: 'https://uat-api.elis.com', description: 'UAT Env' },
+      { url: 'https://api.elis.com', description: 'PROD Env' }
+    ];
+
+    // Mettre à jour le info avec le titre et description Apigee
+    if (publicSpec.info) {
+      publicSpec.info.title = this.config.apiname + ' API';
+      publicSpec.info.description = this.config.description;
+      publicSpec.info.version = this.config.version;
+      publicSpec.info.contact = { name: this.config.entity, url: '', email: '' };
+    }
+
+    // Remplacer les securitySchemes par OAuth2 avec URL Apigee
+    if (!publicSpec.components) {
+      publicSpec.components = {};
+    }
+    publicSpec.components.securitySchemes = {
+      oauth2: {
+        type: 'oauth2',
+        description: 'For direct access token use the following URL = https://elis-employees.oktapreview.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token',
+        flows: {
+          clientCredentials: {
+            tokenUrl: 'https://dev-api.elis.com/oauth2',
+            scopes: {}
+          }
+        }
+      }
+    };
+
+    // Remplacer la section security par OAuth2
+    publicSpec.security = [{ oauth2: [] }];
+
+    // Mettre à jour les paths pour utiliser le basepath Apigee
+    if (publicSpec.paths) {
+      const newPaths: Record<string, any> = {};
+      const basePath = this.config.proxyBasepath.startsWith('/') 
+        ? this.config.proxyBasepath 
+        : '/' + this.config.proxyBasepath;
+      for (const [pathKey, pathItem] of Object.entries(publicSpec.paths)) {
+        newPaths[basePath + pathKey] = pathItem;
+      }
+      publicSpec.paths = newPaths;
+    }
+
+    project.files.set('src/main/resources/api-config/swagger.json', JSON.stringify(publicSpec, null, 2));
+  }
+
+  private processConditionals(template: string): string {
+    // Traiter les conditions Handlebars-like simples
+    let processed = template;
+
+    // {{#if globalRateLimit}}...{{/if}}
+    if (this.config.globalRateLimit) {
+      processed = processed.replace(/{{#if globalRateLimit}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if globalRateLimit}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    // {{#if mockUrl}}...{{/if}}
+    if (this.config.mockUrl) {
+      processed = processed.replace(/{{#if mockUrl}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if mockUrl}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    // {{#if isBasicAuth}}...{{/if}}
+    if (this.config.authSouthbound === 'Basic') {
+      processed = processed.replace(/{{#if isBasicAuth}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if isBasicAuth}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    // {{#if isOAuth2}}...{{/if}}
+    if (this.config.authSouthbound === 'OAuth2-ClientCredentials') {
+      processed = processed.replace(/{{#if isOAuth2}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if isOAuth2}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    // {{#if authSouthbound}}...{{/if}}
+    if (this.config.authSouthbound && this.config.authSouthbound !== 'None') {
+      processed = processed.replace(/{{#if authSouthbound}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if authSouthbound}}[\s\S]*?{{\/if}}/g, '');
+    }
+
+    return processed;
+  }
+
+  private generateGitFiles(project: GeneratedProject): void {
+    // .gitignore
+    const gitignore = `# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Apigee
+edge.json
+`;
+    project.files.set('.gitignore', gitignore);
+
+    // azure-pipelines.yml
+    const azurePipeline = `resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: Common.template
+    ref: main
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- template: pipelines/prep-env-deployment-v2.yml@templates
+  parameters:
+    workingDirectory: \$(workingDirectory)
+    environments:
+    - name: dev1
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: dev1
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: uat1
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: uat1
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: staging
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: staging
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: prod1
+      GCP_SERVICE_ACCOUNT: apigeex-config-prd.json
+      APIGEE_ENV: prod1
+      APIGEE_ORG: apigeex-prd
+      API_VERSION: googleapi
+`;
+    project.files.set('azure-pipelines.yml', azurePipeline);
+  }
+
+  private generateReadme(project: GeneratedProject): void {
+    const readme = `# ${this.config.proxyName}
+
+${this.config.description}
+
+## Overview
+
+This is an Apigee API Proxy generated automatically.
+
+- **API Name**: ${this.config.apiname}
+- **Version**: ${this.config.version}
+- **Base Path**: ${this.config.proxyBasepath}
+
+## Project Structure
+
+\`\`\`
+.
+├── pom.xml                           # Root Maven POM
+├── src/
+│   └── main/
+│       ├── apigee/
+│       │   ├── gateway/
+│       │   │   ├── apiproxy/         # Apigee proxy bundle
+│       │   │   │   ├── ${this.config.proxyName}.xml
+│       │   │   │   ├── proxies/      # Proxy endpoints
+│       │   │   │   ├── targets/      # Target endpoints
+│       │   │   │   └── policies/     # Policies
+│       │   │   ├── config/           # Environment configurations
+│       │   │   └── pom.xml           # Gateway Maven POM
+│       │   ├── apigee-lint/          # Apigee linting rules
+│       │   └── spectral-lint/        # OpenAPI linting
+│       └── resources/
+│           └── api-config/
+│               ├── apigee-configuration.json
+│               ├── swagger.json      # OpenAPI specification
+│               └── config/           # Environment configs
+└── azure-pipelines.yml               # CI/CD pipeline
+\`\`\`
+
+## Prerequisites
+
+- Java 11 or higher
+- Maven 3.x
+- Apigee Edge account
+- Azure DevOps (for CI/CD)
+
+## Local Development
+
+### Build the proxy
+
+\`\`\`bash
+mvn clean install
+\`\`\`
+
+### Deploy to Apigee
+
+\`\`\`bash
+mvn apigee-enterprise:deploy \\
+  -Dapigee.org=YOUR_ORG \\
+  -Dapigee.env=YOUR_ENV \\
+  -Dapigee.username=YOUR_USERNAME \\
+  -Dapigee.password=YOUR_PASSWORD
+\`\`\`
+
+## CI/CD Pipeline
+
+This project uses Azure Pipelines for continuous integration and deployment with Apigee X on Google Cloud Platform.
+
+### Pipeline Configuration
+
+The pipeline uses a shared template from the \`Common.template\` repository:
+- **Template**: \`pipelines/prep-env-deployment-v2.yml@templates\`
+- **Trigger**: Automatically runs on commits to \`main\` branch
+- **Pool**: Uses \`ubuntu-latest\` VM image
+
+### Environments
+
+The pipeline deploys to 4 environments with the following configurations:
+
+| Environment | Apigee Org | GCP Service Account | API Version |
+|-------------|------------|---------------------|-------------|
+| dev1 | apigeex-nprd | apigeex-config-nprd.json | googleapi |
+| uat1 | apigeex-nprd | apigeex-config-nprd.json | googleapi |
+| staging | apigeex-nprd | apigeex-config-nprd.json | googleapi |
+| prod1 | apigeex-prd | apigeex-config-prd.json | googleapi |
+
+### Required Configuration
+
+1. **Repository Access**: Ensure your Azure DevOps project has access to the \`Common.template\` repository
+2. **GCP Service Accounts**: Configure the following service account files in Azure DevOps Library:
+   - \`apigeex-config-nprd.json\` (for non-production environments)
+   - \`apigeex-config-prd.json\` (for production environment)
+3. **Variable**: Set \`workingDirectory\` variable in Azure Pipelines if needed
+
+## API Documentation
+
+See [swagger.json](src/main/resources/api-config/swagger.json) for the OpenAPI specification.
+
+## Configuration
+
+Environment-specific configurations are located in:
+- \`src/main/apigee/gateway/config/{env}/\`
+- \`src/main/resources/api-config/config/{env}/\`
+
+### Supported Environments
+
+${ENVIRONMENTS.map(env => `- ${env}`).join('\n')}
+
+## License
+
+Copyright © ${new Date().getFullYear()}
+
+## Generated
+
+This project was generated using the Apigee React Generator tool.
+`;
+    project.files.set('README.md', readme);
+  }
+
+  private generateMavenWrapper(project: GeneratedProject): void {
+    // Maven settings.xml for Azure DevOps authentication
+    const settingsXml = `<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>elisdevops</id>
+      <username>elisdevops</username>
+      <password>4Mb169x74AOTSF9uYUAhc0hePYT8qVYSv91reJunqsf1MKVar1G1QO19gHDACAMAA9yhFAAM5A2U00c00m</password>
+    </server>
+  </servers>
+</settings>
+`;
+    project.files.set('.mvn/settings.xml', settingsXml);
+  }
+}

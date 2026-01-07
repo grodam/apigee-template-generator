@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description/>
+    <DefaultFaultRule>
+        <AlwaysEnforce>true</AlwaysEnforce>
+        <Step>
+            <Name>FC-SetCorsHeaders</Name>
+        </Step>
+    </DefaultFaultRule>
+    <FaultRules>
+        <FaultRule name="error_handling">
+            <Condition>(fault.name != "RaiseFault")</Condition>
+            <Step>
+                <Name>FC-ErrorHandling</Name>
+            </Step>
+        </FaultRule>
+    </FaultRules>
+    <PreFlow name="PreFlow">
+        <Request>
+            {{#if globalRateLimit}}
+            <Step>
+                <Name>SA-GlobalRate</Name>
+            </Step>
+            {{/if}}
+            <Step>
+                <Name>FC-VerifyJWT</Name>
+            </Step>
+            <Step>
+                <Name>FC-VerifyApiKey</Name>
+            </Step>
+            {{#if authSouthbound}}
+            {{#if isBasicAuth}}
+            <Step>
+                <Name>KVM-GetBackendInfos</Name>
+            </Step>
+            <Step>
+                <Name>BA-AddAuthHeader</Name>
+            </Step>
+            {{/if}}
+            {{#if isOAuth2}}
+            <Step>
+                <Name>KVM-GetBackendInfosCC</Name>
+            </Step>
+            <Step>
+                <Name>LC-LookupToken</Name>
+            </Step>
+            <Step>
+                <Name>SC-GetTokenCC</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step>
+                <Name>EV-ExtractToken</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step>
+                <Name>PC-PopulateToken</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step>
+                <Name>AM-SetToken</Name>
+            </Step>
+            {{/if}}
+            {{/if}}
+        </Request>
+        <Response/>
+    </PreFlow>
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response>
+            <Step>
+                <Name>FC-SetCorsHeaders</Name>
+                <Condition>request.verb != "OPTIONS"</Condition>
+            </Step>
+        </Response>
+    </PostFlow>
+    <Flows>
+        <Flow name="OptionsPreFlight">
+            <Request/>
+            <Response>
+                <Step>
+                    <Name>FC-SetCorsHeaders</Name>
+                </Step>
+            </Response>
+            <Condition>request.verb = "OPTIONS" AND request.header.origin != null AND request.header.Access-Control-Request-Method != null</Condition>
+        </Flow>
+{{flows}}
+        <Flow name="404">
+            <Description>Catch-all for unmatched requests</Description>
+            <Request/>
+            <Response>
+                <Step>
+                    <Name>AM-NotFound</Name>
+                </Step>
+            </Response>
+            <Condition/>
+        </Flow>
+    </Flows>
+    <HTTPProxyConnection>
+        <BasePath>{{basepath}}</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="NoRoute">
+        <Condition>request.verb = "OPTIONS" AND request.header.origin != null AND request.header.Access-Control-Request-Method != null</Condition>
+    </RouteRule>
+    {{#if mockUrl}}
+    <RouteRule name="MockRoute">
+        <Condition>(request.header.X-Mock = "true")</Condition>
+        <TargetEndpoint>mock</TargetEndpoint>
+    </RouteRule>
+    {{/if}}
+    <RouteRule name="default">
+        <TargetEndpoint>default</TargetEndpoint>
+    </RouteRule>
+</ProxyEndpoint>

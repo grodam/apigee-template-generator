@@ -1,0 +1,281 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Unified Post API
+  description: |-
+    API for document intake into Unifiedpost Deliver & Archive system.
+
+    This API supports document delivery through HTTPS REST POST with:
+    - HTTP Basic Authentication or Client Certificate
+    - Multipart form-data for single or multiple documents
+    - ZIP file upload for batch processing
+
+    **Key Features:**
+    - Accept PDF documents with metadata (JSON or XML)
+    - Support for UBL XML documents
+    - Multiple delivery channels (Email, Archive, Peppol, Print, etc.)
+    - Synchronous and asynchronous processing feedback
+
+
+    Contact Support:
+     Name: Unifiedpost Group
+     Email: support@unifiedpost.com
+  contact:
+    name: Unifiedpost Group
+    url: ''
+    email: support@unifiedpost.com
+servers:
+  - url: 'https://intake-1-2.nxt.uat.unifiedpost.com/1/upcloud_uat'
+    description: UAT
+  - url: 'https://intake-1-2.nxt.unifiedpost.com/1/upcloud_prod'
+    description: PROD
+paths:
+  /process:
+    post:
+      tags:
+        - Post Invoice
+      summary: Submit document(s) for processing
+      description: |-
+        Submit one or multiple documents for delivery and archiving.
+
+        **Supported formats:**
+
+        - Multipart single document (UPData + PDF + optional UBL)
+            
+        - Multipart multiple documents
+            
+        - Single document in ZIP file
+            
+        - Multiple documents in ZIP file (batch)
+            
+
+        **Required files per document:**
+
+        - UPData file (JSON or XML) - metadata and routing information
+            
+        - PDF file - visual representation of the document
+            
+        - Optional: UBL XML or other attachments
+            
+
+        **Limitations:**
+
+        - Max 25,000 files per ZIP
+            
+        - Max file size: 1GB
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+            example: multipart/form-data
+          examples:
+            default:
+              value: multipart/form-data
+        - name: Accept
+          in: header
+          schema:
+            type: string
+            example: application/json
+          examples:
+            default:
+              value: application/json
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                updata:
+                  type: string
+                  description: UPData file containing metadata and routing information
+                  format: binary
+                pdf:
+                  type: string
+                  description: PDF representation of the document
+                  format: binary
+                ubl:
+                  type: string
+                  description: Optional UBL XML file for invoices/credit notes
+                  format: binary
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    status: accepted
+                    message: Document intake successful
+                    timestamp: '1955-03-21T08:18:05.935Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    status: accepted
+                    message: Document intake successful
+                    timestamp: '1955-03-21T08:18:05.935Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: Missing required file
+                  value:
+                    error: Bad Request
+                    message: 'Missing required file: updata or pdf'
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: Invalid file format
+                  value:
+                    error: Bad Request
+                    message: Invalid UPData format
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    error: Unauthorized
+                    message: Invalid authentication credentials
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    error: Unauthorized
+                    message: Invalid authentication credentials
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    error: Not Found
+                    message: Sender configuration not found
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    error: Not Found
+                    message: Sender configuration not found
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '413':
+          description: Request Entity Too Large
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    error: Payload Too Large
+                    message: File size exceeds maximum allowed size of 1GB
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    error: Payload Too Large
+                    message: File size exceeds maximum allowed size of 1GB
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    error: Internal Server Error
+                    message: An unexpected error occurred
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    error: Internal Server Error
+                    message: An unexpected error occurred
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: UPData JSON + PDF
+                  value:
+                    error: Service Unavailable
+                    message: Service temporarily unavailable
+                    timestamp: '2024-12-04T10:30:00Z'
+                example-1:
+                  summary: UPData XML + UBL + PDF
+                  value:
+                    error: Service Unavailable
+                    message: Service temporarily unavailable
+                    timestamp: '2024-12-04T10:30:00Z'
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+      security:
+        - basicAuth: []
+      servers:
+        - url: ''
+          description: ''
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - basicAuth: []
