@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<VerifyJWT async="false" continueOnError="false" enabled="true" name="FC-VerifyJWT">
+<FlowCallout continueOnError="false" enabled="true" name="FC-VerifyJWT">
     <DisplayName>FC-VerifyJWT</DisplayName>
-    <Algorithm>RS256</Algorithm>
-    <Source>request.header.authorization</Source>
-    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
-    <PublicKey>
-        <JWKS uri="https://example.com/.well-known/jwks.json"/>
-    </PublicKey>
-    <Subject>apigee-subject</Subject>
-    <Issuer>apigee-issuer</Issuer>
-    <Audience>apigee-audience</Audience>
-</VerifyJWT>
+    <FaultRules/>
+    <Properties/>
+    <SharedFlowBundle>sf-elis-security</SharedFlowBundle>
+</FlowCallout>

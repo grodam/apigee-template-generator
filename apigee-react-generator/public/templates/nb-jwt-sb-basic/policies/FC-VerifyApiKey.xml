@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<VerifyAPIKey async="false" continueOnError="false" enabled="true" name="FC-VerifyApiKey">
+<FlowCallout continueOnError="false" enabled="true" name="FC-VerifyApiKey">
     <DisplayName>FC-VerifyApiKey</DisplayName>
-    <APIKey ref="request.header.x-apikey"/>
-</VerifyAPIKey>
+    <FaultRules/>
+    <Properties/>
+    <SharedFlowBundle>sf-verify-apikey</SharedFlowBundle>
+</FlowCallout>
