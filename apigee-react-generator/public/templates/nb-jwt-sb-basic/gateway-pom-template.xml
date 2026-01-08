@@ -3,108 +3,131 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.elis.apigee</groupId>
     <artifactId>{{artifactId}}</artifactId>
     <name>{{name}}</name>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>com.apigee.edge.config</groupId>
-                <artifactId>apigee-config-maven-plugin</artifactId>
-                <version>2.5.3</version>
-                <executions>
-                    <execution>
-                        <id>create-config-targetserver</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>targetservers</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>create-config-kvm</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>keyvaluemaps</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>create-config-apiproduct</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>apiproducts</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>create-config-developer</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>developers</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>create-config-app</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>apps</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.apigee.build-tools.enterprise4g</groupId>
-                <artifactId>apigee-edge-maven-plugin</artifactId>
-                <version>2.5.3</version>
-                <executions>
-                    <execution>
-                        <id>configure-bundle-step</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>configure</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>deploy-bundle-step</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>deploy</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <name>Maven Plugin Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <layout>default</layout>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <org.slf4j.simpleLogger.defaultLogLevel>info</org.slf4j.simpleLogger.defaultLogLevel>
+        <project.root.dir>${basedir}</project.root.dir>
+        <target.root.dir>${basedir}/target</target.root.dir>
+        <deployment.suffix/>
+        <apigee.options>override</apigee.options>
+        <apigee.apiversion>v1</apigee.apiversion>
+        <apigee.org>${org}</apigee.org>
+        <apigee.env>${env}</apigee.env>
+        <deployment.description>n/a</deployment.description>
+    </properties>
 
     <profiles>
         <profile>
+            <!-- Next Generation SaaS and hybrid -->
             <id>googleapi</id>
             <properties>
-                <apigee.config.options>update</apigee.config.options>
-                <apigee.config.dir>config</apigee.config.dir>
-                <apigee.config.exportDir>config</apigee.config.exportDir>
-                <api.northbound.domain>${api.northbound.domain}</api.northbound.domain>
-                <api.testtag>~@wip,~@mock</api.testtag>
+                <apigee.plugin.version>2.5.3</apigee.plugin.version>
+                <apigee.hosturl>https://apigee.googleapis.com</apigee.hosturl>
+                <apigee.bearer>${token}</apigee.bearer>
+                <apigee.serviceaccount.file>${sa}</apigee.serviceaccount.file>
             </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>com.apigee.edge.config</groupId>
                         <artifactId>apigee-config-maven-plugin</artifactId>
-                        <version>2.5.3</version>
+                        <version>${apigee.plugin.version}</version>
                         <configuration>
-                            <configDir>${apigee.config.dir}/${env}</configDir>
+                            <configDir>config/${env}</configDir>
                             <bearer>${token}</bearer>
                             <apiVersion>google</apiVersion>
                         </configuration>
+                        <executions>
+                            <execution>
+                                <id>create-config-targetserver</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>targetservers</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>create-config-kvm</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>keyvaluemaps</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>create-config-apiproduct</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>apiproducts</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>create-config-developer</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>developers</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>create-config-app</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>apps</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>io.apigee.build-tools.enterprise4g</groupId>
                         <artifactId>apigee-edge-maven-plugin</artifactId>
-                        <version>2.5.3</version>
+                        <version>${apigee.plugin.version}</version>
                         <configuration>
                             <bearer>${token}</bearer>
                             <apiVersion>google</apiVersion>
                         </configuration>
+                        <executions>
+                            <execution>
+                                <id>configure-bundle-step</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>configure</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>deploy-bundle-step</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>deploy</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
