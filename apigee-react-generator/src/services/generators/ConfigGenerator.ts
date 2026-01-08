@@ -80,14 +80,12 @@ export class ConfigGenerator {
   private generateOperationGroup(): any {
     const operations = this.extractOperationsFromOpenAPI();
 
+    // Each operation should be in its own operationConfig
     return {
-      operationConfigs: [
-        {
-          apiSource: this.config.proxyName,
-          operations: operations,
-          quota: {}
-        }
-      ],
+      operationConfigs: operations.map(op => ({
+        apiSource: this.config.proxyName,
+        operations: [op]
+      })),
       operationConfigType: "proxy"
     };
   }
