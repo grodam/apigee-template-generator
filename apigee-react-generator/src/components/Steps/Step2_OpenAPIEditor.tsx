@@ -111,12 +111,12 @@ export const Step2_OpenAPIEditor: React.FC = () => {
 
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'GET': return 'bg-[var(--mint-soft)] text-green-800';
-      case 'POST': return 'bg-[var(--sky-soft)] text-blue-800';
-      case 'PUT': return 'bg-[var(--peach-300)] text-orange-800';
-      case 'DELETE': return 'bg-[var(--rose-soft)] text-red-800';
-      case 'PATCH': return 'bg-[var(--lavender-300)] text-purple-800';
-      default: return 'bg-[var(--cream-300)] text-[var(--text-primary)]';
+      case 'GET': return 'bg-[var(--success-light)] text-green-800';
+      case 'POST': return 'bg-[var(--info-light)] text-blue-800';
+      case 'PUT': return 'bg-[var(--warning-base)] text-orange-800';
+      case 'DELETE': return 'bg-[var(--error-light)] text-red-800';
+      case 'PATCH': return 'bg-[var(--accent-300)] text-purple-800';
+      default: return 'bg-[var(--slate-200)] text-[var(--text-primary)]';
     }
   };
 
@@ -160,14 +160,14 @@ export const Step2_OpenAPIEditor: React.FC = () => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          border-2 border-dashed rounded-2xl p-8 text-center transition-all mb-6
+          border-2 border-dashed rounded-lg p-8 text-center transition-all mb-6
           ${isDragging
-            ? 'border-[var(--lavender-400)] bg-[var(--lavender-50)] gradient-card'
-            : 'border-[var(--border-medium)] hover:border-[var(--lavender-300)] bg-[var(--bg-secondary)]'
+            ? 'border-[var(--accent-400)] bg-[var(--accent-50)] gradient-card'
+            : 'border-[var(--border-default)] hover:border-[var(--accent-300)] bg-[var(--bg-secondary)]'
           }
         `}
       >
-        <FileText className="mx-auto h-12 w-12 text-[var(--text-tertiary)] mb-4" />
+        <FileText className="mx-auto h-12 w-12 text-[var(--text-muted)] mb-4" />
         <p className="text-sm text-[var(--text-secondary)] mb-2 font-medium">
           {t('step2.dragDrop')}
         </p>
@@ -235,7 +235,7 @@ export const Step2_OpenAPIEditor: React.FC = () => {
 
                   <div className="space-y-2 gradient-border-content">
                     <p className="soft-label">{t('step2.validation.endpointsDetected')}</p>
-                    <p className="text-3xl font-bold bg-gradient-to-r from-[var(--lavender-600)] to-[var(--peach-500)] bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-[var(--accent-600)] to-[var(--warning-light0)] bg-clip-text text-transparent">
                       {parsedOpenAPI.paths.length}
                     </p>
                   </div>

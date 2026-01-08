@@ -63,7 +63,7 @@ export function AzureDevOpsSettings() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Cloud className="h-5 w-5 text-[var(--lavender-600)]" />
+          <Cloud className="h-5 w-5 text-[var(--accent-600)]" />
           {t('azureSettings.title')}
         </h3>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -88,9 +88,9 @@ export function AzureDevOpsSettings() {
             value={azureDevOpsConfig.organization}
             onChange={(e) => updateAzureDevOpsConfig({ organization: e.target.value })}
             placeholder={t('azureSettings.fields.organization.placeholder')}
-            className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
+            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
           />
-          <p className="text-xs text-[var(--text-tertiary)]">
+          <p className="text-xs text-[var(--text-muted)]">
             {t('azureSettings.fields.organization.help')}
           </p>
         </div>
@@ -104,9 +104,9 @@ export function AzureDevOpsSettings() {
             value={azureDevOpsConfig.project}
             onChange={(e) => updateAzureDevOpsConfig({ project: e.target.value })}
             placeholder={t('azureSettings.fields.project.placeholder')}
-            className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
+            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
           />
-          <p className="text-xs text-[var(--text-tertiary)]">
+          <p className="text-xs text-[var(--text-muted)]">
             {t('azureSettings.fields.project.help')}
           </p>
         </div>
@@ -122,17 +122,17 @@ export function AzureDevOpsSettings() {
               value={azureDevOpsConfig.personalAccessToken}
               onChange={(e) => updateAzureDevOpsConfig({ personalAccessToken: e.target.value })}
               placeholder={t('azureSettings.fields.pat.placeholder')}
-              className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)] pr-10"
+              className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)] pr-10"
             />
             <button
               type="button"
               onClick={() => setShowToken(!showToken)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             >
               {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-xs text-[var(--text-tertiary)]">
+          <p className="text-xs text-[var(--text-muted)]">
             {t('azureSettings.fields.pat.help')}
           </p>
         </div>
@@ -146,19 +146,19 @@ export function AzureDevOpsSettings() {
             value={azureDevOpsConfig.defaultBranch}
             onChange={(e) => updateAzureDevOpsConfig({ defaultBranch: e.target.value })}
             placeholder={t('azureSettings.fields.defaultBranch.placeholder')}
-            className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
+            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
           />
-          <p className="text-xs text-[var(--text-tertiary)]">
+          <p className="text-xs text-[var(--text-muted)]">
             {t('azureSettings.fields.defaultBranch.help')}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-light)]">
+      <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-default)]">
         <Button
           onClick={handleTestConnection}
           disabled={isTesting}
-          className="soft-button bg-[var(--lavender-500)] hover:bg-[var(--lavender-600)] text-white rounded-xl"
+          className="soft-button bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white rounded-md"
         >
           {isTesting ? (
             <>
@@ -174,7 +174,7 @@ export function AzureDevOpsSettings() {
         </Button>
 
         {lastSaved && (
-          <span className="text-xs text-[var(--text-tertiary)]">
+          <span className="text-xs text-[var(--text-muted)]">
             {t('common.savedAutomatically')}
           </span>
         )}
@@ -185,17 +185,17 @@ export function AzureDevOpsSettings() {
           className={
             testResult.success
               ? 'bg-[var(--mint-100)] border-[var(--mint-400)]'
-              : 'bg-[var(--peach-100)] border-[var(--peach-400)]'
+              : 'bg-[var(--warning-light)] border-[var(--warning-base)]'
           }
         >
           {testResult.success ? (
             <CheckCircle2 className="h-4 w-4 text-[var(--mint-600)]" />
           ) : (
-            <XCircle className="h-4 w-4 text-[var(--peach-600)]" />
+            <XCircle className="h-4 w-4 text-[var(--warning-dark)]" />
           )}
           <AlertDescription
             className={
-              testResult.success ? 'text-[var(--mint-700)]' : 'text-[var(--peach-700)]'
+              testResult.success ? 'text-[var(--success-dark)]' : 'text-[var(--warning-dark)]'
             }
           >
             {testResult.message}

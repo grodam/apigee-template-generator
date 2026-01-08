@@ -86,48 +86,43 @@ export const WizardContainer: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Progress Bar */}
-      <div className="glass-panel rounded-2xl p-6 space-y-3">
+      <div className="bg-[var(--bg-primary)] border border-[var(--border-default)] rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="pill-badge text-sm font-semibold">
+          <span className="text-sm font-medium text-[var(--text-primary)]">
             {t('wizard.progress', { current: currentStep + 1, total: totalSteps })}
           </span>
-          <span className="text-[var(--text-secondary)] text-sm font-medium">
+          <span className="text-sm text-[var(--text-muted)]">
             {Math.round(progress)}% {t('common.complete')}
           </span>
         </div>
-        <div className="soft-progress">
-          <div
-            className="soft-progress-bar"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <Progress value={progress} />
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs value={`step${currentStep}`} onValueChange={handleTabChange} className="space-y-8">
-        <TabsList className="glass-panel grid w-full grid-cols-6 p-1 gap-2 rounded-2xl">
+      <Tabs value={`step${currentStep}`} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6 gap-1 h-10 bg-[var(--bg-tertiary)] p-1 rounded-lg">
           {steps.map((step) => (
             <TabsTrigger
               key={step.id}
               value={`step${step.id}`}
               disabled={step.id > currentStep}
               className="
-                data-[state=active]:bg-gradient-to-br
-                data-[state=active]:from-[var(--lavender-500)]
-                data-[state=active]:to-[var(--lavender-600)]
+                h-full
+                data-[state=active]:bg-[var(--accent-500)]
                 data-[state=active]:text-white
-                data-[state=active]:shadow-lg
-                data-[state=inactive]:text-[var(--text-secondary)]
+                data-[state=active]:shadow-sm
+                data-[state=inactive]:text-[var(--text-muted)]
+                data-[state=inactive]:hover:text-[var(--text-primary)]
+                data-[state=inactive]:hover:bg-[var(--bg-primary)]
                 disabled:opacity-40
                 disabled:cursor-not-allowed
-                rounded-xl
+                rounded-md
                 font-medium
                 text-sm
                 transition-all
-                duration-200
-                py-1
+                duration-150
               "
             >
               {t(step.labelKey)}
@@ -136,20 +131,15 @@ export const WizardContainer: React.FC = () => {
         </TabsList>
 
         {/* Step Content */}
-        <TabsContent value={`step${currentStep}`} className="space-y-8">
+        <TabsContent value={`step${currentStep}`} className="space-y-6">
           {renderStep()}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between pt-6">
+          <div className="flex justify-between pt-4 border-t border-[var(--border-subtle)]">
             <Button
               variant="outline"
               onClick={handlePreviousStep}
               disabled={currentStep === 0}
-              className="
-                soft-button secondary
-                disabled:opacity-40
-                disabled:cursor-not-allowed
-              "
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
               {t('common.back')}
@@ -159,11 +149,6 @@ export const WizardContainer: React.FC = () => {
               <Button
                 onClick={handleNextStep}
                 disabled={!canGoNext()}
-                className="
-                  soft-button
-                  disabled:opacity-40
-                  disabled:cursor-not-allowed
-                "
               >
                 {t('common.next')}
                 <ChevronRight className="ml-2 h-4 w-4" />

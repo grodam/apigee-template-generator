@@ -12,30 +12,34 @@ function App() {
   const setSettingsModalOpen = useProjectStore((state) => state.setSettingsModalOpen)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Header */}
-      <header className="border-b bg-white/50 backdrop-blur-sm dark:bg-slate-900/50">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-[var(--bg-secondary)]">
+      {/* Header - Clean, bordered */}
+      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCode2 className="h-8 w-8 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="icon-container accent">
+                <FileCode2 className="h-5 w-5" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">{t('app.title')}</h1>
-                <p className="text-sm text-muted-foreground">{t('app.subtitle')}</p>
+                <h1 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+                  {t('app.title')}
+                </h1>
+                <p className="text-sm text-[var(--text-muted)]">{t('app.subtitle')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <LanguageSwitcher />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSettingsModalOpen(true)}
-                className="rounded-xl hover:bg-[var(--cream-200)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="h-8 w-8 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 title={t('common.settings')}
               >
-                <Settings className="h-5 w-5" />
+                <Settings className="h-4 w-4" />
               </Button>
-              <Badge variant="secondary">v2.0.0</Badge>
+              <Badge variant="secondary" className="text-xs font-medium">v2.0.0</Badge>
             </div>
           </div>
         </div>
@@ -45,14 +49,14 @@ function App() {
       <SettingsModal />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-6 py-6">
         <WizardContainer />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-white/50 backdrop-blur-sm dark:bg-slate-900/50 mt-8">
-        <div className="container mx-auto px-4 py-4">
-          <p className="text-sm text-center text-muted-foreground">
+      {/* Footer - Minimal */}
+      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] mt-6">
+        <div className="container mx-auto px-6 py-4">
+          <p className="text-xs text-center text-[var(--text-faint)]">
             {t('app.footer')}
           </p>
         </div>

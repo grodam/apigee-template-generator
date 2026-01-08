@@ -62,6 +62,15 @@ interface ProjectState {
 // Helper to remove trailing '1' from environment name (dev1 -> dev, prod1 -> prod)
 const normalizeEnvName = (env: string): string => env.replace(/1$/, '');
 
+// Helper to get environment suffix for product/display names
+// prod/prod1: no suffix, staging: "stg", others: normalized env name
+const getEnvSuffix = (env: string, separator: string = '-'): string => {
+  const normalized = normalizeEnvName(env);
+  if (normalized === 'prod') return '';
+  if (normalized === 'staging') return `${separator}stg`;
+  return `${separator}${normalized}`;
+};
+
 // Helper to capitalize first letter
 const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -88,10 +97,10 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
   const envNormalized = normalizeEnvName(env);
   // Target Server Name: [entity].[backendapp].[version].backend
   const targetServerName = `${entity}.${backendApps.join('-')}.${version}.backend`;
-  // Product Name: [proxyName].[env without '1']
-  const productName = `${proxyName}.${envNormalized}`;
-  // Display Name: businessObject (lowercase)
-  const displayName = businessObject.toLowerCase();
+  // Product Name: [proxyName].[env] (prod: no suffix, staging: .stg)
+  const productName = `${proxyName}${getEnvSuffix(env, '.')}`;
+  // Display Name: [businessObject]-[version]-[env] (prod: no suffix, staging: -stg)
+  const displayName = `${businessObject}-${version}${getEnvSuffix(env)}`;
   // Description: auto-generated
   const description = generateProductDescription(params);
 
@@ -99,7 +108,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
   const kvms = backendApps.map(backendApp => ({
     name: `${backendApp}.${version}.backend`,
     encrypted: true,
-    entry: []
+    entries: []
   }));
 
   return {
@@ -133,13 +142,12 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
 // Update environment config with new proxy name while preserving user customizations
 const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: EnvConfigParams): EnvironmentConfig => {
   const { env, proxyName, entity, backendApps, businessObject, version } = params;
-  const envNormalized = normalizeEnvName(env);
   // Target Server Name: [entity].[backendapp].[version].backend
   const targetServerName = `${entity}.${backendApps.join('-')}.${version}.backend`;
-  // Product Name: [proxyName].[env without '1']
-  const productName = `${proxyName}.${envNormalized}`;
-  // Display Name: businessObject (lowercase)
-  const displayName = businessObject.toLowerCase();
+  // Product Name: [proxyName].[env] (prod: no suffix, staging: .stg)
+  const productName = `${proxyName}${getEnvSuffix(env, '.')}`;
+  // Display Name: [businessObject]-[version]-[env] (prod: no suffix, staging: -stg)
+  const displayName = `${businessObject}-${version}${getEnvSuffix(env)}`;
   // Description: auto-generated
   const description = generateProductDescription(params);
 
@@ -151,7 +159,7 @@ const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: En
     return existingKvm || {
       name: kvmName,
       encrypted: true,
-      entry: []
+      entries: []
     };
   });
 

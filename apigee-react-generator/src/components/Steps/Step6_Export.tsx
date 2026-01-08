@@ -105,7 +105,7 @@ export const Step6_Export: React.FC = () => {
 
         <Accordion type="single" collapsible className="w-full space-y-4">
           <AccordionItem value="azure-devops" className="soft-card border-none">
-            <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--lavender-600)] px-6">
+            <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--accent-600)] px-6">
               {t('step6.sections.azureGuide')}
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
@@ -124,7 +124,7 @@ export const Step6_Export: React.FC = () => {
                     <Copy className="mr-2 h-3 w-3" />
                     Copy
                   </Button>
-                  <pre className="bg-[var(--cream-200)] text-[var(--text-primary)] border border-[var(--border-light)] p-4 rounded-2xl overflow-x-auto text-sm font-mono">
+                  <pre className="bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-default)] p-4 rounded-lg overflow-x-auto text-sm font-mono">
                     {azureDevOpsInstructions}
                   </pre>
                 </div>
@@ -133,7 +133,7 @@ export const Step6_Export: React.FC = () => {
           </AccordionItem>
 
           <AccordionItem value="file-structure" className="soft-card border-none">
-            <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--lavender-600)] px-6">
+            <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--accent-600)] px-6">
               {t('step6.sections.fileStructure')}
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
@@ -141,7 +141,7 @@ export const Step6_Export: React.FC = () => {
                 {Array.from(generatedProject?.files.keys() || []).sort().map((filePath) => (
                   <div
                     key={filePath}
-                    className="py-2 px-3 hover:bg-[var(--lavender-50)] rounded-lg text-sm font-mono border-b border-[var(--border-light)] last:border-0 text-[var(--text-secondary)] transition-colors"
+                    className="py-2 px-3 hover:bg-[var(--accent-50)] rounded-lg text-sm font-mono border-b border-[var(--border-default)] last:border-0 text-[var(--text-secondary)] transition-colors"
                   >
                     {filePath}
                   </div>

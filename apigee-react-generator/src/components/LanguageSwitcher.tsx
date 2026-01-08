@@ -16,7 +16,7 @@ export const LanguageSwitcher: React.FC = () => {
       variant="ghost"
       size="sm"
       onClick={toggleLanguage}
-      className="rounded-xl hover:bg-[var(--cream-200)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] gap-2"
+      className="rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] gap-2"
     >
       <Globe className="h-4 w-4" />
       <span className="text-sm font-medium">

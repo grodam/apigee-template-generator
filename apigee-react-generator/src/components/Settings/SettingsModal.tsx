@@ -23,10 +23,10 @@ export function SettingsModal() {
 
   return (
     <Dialog open={isSettingsModalOpen} onOpenChange={setSettingsModalOpen}>
-      <DialogContent className="max-w-[90vw] w-[1200px] h-[85vh] max-h-[900px] p-0 gap-0 bg-[var(--cream-100)] border-[var(--border-light)] rounded-3xl overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b border-[var(--border-light)] bg-white/50 flex-shrink-0">
+      <DialogContent className="max-w-[90vw] w-[1200px] h-[85vh] max-h-[900px] p-0 gap-0 bg-[var(--bg-secondary)] border-[var(--border-default)] rounded-3xl overflow-hidden flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b border-[var(--border-default)] bg-white/50 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-[var(--text-primary)]">
-            <Settings className="h-5 w-5 text-[var(--lavender-600)]" />
+            <Settings className="h-5 w-5 text-[var(--accent-600)]" />
             {t('settings.title')}
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -36,7 +36,7 @@ export function SettingsModal() {
 
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Sidebar Navigation */}
-          <div className="w-56 border-r border-[var(--border-light)] bg-white/30 p-4">
+          <div className="w-56 border-r border-[var(--border-default)] bg-white/30 p-4">
             <Tabs
               value={settingsActiveTab}
               onValueChange={(v) => setSettingsActiveTab(v as 'templates' | 'azure-devops')}
@@ -46,14 +46,14 @@ export function SettingsModal() {
               <TabsList className="flex flex-col h-auto w-full bg-transparent gap-2">
                 <TabsTrigger
                   value="templates"
-                  className="w-full justify-start gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-200 data-[state=active]:bg-[var(--lavender-200)] data-[state=active]:text-[var(--lavender-700)] data-[state=inactive]:text-[var(--text-secondary)] data-[state=inactive]:hover:bg-[var(--cream-200)]"
+                  className="w-full justify-start gap-3 px-4 py-3 rounded-md text-left font-medium transition-all duration-200 data-[state=active]:bg-[var(--accent-200)] data-[state=active]:text-[var(--accent-700)] data-[state=inactive]:text-[var(--text-secondary)] data-[state=inactive]:hover:bg-[var(--bg-tertiary)]"
                 >
                   <FileCode2 className="h-4 w-4" />
                   {t('settings.tabs.templates')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="azure-devops"
-                  className="w-full justify-start gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-200 data-[state=active]:bg-[var(--lavender-200)] data-[state=active]:text-[var(--lavender-700)] data-[state=inactive]:text-[var(--text-secondary)] data-[state=inactive]:hover:bg-[var(--cream-200)]"
+                  className="w-full justify-start gap-3 px-4 py-3 rounded-md text-left font-medium transition-all duration-200 data-[state=active]:bg-[var(--accent-200)] data-[state=active]:text-[var(--accent-700)] data-[state=inactive]:text-[var(--text-secondary)] data-[state=inactive]:hover:bg-[var(--bg-tertiary)]"
                 >
                   <Cloud className="h-4 w-4" />
                   {t('settings.tabs.azureDevOps')}

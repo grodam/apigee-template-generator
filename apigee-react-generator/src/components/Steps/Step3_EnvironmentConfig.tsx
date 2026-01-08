@@ -23,7 +23,7 @@ const SectionCard: React.FC<{
   <div className="soft-card">
     <div className="flex items-start justify-between mb-6">
       <div className="flex items-center gap-3 flex-1">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--lavender-100)] text-[var(--lavender-600)]">
+        <div className="flex items-center justify-center w-10 h-10 rounded-md bg-[var(--accent-100)] text-[var(--accent-600)]">
           {icon}
         </div>
         <div>
@@ -77,48 +77,10 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       [field]: value
     };
 
-    // Update current environment
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
       targetServers: updatedTargetServers
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig) {
-            const envTargetServers = envConfig.targetServers.length > 0
-              ? [...envConfig.targetServers]
-              : [{
-                  name: `${apiConfig.proxyName}.backend`,
-                  host: `backend-${env}.elis.com`,
-                  isEnabled: true,
-                  port: 443,
-                  sSLInfo: { enabled: true, clientAuthEnabled: false }
-                }];
-
-            // Adapter la valeur pour l'environnement cible
-            let adaptedValue = value;
-            if (field === 'host' && typeof value === 'string') {
-              // Remplacer dev1 par le nom de l'env cible dans le host
-              adaptedValue = value.replace(/dev1/gi, env);
-            }
-
-            envTargetServers[0] = {
-              ...envTargetServers[0],
-              [field]: adaptedValue
-            };
-
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              targetServers: envTargetServers
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleApiProductChange = (field: string, value: any) => {
@@ -142,48 +104,10 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       [field]: value
     };
 
-    // Update current environment
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
       apiProducts: updatedProducts
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig) {
-            const envProducts = envConfig.apiProducts.length > 0
-              ? [...envConfig.apiProducts]
-              : [{
-                  name: `${apiConfig.proxyName}-product-${env}`,
-                  displayName: `${apiConfig.proxyName} Product ${env.toUpperCase()}`,
-                  approvalType: 'auto',
-                  environments: [env],
-                  attributes: [{ name: 'access', value: 'private' }]
-                }];
-
-            // Adapter la valeur pour l'environnement cible
-            let adaptedValue = value;
-            if (typeof value === 'string') {
-              // Remplacer dev1 par le nom de l'env cible dans les noms et display names
-              adaptedValue = value.replace(/dev1/gi, env).replace(/DEV1/g, env.toUpperCase());
-            }
-
-            envProducts[0] = {
-              ...envProducts[0],
-              [field]: adaptedValue
-            };
-
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              apiProducts: envProducts
-            });
-          }
-        }
-      });
-    }
   };
 
   // KVM Management Functions
@@ -198,7 +122,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
     const newKVM: KVM = {
       name: kvmName,
       encrypted: false,
-      entry: []
+      entries: []
     };
 
     const updatedKVMs = [...existingKvms, newKVM];
@@ -207,26 +131,6 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig) {
-            const adaptedKVM: KVM = {
-              name: kvmName,
-              encrypted: false,
-              entry: []
-            };
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              kvms: [...(envConfig.kvms || []), adaptedKVM]
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleRemoveKVM = (index: number) => {
@@ -238,22 +142,6 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig) {
-            const envKVMs = envConfig.kvms?.filter((_, i) => i !== index) || [];
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              kvms: envKVMs
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleKVMChange = (kvmIndex: number, field: 'name' | 'encrypted', value: any) => {
@@ -269,151 +157,58 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig && envConfig.kvms && envConfig.kvms[kvmIndex]) {
-            const envKVMs = [...envConfig.kvms];
-            let adaptedValue = value;
-            if (field === 'name' && typeof value === 'string') {
-              adaptedValue = value.replace(/dev1/gi, env);
-            }
-            envKVMs[kvmIndex] = {
-              ...envKVMs[kvmIndex],
-              [field]: adaptedValue
-            };
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              kvms: envKVMs
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleAddKVMEntry = (kvmIndex: number) => {
     if (!currentEnvConfig || !currentEnvConfig.kvms) return;
 
     const updatedKVMs = [...currentEnvConfig.kvms];
-    const currentEntries = updatedKVMs[kvmIndex].entry || [];
+    const currentEntries = updatedKVMs[kvmIndex].entries || [];
     updatedKVMs[kvmIndex] = {
       ...updatedKVMs[kvmIndex],
-      entry: [...currentEntries, { name: '', value: '' }]
+      entries: [...currentEntries, { name: '', value: '' }]
     };
 
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig && envConfig.kvms && envConfig.kvms[kvmIndex]) {
-            const envKVMs = [...envConfig.kvms];
-            const envEntries = envKVMs[kvmIndex].entry || [];
-            envKVMs[kvmIndex] = {
-              ...envKVMs[kvmIndex],
-              entry: [...envEntries, { name: '', value: '' }]
-            };
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              kvms: envKVMs
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleRemoveKVMEntry = (kvmIndex: number, entryIndex: number) => {
     if (!currentEnvConfig || !currentEnvConfig.kvms) return;
 
     const updatedKVMs = [...currentEnvConfig.kvms];
-    const updatedEntries = updatedKVMs[kvmIndex].entry?.filter((_, i) => i !== entryIndex) || [];
+    const updatedEntries = updatedKVMs[kvmIndex].entries?.filter((_, i) => i !== entryIndex) || [];
     updatedKVMs[kvmIndex] = {
       ...updatedKVMs[kvmIndex],
-      entry: updatedEntries
+      entries: updatedEntries
     };
 
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig && envConfig.kvms && envConfig.kvms[kvmIndex]) {
-            const envKVMs = [...envConfig.kvms];
-            const envEntries = envKVMs[kvmIndex].entry?.filter((_, i) => i !== entryIndex) || [];
-            envKVMs[kvmIndex] = {
-              ...envKVMs[kvmIndex],
-              entry: envEntries
-            };
-            updateEnvironmentConfig(env, {
-              ...envConfig,
-              kvms: envKVMs
-            });
-          }
-        }
-      });
-    }
   };
 
   const handleKVMEntryChange = (kvmIndex: number, entryIndex: number, field: 'name' | 'value', value: string) => {
     if (!currentEnvConfig || !currentEnvConfig.kvms) return;
 
     const updatedKVMs = [...currentEnvConfig.kvms];
-    const updatedEntries = [...(updatedKVMs[kvmIndex].entry || [])];
+    const updatedEntries = [...(updatedKVMs[kvmIndex].entries || [])];
     updatedEntries[entryIndex] = {
       ...updatedEntries[entryIndex],
       [field]: value
     };
     updatedKVMs[kvmIndex] = {
       ...updatedKVMs[kvmIndex],
-      entry: updatedEntries
+      entries: updatedEntries
     };
 
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
       kvms: updatedKVMs
     });
-
-    // Si on est dans dev1, synchroniser avec les autres environnements
-    if (selectedEnv === 'dev1' && apiConfig.environments) {
-      ENVIRONMENTS.forEach((env) => {
-        if (env !== 'dev1') {
-          const envConfig = apiConfig.environments![env];
-          if (envConfig && envConfig.kvms && envConfig.kvms[kvmIndex]) {
-            const envKVMs = [...envConfig.kvms];
-            const envEntries = [...(envKVMs[kvmIndex].entry || [])];
-            if (envEntries[entryIndex]) {
-              envEntries[entryIndex] = {
-                ...envEntries[entryIndex],
-                [field]: value
-              };
-              envKVMs[kvmIndex] = {
-                ...envKVMs[kvmIndex],
-                entry: envEntries
-              };
-              updateEnvironmentConfig(env, {
-                ...envConfig,
-                kvms: envKVMs
-              });
-            }
-          }
-        }
-      });
-    }
   };
 
   // Check if basic config is complete
@@ -422,9 +217,9 @@ export const Step3_EnvironmentConfig: React.FC = () => {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-2">{t('step3.title')}</h2>
-        <p className="text-[var(--text-secondary)]">{t('step3.subtitle')}</p>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight mb-1">{t('step3.title')}</h2>
+        <p className="text-sm text-[var(--text-muted)]">{t('step3.subtitle')}</p>
       </div>
 
       {!isConfigComplete && (
@@ -444,22 +239,13 @@ export const Step3_EnvironmentConfig: React.FC = () => {
         </Alert>
       )}
 
-      {selectedEnv === 'dev1' && (
-        <Alert className="soft-alert info mb-6">
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            {t('step3.alerts.syncMode')}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Tabs value={selectedEnv} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 h-11 bg-[var(--cream-200)] border border-[var(--border-light)] rounded-2xl p-1 mb-6">
+        <TabsList className="grid w-full grid-cols-4 h-11 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-lg p-1 mb-6">
           {ENVIRONMENTS.map((env) => (
             <TabsTrigger
               key={env}
               value={env}
-              className="h-full flex items-center justify-center data-[state=active]:bg-[var(--lavender-500)] data-[state=active]:text-white data-[state=active]:shadow-sm text-[var(--text-secondary)] rounded-xl transition-all font-medium"
+              className="h-full flex items-center justify-center data-[state=active]:bg-[var(--accent-500)] data-[state=active]:text-white data-[state=active]:shadow-sm text-[var(--text-secondary)] rounded-md transition-all font-medium"
             >
               {env.toUpperCase()}
             </TabsTrigger>
@@ -488,7 +274,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                       disabled
                       className="soft-input font-mono text-sm opacity-60"
                     />
-                    <p className="text-sm text-[var(--text-tertiary)]">{t('step3.targetServer.autoGenerated')}</p>
+                    <p className="text-sm text-[var(--text-muted)]">{t('step3.targetServer.autoGenerated')}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -503,7 +289,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                         placeholder={`e.g., backend-${env}.elis.com`}
                         className="soft-input font-mono text-sm"
                       />
-                      <p className="text-sm text-[var(--text-tertiary)]">e.g., backend-{env}.elis.com</p>
+                      <p className="text-sm text-[var(--text-muted)]">e.g., backend-{env}.elis.com</p>
                     </div>
 
                     <div className="space-y-2">
@@ -548,7 +334,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                         id={`displayName-${env}`}
                         value={apiProduct?.displayName || ''}
                         onChange={(e) => handleApiProductChange('displayName', e.target.value)}
-                        className="soft-input text-sm"
+                        className="soft-input font-mono text-sm"
                       />
                     </div>
                   </div>
@@ -562,7 +348,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                       value={apiProduct?.description || ''}
                       onChange={(e) => handleApiProductChange('description', e.target.value)}
                       rows={2}
-                      className="soft-input text-sm"
+                      className="soft-input font-mono text-sm"
                     />
                   </div>
                 </div>
@@ -595,7 +381,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                   )}
 
                   {envConfig?.kvms?.map((kvm, kvmIndex) => (
-                    <div key={kvmIndex} className="border-2 border-[var(--border-light)] rounded-2xl p-5 bg-[var(--cream-100)]">
+                    <div key={kvmIndex} className="border-2 border-[var(--border-default)] rounded-lg p-5 bg-[var(--bg-secondary)]">
                       <div className="flex items-start justify-between mb-4">
                         <div className="space-y-3 flex-1">
                           <div className="space-y-2">
@@ -615,7 +401,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                               id={`kvm-encrypted-${env}-${kvmIndex}`}
                               checked={kvm.encrypted}
                               onCheckedChange={(checked) => handleKVMChange(kvmIndex, 'encrypted', checked)}
-                              className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
+                              className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
                             />
                             <Label
                               htmlFor={`kvm-encrypted-${env}-${kvmIndex}`}
@@ -630,7 +416,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveKVM(kvmIndex)}
-                          className="text-[var(--error-base)] hover:text-[var(--error-dark)] hover:bg-[var(--rose-soft)]"
+                          className="text-[var(--error-base)] hover:text-[var(--error-text)] hover:bg-[var(--error-light)]"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -651,14 +437,14 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                           </Button>
                         </div>
 
-                        {(!kvm.entry || kvm.entry.length === 0) && (
-                          <p className="text-sm text-[var(--text-tertiary)] italic">
+                        {(!kvm.entries || kvm.entries.length === 0) && (
+                          <p className="text-sm text-[var(--text-muted)] italic">
                             {t('step3.kvm.noEntries')}
                           </p>
                         )}
 
                         <div className="space-y-2">
-                          {kvm.entry?.map((entry, entryIndex) => (
+                          {kvm.entries?.map((entry, entryIndex) => (
                             <div key={entryIndex} className="flex items-center gap-2">
                               <Input
                                 placeholder={t('step3.kvm.keyPlaceholder')}
@@ -678,7 +464,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveKVMEntry(kvmIndex, entryIndex)}
-                                className="text-[var(--error-base)] hover:text-[var(--error-dark)] hover:bg-[var(--rose-soft)]"
+                                className="text-[var(--error-base)] hover:text-[var(--error-text)] hover:bg-[var(--error-light)]"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

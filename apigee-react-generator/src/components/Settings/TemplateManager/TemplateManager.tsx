@@ -159,15 +159,15 @@ export function TemplateManager() {
   return (
     <div className="flex h-full">
       {/* Left Panel - Tree */}
-      <div className="w-72 border-r border-[var(--border-light)] bg-white/30 flex flex-col">
-        <div className="p-4 border-b border-[var(--border-light)]">
+      <div className="w-72 border-r border-[var(--border-default)] bg-white/30 flex flex-col">
+        <div className="p-4 border-b border-[var(--border-default)]">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">{t('templates.title')}</h3>
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportAll}
-              className="h-9 text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center justify-center gap-1.5"
+              className="h-9 text-xs rounded-md border-[var(--border-default)] hover:bg-[var(--bg-tertiary)] inline-flex items-center justify-center gap-1.5"
             >
               <Download className="h-3 w-3" />
               <span>{t('templates.exportZip')}</span>
@@ -176,7 +176,7 @@ export function TemplateManager() {
               variant="outline"
               size="sm"
               onClick={() => document.getElementById('template-import-input')?.click()}
-              className="h-9 text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center justify-center gap-1.5"
+              className="h-9 text-xs rounded-md border-[var(--border-default)] hover:bg-[var(--bg-tertiary)] inline-flex items-center justify-center gap-1.5"
             >
               <Upload className="h-3 w-3" />
               <span>{t('templates.importZip')}</span>
@@ -203,13 +203,13 @@ export function TemplateManager() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedTemplate ? (
           <>
-            <div className="px-4 py-3 border-b border-[var(--border-light)] bg-white/50 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[var(--border-default)] bg-white/50 flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-[var(--text-primary)]">{selectedTemplate.name}</h3>
                 <p className="text-xs text-[var(--text-secondary)]">
                   {selectedTemplate.description}
                   {hasUnsavedChanges && (
-                    <span className="ml-2 text-[var(--peach-600)]">{t('templates.modified')}</span>
+                    <span className="ml-2 text-[var(--warning-dark)]">{t('templates.modified')}</span>
                   )}
                 </p>
               </div>
@@ -218,7 +218,7 @@ export function TemplateManager() {
                   variant="outline"
                   size="sm"
                   onClick={handleExportSingle}
-                  className="text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center gap-1.5"
+                  className="text-xs rounded-md border-[var(--border-default)] hover:bg-[var(--bg-tertiary)] inline-flex items-center gap-1.5"
                 >
                   <Download className="h-3 w-3" />
                   <span>{t('common.export')}</span>
@@ -229,7 +229,7 @@ export function TemplateManager() {
                       variant="outline"
                       size="sm"
                       onClick={handleReset}
-                      className="text-xs rounded-xl border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--cream-200)] inline-flex items-center gap-1.5"
+                      className="text-xs rounded-md border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] inline-flex items-center gap-1.5"
                     >
                       <RotateCcw className="h-3 w-3" />
                       <span>{t('common.cancel')}</span>
@@ -238,7 +238,7 @@ export function TemplateManager() {
                       size="sm"
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="text-xs rounded-xl bg-gradient-to-r from-[var(--lavender-500)] to-[var(--lavender-600)] hover:from-[var(--lavender-600)] hover:to-[var(--lavender-700)] text-white shadow-sm inline-flex items-center gap-1.5"
+                      className="text-xs rounded-md bg-gradient-to-r from-[var(--accent-500)] to-[var(--accent-600)] hover:from-[var(--accent-600)] hover:to-[var(--accent-700)] text-white shadow-sm inline-flex items-center gap-1.5"
                     >
                       <Save className="h-3 w-3" />
                       <span>{t('common.save')}</span>

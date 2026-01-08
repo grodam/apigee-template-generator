@@ -11,6 +11,19 @@ export class ConfigGenerator {
   }
 
   generateEdgeEnvJson(env: string, envConfig: EnvironmentConfig): any {
+    // Map KVMs and remove empty entries arrays
+    const kvms = (envConfig.kvms || []).map(kvm => {
+      const kvmObj: any = {
+        name: kvm.name,
+        encrypted: kvm.encrypted,
+      };
+      // Only include entries if not empty
+      if (kvm.entries && kvm.entries.length > 0) {
+        kvmObj.entries = kvm.entries;
+      }
+      return kvmObj;
+    });
+
     return {
       version: "1.0",
       envConfig: {
@@ -25,7 +38,7 @@ export class ConfigGenerator {
               clientAuthEnabled: false,
             }
           })),
-          kvms: envConfig.kvms || [],
+          kvms,
           virtualHosts: [],
           references: [],
           caches: [],
@@ -110,18 +123,17 @@ export class ConfigGenerator {
 
   generateApigeConfiguration(): any {
     return {
-      proxyName: this.config.proxyName,
       entity: this.config.entity,
-      apiname: this.config.apiname,
-      version: this.config.version,
       description: this.config.description,
-      proxyBasepath: this.config.proxyBasepath,
-      targetPath: this.config.targetPath,
-      mockUrl: this.config.mockUrl,
-      globalRateLimit: this.config.globalRateLimit,
-      authSouthbound: this.config.authSouthbound?.toLowerCase(),
-      oasVersion: this.config.oasVersion,
-      oasFormat: 'json'
+      version: this.config.version,
+      apiname: this.config.apiname,
+      'oas.version': this.config.oasVersion,
+      'oas.format': 'json',
+      'proxy.basepath': this.config.proxyBasepath,
+      'target.path': this.config.targetPath,
+      'global-rate-limit': this.config.globalRateLimit,
+      'auth-southbound': this.config.authSouthbound?.toLowerCase(),
+      'mock.url': this.config.mockUrl || ''
     };
   }
 }

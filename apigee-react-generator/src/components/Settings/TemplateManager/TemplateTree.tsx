@@ -24,11 +24,11 @@ export function TemplateTree({ nodes, selectedId, onSelect }: TemplateTreeProps)
     const ext = filename.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'xml':
-        return <FileCode className="h-4 w-4 text-[var(--lavender-500)]" />;
+        return <FileCode className="h-4 w-4 text-[var(--accent-500)]" />;
       case 'json':
         return <FileJson className="h-4 w-4 text-[var(--mint-500)]" />;
       case 'js':
-        return <FileText className="h-4 w-4 text-[var(--peach-500)]" />;
+        return <FileText className="h-4 w-4 text-[var(--warning-light0)]" />;
       case 'yaml':
       case 'yml':
         return <FileText className="h-4 w-4 text-[var(--sky-500)]" />;
@@ -50,11 +50,11 @@ export function TemplateTree({ nodes, selectedId, onSelect }: TemplateTreeProps)
           value={node.id}
           className="border-none"
         >
-          <AccordionTrigger className="py-2 px-3 rounded-xl hover:bg-[var(--cream-200)] hover:no-underline text-sm font-medium text-[var(--text-primary)] [&[data-state=open]>svg]:rotate-90">
+          <AccordionTrigger className="py-2 px-3 rounded-md hover:bg-[var(--bg-tertiary)] hover:no-underline text-sm font-medium text-[var(--text-primary)] [&[data-state=open]>svg]:rotate-90">
             <div className="flex items-center gap-2">
-              <Folder className="h-4 w-4 text-[var(--lavender-500)]" />
+              <Folder className="h-4 w-4 text-[var(--accent-500)]" />
               <span>{node.name}</span>
-              <span className="text-xs text-[var(--text-tertiary)]">
+              <span className="text-xs text-[var(--text-muted)]">
                 ({node.children?.length || 0})
               </span>
             </div>
@@ -66,10 +66,10 @@ export function TemplateTree({ nodes, selectedId, onSelect }: TemplateTreeProps)
                   key={child.id}
                   onClick={() => child.template && onSelect(child.template)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-left transition-colors",
                     selectedId === child.id
-                      ? "bg-[var(--lavender-200)] text-[var(--lavender-700)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--cream-200)] hover:text-[var(--text-primary)]"
+                      ? "bg-[var(--accent-200)] text-[var(--accent-700)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   {getFileIcon(child.name)}

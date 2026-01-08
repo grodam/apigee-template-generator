@@ -20,7 +20,7 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex items-center">
-            <HelpCircle className="h-3.5 w-3.5 text-[var(--text-tertiary)] cursor-help hover:text-[var(--lavender-500)] transition-colors" />
+            <HelpCircle className="h-3.5 w-3.5 text-[var(--text-muted)] cursor-help hover:text-[var(--accent-500)] transition-colors" />
           </span>
         </TooltipTrigger>
         <TooltipContent side="right" className="soft-tooltip">
@@ -191,7 +191,7 @@ export const Step5_AzureDevOps: React.FC = () => {
               id="enable-azure-devops"
               checked={azureDevOpsConfig.enabled}
               onCheckedChange={(checked) => updateAzureDevOpsConfig({ enabled: !!checked })}
-              className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
+              className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
             />
             <Label
               htmlFor="enable-azure-devops"
@@ -216,19 +216,19 @@ export const Step5_AzureDevOps: React.FC = () => {
                   <div className="bg-[var(--bg-secondary)] rounded-lg p-4 space-y-2">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-[var(--text-tertiary)]">{t('step5.config.organization')}</span>
+                        <span className="text-[var(--text-muted)]">{t('step5.config.organization')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.organization}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">{t('step5.config.project')}</span>
+                        <span className="text-[var(--text-muted)]">{t('step5.config.project')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.project}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">{t('step5.config.branch')}</span>
+                        <span className="text-[var(--text-muted)]">{t('step5.config.branch')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.defaultBranch}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">{t('step5.config.pat')}</span>
+                        <span className="text-[var(--text-muted)]">{t('step5.config.pat')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">****{t('step5.config.configured')}****</span>
                       </div>
                     </div>
@@ -253,7 +253,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                         variant="link"
                         size="sm"
                         onClick={() => setSettingsModalOpen(true)}
-                        className="ml-2 text-[var(--lavender-500)] hover:text-[var(--lavender-600)] p-0 h-auto"
+                        className="ml-2 text-[var(--accent-500)] hover:text-[var(--accent-600)] p-0 h-auto"
                       >
                         {t('step5.openSettings')}
                       </Button>
@@ -326,7 +326,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       id="create-repository"
                       checked={azureDevOpsConfig.createRepository}
                       onCheckedChange={(checked) => updateAzureDevOpsConfig({ createRepository: !!checked })}
-                      className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
+                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
                     />
                     <Label htmlFor="create-repository" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
                       {t('step5.options.createRepo')}
@@ -338,7 +338,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       id="push-after-generation"
                       checked={azureDevOpsConfig.pushAfterGeneration}
                       onCheckedChange={(checked) => updateAzureDevOpsConfig({ pushAfterGeneration: !!checked })}
-                      className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
+                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
                     />
                     <Label htmlFor="push-after-generation" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
                       {t('step5.options.autoPush')}
@@ -350,7 +350,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       id="create-pipelines"
                       checked={azureDevOpsConfig.createPipelines}
                       onCheckedChange={(checked) => updateAzureDevOpsConfig({ createPipelines: !!checked })}
-                      className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
+                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
                     />
                     <Label htmlFor="create-pipelines" className="text-sm font-normal cursor-pointer text-[var(--text-secondary)]">
                       {t('step5.options.createPipelines')}

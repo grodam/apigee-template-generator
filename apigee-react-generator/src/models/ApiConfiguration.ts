@@ -99,7 +99,7 @@ export interface DeveloperApp {
 export interface KVM {
   name: string;                      // Ex: "customer-backend"
   encrypted: boolean;
-  entry?: Array<{
+  entries?: Array<{
     name: string;
     value: string;
   }>;
