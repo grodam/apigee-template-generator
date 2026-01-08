@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <TargetEndpoint name="default">
     <PreFlow name="PreFlow">
-        <Request/>
+        <Request>
+            {{#if isBasicAuth}}
+            <Step><Name>KVM-GetBackendInfos</Name></Step>
+            <Step><Name>BA-AddAuthHeader</Name></Step>
+            {{/if}}
+            {{#if isOAuth2}}
+            <Step><Name>KVM-GetBackendInfosCC</Name></Step>
+            <Step><Name>LC-LookupToken</Name></Step>
+            <Step>
+                <Name>SC-GetTokenCC</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step>
+                <Name>EV-ExtractToken</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step>
+                <Name>PC-PopulateToken</Name>
+                <Condition>lookupcache.LC-LookupToken.cachehit = false</Condition>
+            </Step>
+            <Step><Name>AM-SetToken</Name></Step>
+            {{/if}}
+        </Request>
         <Response/>
     </PreFlow>
     <Flows/>

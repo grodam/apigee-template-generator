@@ -148,9 +148,12 @@ export class ApigeeProjectGenerator {
       const defaultTemplate = await this.templateLoader.load('targets/default-template.xml');
       const targetServerName = `${this.config.proxyName}.backend`;
 
-      const defaultTarget = defaultTemplate
+      let defaultTarget = defaultTemplate
         .replace(/{{targetServerName}}/g, targetServerName)
         .replace(/{{targetPath}}/g, this.config.targetPath);
+
+      // Process conditionals for southbound auth
+      defaultTarget = this.processConditionals(defaultTarget);
 
       project.files.set(
         'src/main/apigee/gateway/apiproxy/targets/default.xml',
