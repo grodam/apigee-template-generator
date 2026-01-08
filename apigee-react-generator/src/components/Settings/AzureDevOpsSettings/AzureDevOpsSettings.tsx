@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { AzureDevOpsService } from '@/services/azure-devops/AzureDevOpsService';
 import { Cloud, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Info } from 'lucide-react';
 
 export function AzureDevOpsSettings() {
+  const { t } = useTranslation();
   const { azureDevOpsConfig, updateAzureDevOpsConfig } = useProjectStore();
 
   const [showToken, setShowToken] = useState(false);
@@ -24,7 +26,7 @@ export function AzureDevOpsSettings() {
     if (!azureDevOpsConfig.organization || !azureDevOpsConfig.personalAccessToken) {
       setTestResult({
         success: false,
-        message: 'Veuillez renseigner l\'organisation et le token.',
+        message: t('azureSettings.missingFields'),
       });
       return;
     }
@@ -44,13 +46,13 @@ export function AzureDevOpsSettings() {
       setTestResult({
         success,
         message: success
-          ? 'Connexion réussie ! Les paramètres sont valides.'
-          : 'La connexion a échoué. Vérifiez vos paramètres.',
+          ? t('azureSettings.testSuccess')
+          : t('azureSettings.testFailure'),
       });
     } catch (error: any) {
       setTestResult({
         success: false,
-        message: error.message || 'Erreur lors du test de connexion.',
+        message: error.message || t('azureSettings.testError'),
       });
     } finally {
       setIsTesting(false);
@@ -62,57 +64,56 @@ export function AzureDevOpsSettings() {
       <div>
         <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <Cloud className="h-5 w-5 text-[var(--lavender-600)]" />
-          Configuration Azure DevOps
+          {t('azureSettings.title')}
         </h3>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Ces paramètres sont sauvegardés automatiquement dans votre navigateur.
+          {t('azureSettings.description')}
         </p>
       </div>
 
       <Alert className="bg-[var(--sky-100)] border-[var(--sky-300)]">
         <Info className="h-4 w-4 text-[var(--sky-600)]" />
         <AlertDescription className="text-[var(--sky-700)]">
-          Le nom du repository est défini par projet et n'est pas sauvegardé ici.
-          Il sera basé sur le nom du proxy généré.
+          {t('azureSettings.repoNameNote')}
         </AlertDescription>
       </Alert>
 
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="organization" className="text-[var(--text-primary)]">
-            Organisation
+            {t('azureSettings.fields.organization.label')}
           </Label>
           <Input
             id="organization"
             value={azureDevOpsConfig.organization}
             onChange={(e) => updateAzureDevOpsConfig({ organization: e.target.value })}
-            placeholder="mon-organisation"
+            placeholder={t('azureSettings.fields.organization.placeholder')}
             className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
           />
           <p className="text-xs text-[var(--text-tertiary)]">
-            Nom de votre organisation Azure DevOps (visible dans l'URL: dev.azure.com/nom-organisation)
+            {t('azureSettings.fields.organization.help')}
           </p>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="project" className="text-[var(--text-primary)]">
-            Projet
+            {t('azureSettings.fields.project.label')}
           </Label>
           <Input
             id="project"
             value={azureDevOpsConfig.project}
             onChange={(e) => updateAzureDevOpsConfig({ project: e.target.value })}
-            placeholder="mon-projet"
+            placeholder={t('azureSettings.fields.project.placeholder')}
             className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
           />
           <p className="text-xs text-[var(--text-tertiary)]">
-            Nom du projet où les repositories seront créés
+            {t('azureSettings.fields.project.help')}
           </p>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="pat" className="text-[var(--text-primary)]">
-            Personal Access Token (PAT)
+            {t('azureSettings.fields.pat.label')}
           </Label>
           <div className="relative">
             <Input
@@ -120,7 +121,7 @@ export function AzureDevOpsSettings() {
               type={showToken ? 'text' : 'password'}
               value={azureDevOpsConfig.personalAccessToken}
               onChange={(e) => updateAzureDevOpsConfig({ personalAccessToken: e.target.value })}
-              placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={t('azureSettings.fields.pat.placeholder')}
               className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)] pr-10"
             />
             <button
@@ -132,23 +133,23 @@ export function AzureDevOpsSettings() {
             </button>
           </div>
           <p className="text-xs text-[var(--text-tertiary)]">
-            Token avec les permissions "Code (Read, Write, & Manage)"
+            {t('azureSettings.fields.pat.help')}
           </p>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="defaultBranch" className="text-[var(--text-primary)]">
-            Branche par défaut
+            {t('azureSettings.fields.defaultBranch.label')}
           </Label>
           <Input
             id="defaultBranch"
             value={azureDevOpsConfig.defaultBranch}
             onChange={(e) => updateAzureDevOpsConfig({ defaultBranch: e.target.value })}
-            placeholder="main"
+            placeholder={t('azureSettings.fields.defaultBranch.placeholder')}
             className="rounded-xl border-[var(--border-light)] focus:border-[var(--lavender-400)] focus:ring-[var(--lavender-200)]"
           />
           <p className="text-xs text-[var(--text-tertiary)]">
-            Nom de la branche principale (généralement "main" ou "master")
+            {t('azureSettings.fields.defaultBranch.help')}
           </p>
         </div>
       </div>
@@ -162,19 +163,19 @@ export function AzureDevOpsSettings() {
           {isTesting ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Test en cours...
+              {t('azureSettings.testing')}
             </>
           ) : (
             <>
               <Cloud className="h-4 w-4 mr-2" />
-              Tester la connexion
+              {t('azureSettings.testConnection')}
             </>
           )}
         </Button>
 
         {lastSaved && (
           <span className="text-xs text-[var(--text-tertiary)]">
-            Sauvegardé automatiquement
+            {t('common.savedAutomatically')}
           </span>
         )}
       </div>

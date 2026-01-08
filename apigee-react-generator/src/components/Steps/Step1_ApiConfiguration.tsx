@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -84,6 +85,7 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
 );
 
 export const Step1_ApiConfiguration: React.FC = () => {
+  const { t } = useTranslation();
   const { apiConfig, updateApiConfig } = useProjectStore();
 
   // Track if description was manually edited by user
@@ -191,17 +193,17 @@ export const Step1_ApiConfiguration: React.FC = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">API Configuration</h1>
-        <p className="text-[var(--text-secondary)] text-lg">Configure your API proxy parameters</p>
+        <h1 className="text-3xl font-bold mb-2">{t('step1.title')}</h1>
+        <p className="text-[var(--text-secondary)] text-lg">{t('step1.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information Section */}
-        <SoftSection id="01" title="Proxy Naming Convention">
+        <SoftSection id="01" title={t('step1.sections.proxyNaming')}>
           {/* Naming convention info */}
           <div className="mb-6 p-4 rounded-xl bg-[var(--lavender-50)] border border-[var(--lavender-200)]">
             <p className="text-sm text-[var(--text-secondary)]">
-              <span className="font-semibold text-[var(--lavender-600)]">Format:</span>{' '}
+              <span className="font-semibold text-[var(--lavender-600)]">{t('step1.proxyName.format')}</span>{' '}
               <code className="font-mono text-xs bg-white px-2 py-1 rounded">
                 [entity].[domain].[backendApps].[businessObject].[version]
               </code>
@@ -213,9 +215,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="entity"
-                label="Entity"
+                label={t('step1.fields.entity.label')}
                 required
-                tooltip="L'entité propriétaire de l'API. 'elis' pour les APIs internes, 'ext' pour les APIs exposées aux partenaires externes."
+                tooltip={t('step1.fields.entity.tooltip')}
               />
               <Controller
                 name="entity"
@@ -226,11 +228,11 @@ export const Step1_ApiConfiguration: React.FC = () => {
                       id="entity"
                       className={`soft-input font-mono text-sm ${errors.entity ? 'border-[var(--error-base)]' : ''}`}
                     >
-                      <SelectValue placeholder="Select" />
+                      <SelectValue placeholder={t('step1.fields.entity.placeholder')} />
                     </SelectTrigger>
                     <SelectContent className="bg-[var(--bg-surface)] border-[var(--border-light)] rounded-xl shadow-lg">
-                      <SelectItem value="elis" className="text-sm font-mono">elis</SelectItem>
-                      <SelectItem value="ext" className="text-sm font-mono">ext</SelectItem>
+                      <SelectItem value="elis" className="text-sm font-mono">{t('step1.fields.entity.options.elis')}</SelectItem>
+                      <SelectItem value="ext" className="text-sm font-mono">{t('step1.fields.entity.options.ext')}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -247,9 +249,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="domain"
-                label="Domain"
+                label={t('step1.fields.domain.label')}
                 required
-                tooltip="Le domaine métier de l'API (ex: finance, rh, supply-chain, sales, marketing). Utilisez des minuscules et des tirets."
+                tooltip={t('step1.fields.domain.tooltip')}
               />
               <Controller
                 name="domain"
@@ -258,7 +260,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="domain"
-                    placeholder="finance"
+                    placeholder={t('step1.fields.domain.placeholder')}
                     className={`soft-input font-mono text-sm ${errors.domain ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
@@ -275,9 +277,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="backendApps"
-                label="Backend Apps"
+                label={t('step1.fields.backendApps.label')}
                 required
-                tooltip="Le(s) nom(s) de l'application backend. Pour plusieurs apps, séparez par des tirets (ex: sap-salesforce). Utilisez des minuscules."
+                tooltip={t('step1.fields.backendApps.tooltip')}
               />
               <Controller
                 name="backendApps"
@@ -286,7 +288,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="backendApps"
-                    placeholder="sap-sf"
+                    placeholder={t('step1.fields.backendApps.placeholder')}
                     className={`soft-input font-mono text-sm ${errors.backendApps ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
@@ -303,9 +305,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="businessObject"
-                label="Business Object"
+                label={t('step1.fields.businessObject.label')}
                 required
-                tooltip="L'objet métier exposé par l'API (ex: invoice, customer, order, product). Utilisez des minuscules et des tirets."
+                tooltip={t('step1.fields.businessObject.tooltip')}
               />
               <Controller
                 name="businessObject"
@@ -314,7 +316,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="businessObject"
-                    placeholder="invoice"
+                    placeholder={t('step1.fields.businessObject.placeholder')}
                     className={`soft-input font-mono text-sm ${errors.businessObject ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
@@ -331,9 +333,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="version"
-                label="Version"
+                label={t('step1.fields.version.label')}
                 required
-                tooltip="La version de l'API au format v1, v2, v3, etc. Permet de gérer plusieurs versions d'une même API."
+                tooltip={t('step1.fields.version.tooltip')}
               />
               <Controller
                 name="version"
@@ -342,7 +344,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="version"
-                    placeholder="v1"
+                    placeholder={t('step1.fields.version.placeholder')}
                     className={`soft-input font-mono text-sm ${errors.version ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
@@ -361,7 +363,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <Alert className="soft-alert info mb-6">
               <Info className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                <span className="font-semibold">Proxy Name:</span>{' '}
+                <span className="font-semibold">{t('step1.proxyName.label')}</span>{' '}
                 <code className="pill-badge font-mono text-xs">{proxyName}</code>
               </AlertDescription>
             </Alert>
@@ -370,9 +372,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
           <div className="soft-stagger">
             <LabelWithTooltip
               htmlFor="description"
-              label="Description"
+              label={t('step1.fields.description.label')}
               required
-              tooltip="Auto-générée à partir du nom du proxy. Modifiable manuellement si besoin. La description apparaît dans l'interface Apigee et aide les développeurs à comprendre l'API."
+              tooltip={t('step1.fields.description.tooltip')}
             />
             <Controller
               name="description"
@@ -381,7 +383,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                 <Textarea
                   {...field}
                   id="description"
-                  placeholder="Describe your API proxy purpose and functionality..."
+                  placeholder={t('step1.fields.description.placeholder')}
                   rows={3}
                   onKeyDown={() => setIsDescriptionManuallyEdited(true)}
                   className={`
@@ -399,7 +401,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                 </p>
               ) : (
                 <span className="text-xs text-[var(--text-tertiary)]">
-                  {isDescriptionManuallyEdited ? '✎ Modifiée manuellement' : '✨ Auto-générée'}
+                  {isDescriptionManuallyEdited ? t('common.manuallyModified') : t('common.autoGenerated')}
                 </span>
               )}
               {isDescriptionManuallyEdited && (
@@ -412,7 +414,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   }}
                   className="text-xs text-[var(--lavender-500)] hover:text-[var(--lavender-600)] underline"
                 >
-                  Régénérer
+                  {t('common.regenerate')}
                 </button>
               )}
             </div>
@@ -420,14 +422,14 @@ export const Step1_ApiConfiguration: React.FC = () => {
         </SoftSection>
 
         {/* Routing Configuration Section */}
-        <SoftSection id="02" title="Routing Configuration">
+        <SoftSection id="02" title={t('step1.sections.routing')}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="proxyBasepath"
-                label="Proxy Basepath"
+                label={t('step1.fields.proxyBasepath.label')}
                 required
-                tooltip="The public URL path where your API will be accessible in Apigee (e.g., 'customer-api/v1'). Clients will call https://api.domain.com/{proxyBasepath}/resource to access your API."
+                tooltip={t('step1.fields.proxyBasepath.tooltip')}
               />
               <Controller
                 name="proxyBasepath"
@@ -436,7 +438,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="proxyBasepath"
-                    placeholder="customer-api/v1"
+                    placeholder={t('step1.fields.proxyBasepath.placeholder')}
                     className={`
                       soft-input font-mono text-sm
                       ${errors.proxyBasepath ? 'border-[var(--error-base)]' : ''}
@@ -455,9 +457,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="targetPath"
-                label="Target Path"
+                label={t('step1.fields.targetPath.label')}
                 required
-                tooltip="The base path on the backend/target server (e.g., '/v1'). Apigee prepends this to all backend calls. For example, if your backend API is at backend.com/v1/customers, set this to '/v1'."
+                tooltip={t('step1.fields.targetPath.tooltip')}
               />
               <Controller
                 name="targetPath"
@@ -466,7 +468,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="targetPath"
-                    placeholder="/v1"
+                    placeholder={t('step1.fields.targetPath.placeholder')}
                     className={`
                       soft-input font-mono text-sm
                       ${errors.targetPath ? 'border-[var(--error-base)]' : ''}
@@ -485,14 +487,14 @@ export const Step1_ApiConfiguration: React.FC = () => {
         </SoftSection>
 
         {/* Security & Limits Section */}
-        <SoftSection id="03" title="Security & Limits">
+        <SoftSection id="03" title={t('step1.sections.security')}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="authSouthbound"
-                label="Southbound Authentication"
+                label={t('step1.fields.authSouthbound.label')}
                 required
-                tooltip="Authentication method used when Apigee calls your backend service. 'Basic' uses username/password, 'OAuth2-ClientCredentials' uses client credentials flow, 'None' for unprotected backends. This is separate from how clients authenticate to Apigee."
+                tooltip={t('step1.fields.authSouthbound.tooltip')}
               />
               <Controller
                 name="authSouthbound"
@@ -503,18 +505,27 @@ export const Step1_ApiConfiguration: React.FC = () => {
                       id="authSouthbound"
                       className="soft-input"
                     >
-                      <SelectValue placeholder="Select authentication type" />
+                      <SelectValue placeholder={t('step1.fields.authSouthbound.placeholder')} />
                     </SelectTrigger>
                     <SelectContent className="bg-[var(--bg-surface)] border-[var(--border-light)] rounded-xl shadow-lg">
-                      {AUTH_TYPES.map((type) => (
-                        <SelectItem
-                          key={type}
-                          value={type}
-                          className="text-sm text-[var(--text-primary)] focus:bg-[var(--lavender-100)] focus:text-[var(--lavender-600)] rounded-lg"
-                        >
-                          {type}
-                        </SelectItem>
-                      ))}
+                      <SelectItem
+                        value="None"
+                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--lavender-100)] focus:text-[var(--lavender-600)] rounded-lg"
+                      >
+                        {t('step1.fields.authSouthbound.options.none')}
+                      </SelectItem>
+                      <SelectItem
+                        value="Basic"
+                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--lavender-100)] focus:text-[var(--lavender-600)] rounded-lg"
+                      >
+                        {t('step1.fields.authSouthbound.options.basic')}
+                      </SelectItem>
+                      <SelectItem
+                        value="OAuth2-ClientCredentials"
+                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--lavender-100)] focus:text-[var(--lavender-600)] rounded-lg"
+                      >
+                        {t('step1.fields.authSouthbound.options.oauth2')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -524,8 +535,8 @@ export const Step1_ApiConfiguration: React.FC = () => {
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="globalRateLimit"
-                label="Global Rate Limit"
-                tooltip="Maximum number of API calls allowed globally. Format: {number}pm (per minute) or {number}ps (per second). Example: '500pm' allows 500 requests per minute. This applies to all clients combined and helps protect your backend from overload."
+                label={t('step1.fields.globalRateLimit.label')}
+                tooltip={t('step1.fields.globalRateLimit.tooltip')}
               />
               <Controller
                 name="globalRateLimit"
@@ -534,7 +545,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   <Input
                     {...field}
                     id="globalRateLimit"
-                    placeholder="500pm or 100ps"
+                    placeholder={t('step1.fields.globalRateLimit.placeholder')}
                     className={`
                       soft-input font-mono text-sm
                       ${errors.globalRateLimit ? 'border-[var(--error-base)]' : ''}
@@ -553,12 +564,12 @@ export const Step1_ApiConfiguration: React.FC = () => {
         </SoftSection>
 
         {/* Optional Configuration Section */}
-        <SoftSection id="04" title="Optional Configuration">
+        <SoftSection id="04" title={t('step1.sections.optional')}>
           <div className="soft-stagger">
             <LabelWithTooltip
               htmlFor="mockUrl"
-              label="Mock URL"
-              tooltip="Optional mock server URL for testing (e.g., from Stoplight, Mockoon, or Prism). When provided, Apigee can be configured to route to this mock instead of the real backend during development and testing phases."
+              label={t('step1.fields.mockUrl.label')}
+              tooltip={t('step1.fields.mockUrl.tooltip')}
             />
             <Controller
               name="mockUrl"
@@ -567,7 +578,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                 <Input
                   {...field}
                   id="mockUrl"
-                  placeholder="https://stoplight.io/mocks/..."
+                  placeholder={t('step1.fields.mockUrl.placeholder')}
                   className={`
                     soft-input font-mono text-sm
                     ${errors.mockUrl ? 'border-[var(--error-base)]' : ''}

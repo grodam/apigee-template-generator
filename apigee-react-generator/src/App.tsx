@@ -1,11 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import { WizardContainer } from './components/Wizard/WizardContainer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Settings } from 'lucide-react'
 import { SettingsModal } from './components/Settings/SettingsModal'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { useProjectStore } from './store/useProjectStore'
 
 function App() {
+  const { t } = useTranslation();
   const setSettingsModalOpen = useProjectStore((state) => state.setSettingsModalOpen)
 
   return (
@@ -17,17 +20,18 @@ function App() {
             <div className="flex items-center gap-2">
               <FileCode2 className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Apigee Template Generator</h1>
-                <p className="text-sm text-muted-foreground">Generate professional Apigee API proxies</p>
+                <h1 className="text-2xl font-bold tracking-tight">{t('app.title')}</h1>
+                <p className="text-sm text-muted-foreground">{t('app.subtitle')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <LanguageSwitcher />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSettingsModalOpen(true)}
                 className="rounded-xl hover:bg-[var(--cream-200)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                title="Paramétrage"
+                title={t('common.settings')}
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -49,7 +53,7 @@ function App() {
       <footer className="border-t bg-white/50 backdrop-blur-sm dark:bg-slate-900/50 mt-8">
         <div className="container mx-auto px-4 py-4">
           <p className="text-sm text-center text-muted-foreground">
-            Apigee Template Generator - Generate Apigee proxies from OpenAPI specifications
+            {t('app.footer')}
           </p>
         </div>
       </footer>

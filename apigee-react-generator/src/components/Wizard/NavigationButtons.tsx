@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Button } from '@mui/material';
 import { ArrowBack, ArrowForward } from '@mui/icons-material';
 
@@ -17,10 +18,12 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   onNext,
   backDisabled = false,
   nextDisabled = false,
-  nextLabel = 'Next',
+  nextLabel,
   showBack = true,
   showNext = true
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
       <Box>
@@ -31,7 +34,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
             onClick={onBack}
             disabled={backDisabled}
           >
-            Back
+            {t('common.back')}
           </Button>
         )}
       </Box>
@@ -43,7 +46,7 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({
             onClick={onNext}
             disabled={nextDisabled}
           >
-            {nextLabel}
+            {nextLabel || t('common.next')}
           </Button>
         )}
       </Box>

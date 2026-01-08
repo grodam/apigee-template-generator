@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -7,6 +8,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { ApigeeProjectGenerator } from '../../services/generators/ApigeeGenerator';
 
 export const Step4_Generation: React.FC = () => {
+  const { t } = useTranslation();
   const {
     getCompleteConfig,
     parsedOpenAPI,
@@ -28,17 +30,17 @@ export const Step4_Generation: React.FC = () => {
     const config = getCompleteConfig();
 
     if (!config && !parsedOpenAPI) {
-      setError('Please complete the API configuration in Step 1 and upload/validate your OpenAPI specification in Step 2');
+      setError(t('step4.errors.both'));
       return;
     }
 
     if (!config) {
-      setError('API configuration is incomplete. Please fill in all required fields in Step 1 (Configuration)');
+      setError(t('step4.errors.configIncomplete'));
       return;
     }
 
     if (!parsedOpenAPI) {
-      setError('OpenAPI specification is missing. Please upload and validate your OpenAPI spec in Step 2 (OpenAPI)');
+      setError(t('step4.errors.openApiMissing'));
       return;
     }
 
@@ -52,15 +54,15 @@ export const Step4_Generation: React.FC = () => {
       const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig);
 
       const steps = [
-        { message: 'Initializing generation...', delay: 100, progress: 10 },
-        { message: 'Generating Eclipse files...', delay: 300, progress: 20 },
-        { message: 'Generating Maven POMs...', delay: 500, progress: 35 },
-        { message: 'Generating proxy configuration...', delay: 700, progress: 50 },
-        { message: 'Generating flows from OpenAPI...', delay: 1000, progress: 65 },
-        { message: 'Generating policies...', delay: 1300, progress: 75 },
-        { message: 'Generating target endpoints...', delay: 1600, progress: 85 },
-        { message: 'Generating environment configurations...', delay: 2000, progress: 95 },
-        { message: 'Finalizing project structure...', delay: 2300, progress: 99 }
+        { message: t('step4.steps.initializing'), delay: 100, progress: 10 },
+        { message: t('step4.steps.eclipse'), delay: 300, progress: 20 },
+        { message: t('step4.steps.maven'), delay: 500, progress: 35 },
+        { message: t('step4.steps.proxyConfig'), delay: 700, progress: 50 },
+        { message: t('step4.steps.flows'), delay: 1000, progress: 65 },
+        { message: t('step4.steps.policies'), delay: 1300, progress: 75 },
+        { message: t('step4.steps.targetEndpoints'), delay: 1600, progress: 85 },
+        { message: t('step4.steps.envConfig'), delay: 2000, progress: 95 },
+        { message: t('step4.steps.finalizing'), delay: 2300, progress: 99 }
       ];
 
       for (const step of steps) {
@@ -72,7 +74,7 @@ export const Step4_Generation: React.FC = () => {
       const project = await generator.generate();
 
       setGeneratedProject(project);
-      setGenerationSteps(prev => [...prev, 'Generation complete!']);
+      setGenerationSteps(prev => [...prev, t('step4.steps.complete')]);
       setProgress(100);
       setIsComplete(true);
     } catch (err: any) {
@@ -87,8 +89,8 @@ export const Step4_Generation: React.FC = () => {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Generate Apigee Project</h1>
-        <p className="text-[var(--text-secondary)] text-lg">Generate the complete Apigee proxy bundle</p>
+        <h1 className="text-3xl font-bold mb-2">{t('step4.title')}</h1>
+        <p className="text-[var(--text-secondary)] text-lg">{t('step4.subtitle')}</p>
       </div>
 
       <div className="soft-card">
@@ -100,7 +102,7 @@ export const Step4_Generation: React.FC = () => {
                 <div className="icon">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <h3>Pre-generation Checklist</h3>
+                <h3>{t('step4.checklist.title')}</h3>
               </div>
 
               <div className="space-y-4 pl-4">
@@ -111,7 +113,7 @@ export const Step4_Generation: React.FC = () => {
                     <AlertCircle className="h-5 w-5 text-[var(--error-base)] flex-shrink-0" />
                   )}
                   <span className={`text-sm ${isConfigComplete ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-tertiary)]'}`}>
-                    API Configuration (Step 1)
+                    {t('step4.checklist.apiConfig')}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 soft-stagger">
@@ -121,7 +123,7 @@ export const Step4_Generation: React.FC = () => {
                     <AlertCircle className="h-5 w-5 text-[var(--error-base)] flex-shrink-0" />
                   )}
                   <span className={`text-sm ${isOpenAPIComplete ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-tertiary)]'}`}>
-                    OpenAPI Specification (Step 2)
+                    {t('step4.checklist.openApiSpec')}
                   </span>
                 </div>
               </div>
@@ -131,13 +133,13 @@ export const Step4_Generation: React.FC = () => {
             <div className="text-center py-12 border-t border-[var(--border-light)]">
               <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
                 {isConfigComplete && isOpenAPIComplete
-                  ? 'Ready to generate your Apigee proxy'
-                  : 'Complete the checklist to enable generation'}
+                  ? t('step4.ready.title')
+                  : t('step4.notReady.title')}
               </h3>
               <p className="text-sm text-[var(--text-secondary)] mb-8">
                 {isConfigComplete && isOpenAPIComplete
-                  ? 'Click the button below to generate the complete project structure'
-                  : 'Please complete all required steps before generating'}
+                  ? t('step4.ready.description')
+                  : t('step4.notReady.description')}
               </p>
               <Button
                 size="lg"
@@ -146,7 +148,7 @@ export const Step4_Generation: React.FC = () => {
                 className="soft-button px-8 py-6 text-base"
               >
                 <Play className="mr-2 h-5 w-5" />
-                Generate Project
+                {t('step4.button')}
               </Button>
             </div>
           </div>
@@ -158,7 +160,7 @@ export const Step4_Generation: React.FC = () => {
               <div className="icon">
                 <Sparkles className="h-5 w-5 animate-pulse" />
               </div>
-              <h3>Generating...</h3>
+              <h3>{t('step4.generating')}</h3>
             </div>
 
             <div className="soft-progress">
@@ -184,7 +186,7 @@ export const Step4_Generation: React.FC = () => {
             <Alert className="soft-alert success">
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription className="text-sm font-medium">
-                Project generated successfully!
+                {t('step4.success')}
               </AlertDescription>
             </Alert>
 

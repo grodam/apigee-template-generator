@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -12,6 +13,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { ZipExporter } from '../../services/exporters/ZipExporter';
 
 export const Step6_Export: React.FC = () => {
+  const { t } = useTranslation();
   const { generatedProject, apiConfig } = useProjectStore();
   const [isExporting, setIsExporting] = useState(false);
   const [exported, setExported] = useState(false);
@@ -68,8 +70,8 @@ export const Step6_Export: React.FC = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Export & Deploy</h1>
-        <p className="text-[var(--text-secondary)] text-lg">Download your generated project and deploy to Azure DevOps</p>
+        <h1 className="text-3xl font-bold mb-2">{t('step6.title')}</h1>
+        <p className="text-[var(--text-secondary)] text-lg">{t('step6.subtitle')}</p>
       </div>
 
       <div className="space-y-6">
@@ -85,8 +87,8 @@ export const Step6_Export: React.FC = () => {
         <div className="soft-card">
           <div className="section-header mb-6">
             <div>
-              <h3 className="text-xl">Project: {proxyName}</h3>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">Files generated: {fileCount}</p>
+              <h3 className="text-xl">{t('step6.projectInfo.project')} {proxyName}</h3>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">{t('step6.projectInfo.filesGenerated')} {fileCount}</p>
             </div>
           </div>
 
@@ -97,14 +99,14 @@ export const Step6_Export: React.FC = () => {
             className="soft-button"
           >
             <Download className="mr-2 h-5 w-5" />
-            {isExporting ? 'Exporting...' : 'Download ZIP'}
+            {isExporting ? t('step6.download.exporting') : t('step6.download.button')}
           </Button>
         </div>
 
         <Accordion type="single" collapsible className="w-full space-y-4">
           <AccordionItem value="azure-devops" className="soft-card border-none">
             <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--lavender-600)] px-6">
-              Azure DevOps Integration Guide
+              {t('step6.sections.azureGuide')}
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
               <div className="space-y-4">
@@ -132,7 +134,7 @@ export const Step6_Export: React.FC = () => {
 
           <AccordionItem value="file-structure" className="soft-card border-none">
             <AccordionTrigger className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--lavender-600)] px-6">
-              Generated Files Structure
+              {t('step6.sections.fileStructure')}
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
               <div className="space-y-1 max-h-96 overflow-y-auto">

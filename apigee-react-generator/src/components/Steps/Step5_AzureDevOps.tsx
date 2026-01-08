@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
 );
 
 export const Step5_AzureDevOps: React.FC = () => {
+  const { t } = useTranslation();
   const { azureDevOpsConfig, updateAzureDevOpsConfig, apiConfig, generatedProject, setSettingsModalOpen } = useProjectStore();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -175,8 +177,8 @@ export const Step5_AzureDevOps: React.FC = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Azure DevOps Integration</h1>
-        <p className="text-[var(--text-secondary)] text-lg">Configure Azure DevOps to automatically create a repository and push your generated code</p>
+        <h1 className="text-3xl font-bold mb-2">{t('step5.title')}</h1>
+        <p className="text-[var(--text-secondary)] text-lg">{t('step5.subtitle')}</p>
       </div>
 
       <div className="soft-card">
@@ -193,7 +195,7 @@ export const Step5_AzureDevOps: React.FC = () => {
               htmlFor="enable-azure-devops"
               className="text-base font-medium cursor-pointer text-[var(--text-primary)]"
             >
-              Enable Azure DevOps Integration
+              {t('step5.enableIntegration')}
             </Label>
           </div>
 
@@ -205,27 +207,27 @@ export const Step5_AzureDevOps: React.FC = () => {
                   <div className="icon">
                     <Settings className="h-5 w-5" />
                   </div>
-                  <h3>Azure DevOps Configuration</h3>
+                  <h3>{t('step5.sections.config')}</h3>
                 </div>
 
                 {isSettingsConfigured ? (
                   <div className="bg-[var(--bg-secondary)] rounded-lg p-4 space-y-2">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-[var(--text-tertiary)]">Organization:</span>
+                        <span className="text-[var(--text-tertiary)]">{t('step5.config.organization')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.organization}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">Project:</span>
+                        <span className="text-[var(--text-tertiary)]">{t('step5.config.project')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.project}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">Branch:</span>
+                        <span className="text-[var(--text-tertiary)]">{t('step5.config.branch')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.defaultBranch}</span>
                       </div>
                       <div>
-                        <span className="text-[var(--text-tertiary)]">PAT:</span>
-                        <span className="ml-2 text-[var(--text-primary)] font-mono">****configured****</span>
+                        <span className="text-[var(--text-tertiary)]">{t('step5.config.pat')}</span>
+                        <span className="ml-2 text-[var(--text-primary)] font-mono">****{t('step5.config.configured')}****</span>
                       </div>
                     </div>
                     <Button
@@ -236,14 +238,14 @@ export const Step5_AzureDevOps: React.FC = () => {
                       className="soft-button secondary mt-2"
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      Modify Settings
+                      {t('step5.modifySettings')}
                     </Button>
                   </div>
                 ) : (
                   <Alert className="soft-alert warning">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      Azure DevOps settings are not configured. Please configure them in the settings.
+                      {t('step5.notConfiguredAlert')}
                       <Button
                         type="button"
                         variant="link"
@@ -251,7 +253,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                         onClick={() => setSettingsModalOpen(true)}
                         className="ml-2 text-[var(--lavender-500)] hover:text-[var(--lavender-600)] p-0 h-auto"
                       >
-                        Open Settings
+                        {t('step5.openSettings')}
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -264,14 +266,14 @@ export const Step5_AzureDevOps: React.FC = () => {
                   <div className="icon">
                     <GitBranch className="h-5 w-5" />
                   </div>
-                  <h3>Repository</h3>
+                  <h3>{t('step5.sections.repository')}</h3>
                 </div>
 
                 <div className="space-y-2">
                   <LabelWithTooltip
                     htmlFor="ado-repository"
-                    label="Repository Name *"
-                    tooltip="Name for the Git repository that will be created in Azure DevOps. Auto-generated based on your proxy name."
+                    label={t('step5.repository.required')}
+                    tooltip={t('step5.repository.tooltip')}
                   />
                   <Input
                     id="ado-repository"
@@ -291,7 +293,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                     disabled={isTestingConnection || !isSettingsConfigured}
                     className="soft-button secondary"
                   >
-                    {isTestingConnection ? 'Testing...' : 'Test Connection'}
+                    {isTestingConnection ? t('common.testing') : t('common.testConnection')}
                   </Button>
 
                   {connectionStatus === 'success' && (
@@ -313,7 +315,7 @@ export const Step5_AzureDevOps: React.FC = () => {
               {/* Options */}
               <div className="space-y-4">
                 <div className="section-header">
-                  <h3>Options</h3>
+                  <h3>{t('step5.sections.options')}</h3>
                 </div>
 
                 <div className="space-y-3">
@@ -325,7 +327,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
                     />
                     <Label htmlFor="create-repository" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
-                      Create repository automatically if it doesn't exist
+                      {t('step5.options.createRepo')}
                     </Label>
                   </div>
 
@@ -337,7 +339,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
                     />
                     <Label htmlFor="push-after-generation" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
-                      Automatically push code after project generation
+                      {t('step5.options.autoPush')}
                     </Label>
                   </div>
 
@@ -349,7 +351,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                       className="border-[var(--border-medium)] data-[state=checked]:bg-[var(--lavender-500)] data-[state=checked]:border-[var(--lavender-500)]"
                     />
                     <Label htmlFor="create-pipelines" className="text-sm font-normal cursor-pointer text-[var(--text-secondary)]">
-                      Create CI/CD pipelines (Coming soon)
+                      {t('step5.options.createPipelines')}
                     </Label>
                   </div>
                 </div>
@@ -361,7 +363,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                   <Alert className="soft-alert info">
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-sm font-medium">
-                      <strong>Project Generated!</strong> You can now push your code to Azure DevOps.
+                      {t('step5.projectReady')}
                     </AlertDescription>
                   </Alert>
 
@@ -385,7 +387,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                         className="soft-button flex items-center gap-2"
                       >
                         <Upload className={`h-4 w-4 ${isPushing ? 'animate-pulse' : ''}`} />
-                        {isPushing ? 'Pushing to Azure DevOps...' : 'Push to Azure DevOps'}
+                        {isPushing ? t('step5.push.pushing') : t('step5.push.button')}
                       </Button>
 
                       {pushStatus === 'success' && (
@@ -415,7 +417,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                           className="soft-button secondary flex items-center gap-2"
                         >
                           <ExternalLink className="h-4 w-4" />
-                          Open Repository in Azure DevOps
+                          {t('step5.push.openRepo')}
                         </Button>
                         <p className="text-sm text-[var(--text-secondary)]">
                           {repositoryUrl}
@@ -430,7 +432,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                 <Alert className="soft-alert info">
                   <GitBranch className="h-4 w-4" />
                   <AlertDescription className="text-sm">
-                    Generate your Apigee project first, then return here to push it to Azure DevOps.
+                    {t('step5.generateFirst')}
                   </AlertDescription>
                 </Alert>
               )}
@@ -441,8 +443,7 @@ export const Step5_AzureDevOps: React.FC = () => {
             <Alert className="soft-alert info">
               <Info className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                Enable Azure DevOps integration to automatically create a repository and push your generated code.
-                This is optional - you can still download the generated project manually.
+                {t('step5.disabledMessage')}
               </AlertDescription>
             </Alert>
           )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TemplateTree } from './TemplateTree';
 import { TemplateEditor } from './TemplateEditor';
 import { templateRegistry } from '@/services/templates/TemplateRegistry';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Upload, RotateCcw, Save } from 'lucide-react';
 
 export function TemplateManager() {
+  const { t } = useTranslation();
   const [treeData, setTreeData] = useState<TemplateTreeNode[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +151,7 @@ export function TemplateManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-[var(--text-secondary)]">Chargement des templates...</div>
+        <div className="text-[var(--text-secondary)]">{t('templates.loading')}</div>
       </div>
     );
   }
@@ -159,7 +161,7 @@ export function TemplateManager() {
       {/* Left Panel - Tree */}
       <div className="w-72 border-r border-[var(--border-light)] bg-white/30 flex flex-col">
         <div className="p-4 border-b border-[var(--border-light)]">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Fichiers Templates</h3>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">{t('templates.title')}</h3>
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
@@ -168,7 +170,7 @@ export function TemplateManager() {
               className="h-9 text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center justify-center gap-1.5"
             >
               <Download className="h-3 w-3" />
-              <span>Export ZIP</span>
+              <span>{t('templates.exportZip')}</span>
             </Button>
             <Button
               variant="outline"
@@ -177,7 +179,7 @@ export function TemplateManager() {
               className="h-9 text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center justify-center gap-1.5"
             >
               <Upload className="h-3 w-3" />
-              <span>Import ZIP</span>
+              <span>{t('templates.importZip')}</span>
             </Button>
             <input
               id="template-import-input"
@@ -207,7 +209,7 @@ export function TemplateManager() {
                 <p className="text-xs text-[var(--text-secondary)]">
                   {selectedTemplate.description}
                   {hasUnsavedChanges && (
-                    <span className="ml-2 text-[var(--peach-600)]">(modifié)</span>
+                    <span className="ml-2 text-[var(--peach-600)]">{t('templates.modified')}</span>
                   )}
                 </p>
               </div>
@@ -219,7 +221,7 @@ export function TemplateManager() {
                   className="text-xs rounded-xl border-[var(--border-light)] hover:bg-[var(--cream-200)] inline-flex items-center gap-1.5"
                 >
                   <Download className="h-3 w-3" />
-                  <span>Export</span>
+                  <span>{t('common.export')}</span>
                 </Button>
                 {hasUnsavedChanges && (
                   <>
@@ -230,7 +232,7 @@ export function TemplateManager() {
                       className="text-xs rounded-xl border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--cream-200)] inline-flex items-center gap-1.5"
                     >
                       <RotateCcw className="h-3 w-3" />
-                      <span>Annuler</span>
+                      <span>{t('common.cancel')}</span>
                     </Button>
                     <Button
                       size="sm"
@@ -239,7 +241,7 @@ export function TemplateManager() {
                       className="text-xs rounded-xl bg-gradient-to-r from-[var(--lavender-500)] to-[var(--lavender-600)] hover:from-[var(--lavender-600)] hover:to-[var(--lavender-700)] text-white shadow-sm inline-flex items-center gap-1.5"
                     >
                       <Save className="h-3 w-3" />
-                      <span>Sauvegarder</span>
+                      <span>{t('common.save')}</span>
                     </Button>
                   </>
                 )}
@@ -255,7 +257,7 @@ export function TemplateManager() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-[var(--text-secondary)]">
-            Sélectionnez un template pour l'éditer
+            {t('templates.selectToEdit')}
           </div>
         )}
       </div>

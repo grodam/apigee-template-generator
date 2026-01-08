@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,15 +13,16 @@ import { Step5_AzureDevOps } from '../Steps/Step5_AzureDevOps';
 import { Step6_Export } from '../Steps/Step6_Export';
 
 const steps = [
-  { id: 0, name: 'Configuration', label: 'Configuration' },
-  { id: 1, name: 'OpenAPI', label: 'OpenAPI' },
-  { id: 2, name: 'Environments', label: 'Environments' },
-  { id: 3, name: 'Generate', label: 'Generate' },
-  { id: 4, name: 'AzureDevOps', label: 'Azure DevOps' },
-  { id: 5, name: 'Export', label: 'Export' }
+  { id: 0, name: 'Configuration', labelKey: 'wizard.steps.configuration' },
+  { id: 1, name: 'OpenAPI', labelKey: 'wizard.steps.openapi' },
+  { id: 2, name: 'Environments', labelKey: 'wizard.steps.environments' },
+  { id: 3, name: 'Generate', labelKey: 'wizard.steps.generate' },
+  { id: 4, name: 'AzureDevOps', labelKey: 'wizard.steps.azureDevOps' },
+  { id: 5, name: 'Export', labelKey: 'wizard.steps.export' }
 ];
 
 export const WizardContainer: React.FC = () => {
+  const { t } = useTranslation();
   const currentStep = useProjectStore(state => state.currentStep);
   const setCurrentStep = useProjectStore(state => state.setCurrentStep);
   const nextStep = useProjectStore(state => state.nextStep);
@@ -89,10 +91,10 @@ export const WizardContainer: React.FC = () => {
       <div className="glass-panel rounded-2xl p-6 space-y-3">
         <div className="flex items-center justify-between">
           <span className="pill-badge text-sm font-semibold">
-            Step {currentStep + 1} of {totalSteps}
+            {t('wizard.progress', { current: currentStep + 1, total: totalSteps })}
           </span>
           <span className="text-[var(--text-secondary)] text-sm font-medium">
-            {Math.round(progress)}% Complete
+            {Math.round(progress)}% {t('common.complete')}
           </span>
         </div>
         <div className="soft-progress">
@@ -128,7 +130,7 @@ export const WizardContainer: React.FC = () => {
                 py-1
               "
             >
-              {step.label}
+              {t(step.labelKey)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -150,7 +152,7 @@ export const WizardContainer: React.FC = () => {
               "
             >
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Back
+              {t('common.back')}
             </Button>
 
             {currentStep < totalSteps - 1 && (
@@ -163,7 +165,7 @@ export const WizardContainer: React.FC = () => {
                   disabled:cursor-not-allowed
                 "
               >
-                Next
+                {t('common.next')}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             )}

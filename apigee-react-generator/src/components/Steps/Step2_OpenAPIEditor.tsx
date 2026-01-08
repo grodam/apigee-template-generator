@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { OpenAPIParserService } from '../../services/parsers/OpenAPIParser';
 
 export const Step2_OpenAPIEditor: React.FC = () => {
+  const { t } = useTranslation();
   const {
     openAPISpec,
     parsedOpenAPI,
@@ -122,8 +124,8 @@ export const Step2_OpenAPIEditor: React.FC = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">OpenAPI Specification</h1>
-        <p className="text-[var(--text-secondary)] text-lg">Upload or paste your OpenAPI/Swagger specification</p>
+        <h1 className="text-3xl font-bold mb-2">{t('step2.title')}</h1>
+        <p className="text-[var(--text-secondary)] text-lg">{t('step2.subtitle')}</p>
       </div>
 
       {/* Action Buttons */}
@@ -141,14 +143,14 @@ export const Step2_OpenAPIEditor: React.FC = () => {
           className="soft-button secondary h-10"
         >
           <Upload className="mr-2 h-4 w-4" />
-          Upload JSON/YAML File
+          {t('step2.uploadButton')}
         </Button>
         <Button
           onClick={() => validateSpec(openAPISpec)}
           disabled={!openAPISpec || isValidating}
           className="soft-button h-10"
         >
-          {isValidating ? 'Validating...' : 'Validate'}
+          {isValidating ? t('common.validating') : t('common.validate')}
         </Button>
       </div>
 
@@ -167,10 +169,10 @@ export const Step2_OpenAPIEditor: React.FC = () => {
       >
         <FileText className="mx-auto h-12 w-12 text-[var(--text-tertiary)] mb-4" />
         <p className="text-sm text-[var(--text-secondary)] mb-2 font-medium">
-          Drag and drop your OpenAPI file here, or click the button above
+          {t('step2.dragDrop')}
         </p>
         <p className="text-xs text-[var(--text-muted)] font-medium">
-          Supports .json, .yaml, .yml files
+          {t('step2.supportedFiles')}
         </p>
       </div>
 
@@ -202,7 +204,7 @@ export const Step2_OpenAPIEditor: React.FC = () => {
               <div className="icon">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <h3>Validation</h3>
+              <h3>{t('step2.validation.title')}</h3>
             </div>
 
             <div className="space-y-4">
@@ -220,26 +222,26 @@ export const Step2_OpenAPIEditor: React.FC = () => {
                   <Alert className="soft-alert success">
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertDescription className="text-sm font-medium">
-                      Specification is valid!
+                      {t('step2.validation.valid')}
                     </AlertDescription>
                   </Alert>
 
                   <div className="space-y-2">
-                    <p className="soft-label">OpenAPI Version</p>
+                    <p className="soft-label">{t('step2.validation.openApiVersion')}</p>
                     <Badge className="pill-badge">
                       {parsedOpenAPI.version}
                     </Badge>
                   </div>
 
                   <div className="space-y-2 gradient-border-content">
-                    <p className="soft-label">Endpoints Detected</p>
+                    <p className="soft-label">{t('step2.validation.endpointsDetected')}</p>
                     <p className="text-3xl font-bold bg-gradient-to-r from-[var(--lavender-600)] to-[var(--peach-500)] bg-clip-text text-transparent">
                       {parsedOpenAPI.paths.length}
                     </p>
                   </div>
 
                   <div className="space-y-3 max-h-[280px] overflow-auto">
-                    <p className="soft-label">Paths</p>
+                    <p className="soft-label">{t('step2.validation.paths')}</p>
                     {parsedOpenAPI.paths.map((path, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm soft-stagger">
                         <Badge className={`${getMethodColor(path.method)} font-semibold text-xs px-2 py-1 rounded-lg`}>
@@ -257,7 +259,7 @@ export const Step2_OpenAPIEditor: React.FC = () => {
               {!openAPISpec && !validationError && (
                 <Alert className="soft-alert info">
                   <AlertDescription className="text-sm">
-                    Upload or paste your OpenAPI specification to begin validation
+                    {t('step2.placeholder')}
                   </AlertDescription>
                 </Alert>
               )}
