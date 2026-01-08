@@ -149,7 +149,8 @@ export class ApigeeProjectGenerator {
     try {
       // Target principal
       const defaultTemplate = await this.templateLoader.load('targets/default-template.xml');
-      const targetServerName = `${this.config.proxyName}.backend`;
+      // Target server name format: [entity].[backendApps].[version].backend
+      const targetServerName = `${this.config.entity}.${this.config.backendApps.join('-')}.${this.config.version}.backend`;
 
       let defaultTarget = defaultTemplate
         .replace(/{{targetServerName}}/g, targetServerName)
