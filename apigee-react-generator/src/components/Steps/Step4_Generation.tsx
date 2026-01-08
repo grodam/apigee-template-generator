@@ -11,6 +11,7 @@ export const Step4_Generation: React.FC = () => {
     getCompleteConfig,
     parsedOpenAPI,
     setGeneratedProject,
+    azureDevOpsConfig,
   } = useProjectStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,7 +49,7 @@ export const Step4_Generation: React.FC = () => {
     setProgress(0);
 
     try {
-      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec);
+      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig);
 
       const steps = [
         { message: 'Initializing generation...', delay: 100, progress: 10 },
@@ -83,7 +84,7 @@ export const Step4_Generation: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Generate Apigee Project</h1>

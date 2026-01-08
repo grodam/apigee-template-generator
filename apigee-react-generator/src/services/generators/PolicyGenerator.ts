@@ -65,27 +65,74 @@ export class PolicyGenerator {
   }
 
   private async generateKVMPolicy(policies: Map<string, string>): Promise<void> {
-    const kvmName = `${this.config.proxyName}-backend`;
+    // Generate one KVM policy per backend app
+    // KVM name format: [backendapp].backend
+    const backendApps = this.config.backendApps || [];
 
-    if (this.config.authSouthbound === 'Basic') {
-      // KVM pour Basic Auth
-      try {
-        const template = await this.templateLoader.load('policies/KVM-GetBackendInfos-template.xml');
-        const policy = template.replace(/{{kvmName}}/g, kvmName);
-        policies.set('KVM-GetBackendInfos.xml', policy);
-      } catch {
-        policies.set('KVM-GetBackendInfos.xml', this.generateKVMPolicyBasic(kvmName));
-      }
-    } else if (this.config.authSouthbound === 'OAuth2-ClientCredentials') {
-      // KVM pour OAuth2 Client Credentials
-      try {
-        const template = await this.templateLoader.load('policies/KVM-GetBackendInfosCC-template.xml');
-        const policy = template.replace(/{{kvmName}}/g, kvmName);
-        policies.set('KVM-GetBackendInfosCC.xml', policy);
-      } catch {
-        policies.set('KVM-GetBackendInfosCC.xml', this.generateKVMPolicyOAuth2(kvmName));
+    if (backendApps.length === 0) return;
+
+    // Get KVM entries from dev1 environment as reference (entries should be consistent across envs)
+    const referenceEnv = this.config.environments?.dev1;
+    const kvmConfigs = referenceEnv?.kvms || [];
+
+    for (const backendApp of backendApps) {
+      const kvmName = `${backendApp}.backend`;
+      const policyNameSuffix = backendApps.length > 1 ? `-${backendApp}` : '';
+
+      // Find the KVM config for this backend app to get custom entries
+      const kvmConfig = kvmConfigs.find(kvm => kvm.name === kvmName);
+      const customEntries = kvmConfig?.entry || [];
+
+      if (this.config.authSouthbound === 'Basic') {
+        // KVM pour Basic Auth
+        const policyName = `KVM-GetBackendInfos${policyNameSuffix}.xml`;
+        try {
+          const template = await this.templateLoader.load('policies/KVM-GetBackendInfos-template.xml');
+          let policy = template
+            .replace(/{{kvmName}}/g, kvmName)
+            .replace(/name="KVM-GetBackendInfos"/g, `name="KVM-GetBackendInfos${policyNameSuffix}"`)
+            .replace(/>KVM-GetBackendInfos</g, `>KVM-GetBackendInfos${policyNameSuffix}<`);
+
+          // Add custom entries before </KeyValueMapOperations>
+          if (customEntries.length > 0) {
+            const customGetElements = this.generateKVMGetElements(customEntries);
+            policy = policy.replace('</KeyValueMapOperations>', `${customGetElements}\n</KeyValueMapOperations>`);
+          }
+
+          policies.set(policyName, policy);
+        } catch {
+          policies.set(policyName, this.generateKVMPolicyBasic(kvmName, policyNameSuffix, customEntries));
+        }
+      } else if (this.config.authSouthbound === 'OAuth2-ClientCredentials') {
+        // KVM pour OAuth2 Client Credentials
+        const policyName = `KVM-GetBackendInfosCC${policyNameSuffix}.xml`;
+        try {
+          const template = await this.templateLoader.load('policies/KVM-GetBackendInfosCC-template.xml');
+          let policy = template
+            .replace(/{{kvmName}}/g, kvmName)
+            .replace(/name="KVM-GetBackendInfosCC"/g, `name="KVM-GetBackendInfosCC${policyNameSuffix}"`)
+            .replace(/>KVM-GetBackendInfosCC</g, `>KVM-GetBackendInfosCC${policyNameSuffix}<`);
+
+          // Add custom entries before </KeyValueMapOperations>
+          if (customEntries.length > 0) {
+            const customGetElements = this.generateKVMGetElements(customEntries);
+            policy = policy.replace('</KeyValueMapOperations>', `${customGetElements}\n</KeyValueMapOperations>`);
+          }
+
+          policies.set(policyName, policy);
+        } catch {
+          policies.set(policyName, this.generateKVMPolicyOAuth2(kvmName, policyNameSuffix, customEntries));
+        }
       }
     }
+  }
+
+  private generateKVMGetElements(entries: Array<{ name: string; value: string }>): string {
+    return entries.map(entry => {
+      return `    <Get assignTo="private.${entry.name}">
+        <Key><Parameter>${entry.name}</Parameter></Key>
+    </Get>`;
+    }).join('\n');
   }
 
   private async generateSpikeArrestPolicy(policies: Map<string, string>): Promise<void> {
@@ -174,10 +221,12 @@ export class PolicyGenerator {
 </Policy>`;
   }
 
-  private generateKVMPolicyBasic(kvmName: string): string {
+  private generateKVMPolicyBasic(kvmName: string, policyNameSuffix: string = '', customEntries: Array<{ name: string; value: string }> = []): string {
+    const policyName = `KVM-GetBackendInfos${policyNameSuffix}`;
+    const customGetElements = customEntries.length > 0 ? '\n' + this.generateKVMGetElements(customEntries) : '';
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="KVM-GetBackendInfos" mapIdentifier="${kvmName}">
-    <DisplayName>KVM-GetBackendInfos</DisplayName>
+<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="${policyName}" mapIdentifier="${kvmName}">
+    <DisplayName>${policyName}</DisplayName>
     <Properties/>
     <ExclusiveCache>false</ExclusiveCache>
     <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
@@ -186,15 +235,17 @@ export class PolicyGenerator {
     </Get>
     <Get assignTo="private.backend_secret">
         <Key><Parameter>backend_secret</Parameter></Key>
-    </Get>
+    </Get>${customGetElements}
     <Scope>environment</Scope>
 </KeyValueMapOperations>`;
   }
 
-  private generateKVMPolicyOAuth2(kvmName: string): string {
+  private generateKVMPolicyOAuth2(kvmName: string, policyNameSuffix: string = '', customEntries: Array<{ name: string; value: string }> = []): string {
+    const policyName = `KVM-GetBackendInfosCC${policyNameSuffix}`;
+    const customGetElements = customEntries.length > 0 ? '\n' + this.generateKVMGetElements(customEntries) : '';
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="KVM-GetBackendInfosCC" mapIdentifier="${kvmName}">
-    <DisplayName>KVM-GetBackendInfosCC</DisplayName>
+<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="${policyName}" mapIdentifier="${kvmName}">
+    <DisplayName>${policyName}</DisplayName>
     <Properties/>
     <ExclusiveCache>false</ExclusiveCache>
     <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
@@ -209,7 +260,7 @@ export class PolicyGenerator {
     </Get>
     <Get assignTo="private.backend.path_auth">
         <Key><Parameter>path_auth</Parameter></Key>
-    </Get>
+    </Get>${customGetElements}
     <Scope>environment</Scope>
 </KeyValueMapOperations>`;
   }

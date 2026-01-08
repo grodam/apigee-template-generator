@@ -188,13 +188,18 @@ export const Step3_EnvironmentConfig: React.FC = () => {
   const handleAddKVM = () => {
     if (!currentEnvConfig) return;
 
+    // Generate a unique KVM name for additional KVMs
+    const existingKvms = currentEnvConfig.kvms || [];
+    const customKvmCount = existingKvms.filter(kvm => kvm.name.startsWith('custom-')).length;
+    const kvmName = `custom-kvm-${customKvmCount + 1}`;
+
     const newKVM: KVM = {
-      name: `${apiConfig.proxyName}-kvm-${selectedEnv}`,
+      name: kvmName,
       encrypted: false,
       entry: []
     };
 
-    const updatedKVMs = [...(currentEnvConfig.kvms || []), newKVM];
+    const updatedKVMs = [...existingKvms, newKVM];
 
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
@@ -208,7 +213,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
           const envConfig = apiConfig.environments![env];
           if (envConfig) {
             const adaptedKVM: KVM = {
-              name: `${apiConfig.proxyName}-kvm-${env}`,
+              name: kvmName,
               encrypted: false,
               entry: []
             };

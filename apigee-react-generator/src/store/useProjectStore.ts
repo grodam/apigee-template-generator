@@ -95,6 +95,13 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
   // Description: auto-generated
   const description = generateProductDescription(params);
 
+  // Create one KVM per backend app with name format: [backendapp].backend
+  const kvms = backendApps.map(backendApp => ({
+    name: `${backendApp}.backend`,
+    encrypted: true,
+    entry: []
+  }));
+
   return {
     name: env,
     targetServers: [{
@@ -119,7 +126,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
     }],
     developers: [],
     developerApps: [],
-    kvms: []
+    kvms: kvms
   };
 };
 
@@ -136,6 +143,18 @@ const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: En
   // Description: auto-generated
   const description = generateProductDescription(params);
 
+  // Create one KVM per backend app with name format: [backendapp].backend
+  // Preserve existing KVM entries if KVM with same name exists
+  const newKvms = backendApps.map(backendApp => {
+    const kvmName = `${backendApp}.backend`;
+    const existingKvm = envConfig.kvms?.find(kvm => kvm.name === kvmName);
+    return existingKvm || {
+      name: kvmName,
+      encrypted: true,
+      entry: []
+    };
+  });
+
   return {
     ...envConfig,
     targetServers: envConfig.targetServers.map((ts, index) => ({
@@ -148,6 +167,7 @@ const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: En
       displayName: index === 0 ? displayName : product.displayName,
       description: index === 0 ? description : product.description,
     })),
+    kvms: newKvms,
   };
 };
 
@@ -241,15 +261,24 @@ export const useProjectStore = create<ProjectState>()(
       setGeneratedProject: (project: GeneratedProject | null) => set({ generatedProject: project }),
 
       updateEnvironmentConfig: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', config: EnvironmentConfig) =>
-        set((state) => ({
-          apiConfig: {
-            ...state.apiConfig,
-            environments: {
-              ...state.apiConfig.environments,
-              [env]: config
+        set((state) => {
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              environments: {
+                ...envs,
+                [env]: config
+              } as {
+                dev1: EnvironmentConfig;
+                uat1: EnvironmentConfig;
+                staging: EnvironmentConfig;
+                prod1: EnvironmentConfig;
+              }
             }
-          }
-        })),
+          };
+        }),
 
       updateAzureDevOpsConfig: (config: Partial<AzureDevOpsConfig>) =>
         set((state) => ({

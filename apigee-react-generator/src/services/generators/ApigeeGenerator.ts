@@ -1,5 +1,6 @@
 import type { ApiConfiguration } from '../../models/ApiConfiguration';
 import type { GeneratedProject } from '../../models/GeneratedProject';
+import type { AzureDevOpsConfig } from '../../models/AzureDevOpsConfig';
 import { TemplateLoader } from '../templates/TemplateLoader';
 import { FlowGenerator } from './FlowGenerator';
 import { PolicyGenerator } from './PolicyGenerator';
@@ -10,11 +11,13 @@ export class ApigeeProjectGenerator {
   private config: ApiConfiguration;
   private openAPI: any;
   private templateLoader: TemplateLoader;
+  private azureDevOpsConfig?: AzureDevOpsConfig;
 
-  constructor(config: ApiConfiguration, openAPI: any) {
+  constructor(config: ApiConfiguration, openAPI: any, azureDevOpsConfig?: AzureDevOpsConfig) {
     this.config = config;
     this.openAPI = openAPI;
     this.templateLoader = new TemplateLoader();
+    this.azureDevOpsConfig = azureDevOpsConfig;
   }
 
   async generate(): Promise<GeneratedProject> {
@@ -663,15 +666,18 @@ This project was generated using the Apigee React Generator tool.
 
   private generateMavenWrapper(project: GeneratedProject): void {
     // Maven settings.xml for Azure DevOps authentication
+    const organization = this.azureDevOpsConfig?.organization || 'elisdevops';
+    const pat = this.azureDevOpsConfig?.personalAccessToken || '';
+
     const settingsXml = `<?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
   <servers>
     <server>
-      <id>elisdevops</id>
-      <username>elisdevops</username>
-      <password>4Mb169x74AOTSF9uYUAhc0hePYT8qVYSv91reJunqsf1MKVar1G1QO19gHDACAMAA9yhFAAM5A2U00c00m</password>
+      <id>${organization}</id>
+      <username>${organization}</username>
+      <password>${pat}</password>
     </server>
   </servers>
 </settings>
