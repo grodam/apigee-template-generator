@@ -24,9 +24,11 @@
             {{/if}}
             <Step>
                 <Name>FC-VerifyJWT</Name>
+                <Condition>request.verb != "OPTIONS"</Condition>
             </Step>
             <Step>
                 <Name>FC-VerifyApiKey</Name>
+                <Condition>request.verb != "OPTIONS"</Condition>
             </Step>
             {{#if authSouthbound}}
             {{#if isBasicAuth}}
