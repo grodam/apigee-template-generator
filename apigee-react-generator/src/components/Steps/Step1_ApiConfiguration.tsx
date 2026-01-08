@@ -63,18 +63,20 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
   tooltip,
   required = false
 }) => (
-  <div className="flex items-center gap-2 mb-3">
+  <div className="inline-flex items-baseline gap-1.5 mb-3">
     <Label
       htmlFor={htmlFor}
       className="soft-label"
     >
       {label}
-      {required && <span className="text-[var(--peach-500)] ml-1">*</span>}
+      {required && <span className="text-[var(--peach-500)] ml-0.5">*</span>}
     </Label>
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-3.5 w-3.5 text-[var(--text-tertiary)] cursor-help hover:text-[var(--lavender-500)] transition-colors" />
+          <span className="inline-flex items-center">
+            <HelpCircle className="h-3.5 w-3.5 text-[var(--text-tertiary)] cursor-help hover:text-[var(--lavender-500)] transition-colors" />
+          </span>
         </TooltipTrigger>
         <TooltipContent side="right" className="soft-tooltip">
           <p className="text-sm leading-relaxed">{tooltip}</p>

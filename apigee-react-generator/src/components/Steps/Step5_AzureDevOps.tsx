@@ -14,12 +14,14 @@ import { AzureDevOpsService } from '../../services/azure-devops/AzureDevOpsServi
 
 // Helper component for labels with tooltip
 const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: string }> = ({ htmlFor, label, tooltip }) => (
-  <div className="flex items-center gap-2">
+  <div className="inline-flex items-baseline gap-1.5">
     <Label htmlFor={htmlFor} className="soft-label">{label}</Label>
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-4 w-4 text-[var(--text-tertiary)] cursor-help hover:text-[var(--lavender-500)] transition-colors" />
+          <span className="inline-flex items-center">
+            <HelpCircle className="h-3.5 w-3.5 text-[var(--text-tertiary)] cursor-help hover:text-[var(--lavender-500)] transition-colors" />
+          </span>
         </TooltipTrigger>
         <TooltipContent side="right" className="soft-tooltip">
           <p className="text-sm">{tooltip}</p>
