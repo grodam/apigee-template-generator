@@ -13,10 +13,16 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { AUTH_TYPES } from '../../utils/constants';
 
 const apiConfigSchema = z.object({
-  entity: z.string().min(1, 'Entity is required'),
-  apiname: z.string()
-    .min(1, 'API name is required')
-    .regex(/^[a-zA-Z][a-zA-Z0-9-]*$/, 'Invalid API name (use letters, numbers, and hyphens)'),
+  entity: z.enum(['elis', 'ext'], { errorMap: () => ({ message: 'Entity must be "elis" or "ext"' }) }),
+  domain: z.string()
+    .min(1, 'Domain is required')
+    .regex(/^[a-z][a-z0-9-]*$/, 'Use lowercase letters, numbers, and hyphens'),
+  backendApps: z.string()
+    .min(1, 'At least one backend app is required')
+    .regex(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/, 'Format: app1 or app1-app2-app3 (lowercase)'),
+  businessObject: z.string()
+    .min(1, 'Business object is required')
+    .regex(/^[a-z][a-z0-9-]*$/, 'Use lowercase letters, numbers, and hyphens'),
   version: z.string()
     .regex(/^v[0-9]+$/, 'Version must be in format v1, v2, etc.'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
@@ -80,12 +86,17 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
 export const Step1_ApiConfiguration: React.FC = () => {
   const { apiConfig, updateApiConfig } = useProjectStore();
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<ApiConfigFormData>({
+  // Track if description was manually edited by user
+  const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = React.useState(false);
+
+  const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ApiConfigFormData>({
     resolver: zodResolver(apiConfigSchema),
     mode: 'onChange',
     defaultValues: {
-      entity: apiConfig.entity || '',
-      apiname: apiConfig.apiname || '',
+      entity: (apiConfig.entity as 'elis' | 'ext') || 'elis',
+      domain: apiConfig.domain || '',
+      backendApps: apiConfig.backendApps?.join('-') || '',
+      businessObject: apiConfig.businessObject || '',
       version: apiConfig.version || '',
       description: apiConfig.description || '',
       proxyBasepath: apiConfig.proxyBasepath || '',
@@ -97,17 +108,61 @@ export const Step1_ApiConfiguration: React.FC = () => {
   });
 
   const entity = watch('entity');
-  const apiname = watch('apiname');
+  const domain = watch('domain');
+  const backendApps = watch('backendApps');
+  const businessObject = watch('businessObject');
   const version = watch('version');
 
-  const proxyName = entity && apiname && version ? `${entity}.${apiname}.${version}` : '';
+  // Proxy name format: [entity].[domain].[backendapp1-backendapp2-...].[businessobject].[version]
+  const proxyName = entity && domain && backendApps && businessObject && version
+    ? `${entity}.${domain}.${backendApps}.${businessObject}.${version}`
+    : '';
+
+  // Generate description from proxy name components
+  const generateDescription = React.useCallback(() => {
+    if (!domain || !backendApps || !businessObject) return '';
+
+    const entityLabel = entity === 'elis' ? 'internal' : 'external';
+    const backendAppsList = backendApps.split('-').join(', ').toUpperCase();
+    const businessObjectCapitalized = businessObject.charAt(0).toUpperCase() + businessObject.slice(1);
+    const domainCapitalized = domain.charAt(0).toUpperCase() + domain.slice(1);
+
+    return `API proxy for ${businessObjectCapitalized} management in the ${domainCapitalized} domain. Backend: ${backendAppsList}. Type: ${entityLabel}.`;
+  }, [entity, domain, backendApps, businessObject]);
+
+  // Auto-generate description when proxy name components change (if not manually edited)
+  React.useEffect(() => {
+    if (!isDescriptionManuallyEdited && domain && backendApps && businessObject) {
+      const autoDescription = generateDescription();
+      if (autoDescription) {
+        setValue('description', autoDescription, { shouldValidate: true });
+      }
+    }
+  }, [entity, domain, backendApps, businessObject, isDescriptionManuallyEdited, generateDescription, setValue]);
+
+  // Also check on mount if we need to auto-generate (for when form loads with values but empty description)
+  React.useEffect(() => {
+    const currentDesc = apiConfig.description;
+    if (!currentDesc && apiConfig.domain && apiConfig.backendApps?.length && apiConfig.businessObject) {
+      const autoDescription = generateDescription();
+      if (autoDescription) {
+        setValue('description', autoDescription, { shouldValidate: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Update store on every field change
   React.useEffect(() => {
     const subscription = watch((formData) => {
+      // Convert backendApps string to array (split by '-')
+      const backendAppsArray = formData.backendApps ? formData.backendApps.split('-').filter(Boolean) : [];
+
       updateApiConfig({
-        entity: formData.entity || '',
-        apiname: formData.apiname || '',
+        entity: (formData.entity as 'elis' | 'ext') || 'elis',
+        domain: formData.domain || '',
+        backendApps: backendAppsArray,
+        businessObject: formData.businessObject || '',
         version: formData.version || '',
         description: formData.description || '',
         proxyBasepath: formData.proxyBasepath || '',
@@ -123,8 +178,10 @@ export const Step1_ApiConfiguration: React.FC = () => {
   }, [watch, updateApiConfig, apiConfig.oasFormat, apiConfig.oasVersion]);
 
   const onSubmit = (data: ApiConfigFormData) => {
+    const backendAppsArray = data.backendApps ? data.backendApps.split('-').filter(Boolean) : [];
     updateApiConfig({
       ...data,
+      backendApps: backendAppsArray,
       oasFormat: 'json',
       oasVersion: '3.0.0',
     });
@@ -140,28 +197,42 @@ export const Step1_ApiConfiguration: React.FC = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information Section */}
-        <SoftSection id="01" title="Basic Information">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <SoftSection id="01" title="Proxy Naming Convention">
+          {/* Naming convention info */}
+          <div className="mb-6 p-4 rounded-xl bg-[var(--lavender-50)] border border-[var(--lavender-200)]">
+            <p className="text-sm text-[var(--text-secondary)]">
+              <span className="font-semibold text-[var(--lavender-600)]">Format:</span>{' '}
+              <code className="font-mono text-xs bg-white px-2 py-1 rounded">
+                [entity].[domain].[backendApps].[businessObject].[version]
+              </code>
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            {/* Entity */}
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="entity"
                 label="Entity"
                 required
-                tooltip="The entity or organization name in Apigee. This is typically your company or business unit identifier (e.g., 'elis'). It becomes part of the API proxy name."
+                tooltip="L'entité propriétaire de l'API. 'elis' pour les APIs internes, 'ext' pour les APIs exposées aux partenaires externes."
               />
               <Controller
                 name="entity"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="entity"
-                    placeholder="elis"
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.entity ? 'border-[var(--error-base)]' : ''}
-                    `}
-                  />
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="entity"
+                      className={`soft-input font-mono text-sm ${errors.entity ? 'border-[var(--error-base)]' : ''}`}
+                    >
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[var(--bg-surface)] border-[var(--border-light)] rounded-xl shadow-lg">
+                      <SelectItem value="elis" className="text-sm font-mono">elis</SelectItem>
+                      <SelectItem value="ext" className="text-sm font-mono">ext</SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
               />
               {errors.entity && (
@@ -172,42 +243,97 @@ export const Step1_ApiConfiguration: React.FC = () => {
               )}
             </div>
 
+            {/* Domain */}
             <div className="soft-stagger">
               <LabelWithTooltip
-                htmlFor="apiname"
-                label="API Name"
+                htmlFor="domain"
+                label="Domain"
                 required
-                tooltip="The functional name of your API (e.g., 'customer', 'product'). Use lowercase letters, numbers, and hyphens only. This identifies the API's business domain in Apigee."
+                tooltip="Le domaine métier de l'API (ex: finance, rh, supply-chain, sales, marketing). Utilisez des minuscules et des tirets."
               />
               <Controller
-                name="apiname"
+                name="domain"
                 control={control}
                 render={({ field }) => (
                   <Input
                     {...field}
-                    id="apiname"
-                    placeholder="customer"
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.apiname ? 'border-[var(--error-base)]' : ''}
-                    `}
+                    id="domain"
+                    placeholder="finance"
+                    className={`soft-input font-mono text-sm ${errors.domain ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
               />
-              {errors.apiname && (
+              {errors.domain && (
                 <p className="text-xs text-[var(--error-base)] mt-2 flex items-center gap-1">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
-                  {errors.apiname.message}
+                  {errors.domain.message}
                 </p>
               )}
             </div>
 
+            {/* Backend Apps */}
+            <div className="soft-stagger">
+              <LabelWithTooltip
+                htmlFor="backendApps"
+                label="Backend Apps"
+                required
+                tooltip="Le(s) nom(s) de l'application backend. Pour plusieurs apps, séparez par des tirets (ex: sap-salesforce). Utilisez des minuscules."
+              />
+              <Controller
+                name="backendApps"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    id="backendApps"
+                    placeholder="sap-sf"
+                    className={`soft-input font-mono text-sm ${errors.backendApps ? 'border-[var(--error-base)]' : ''}`}
+                  />
+                )}
+              />
+              {errors.backendApps && (
+                <p className="text-xs text-[var(--error-base)] mt-2 flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
+                  {errors.backendApps.message}
+                </p>
+              )}
+            </div>
+
+            {/* Business Object */}
+            <div className="soft-stagger">
+              <LabelWithTooltip
+                htmlFor="businessObject"
+                label="Business Object"
+                required
+                tooltip="L'objet métier exposé par l'API (ex: invoice, customer, order, product). Utilisez des minuscules et des tirets."
+              />
+              <Controller
+                name="businessObject"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    id="businessObject"
+                    placeholder="invoice"
+                    className={`soft-input font-mono text-sm ${errors.businessObject ? 'border-[var(--error-base)]' : ''}`}
+                  />
+                )}
+              />
+              {errors.businessObject && (
+                <p className="text-xs text-[var(--error-base)] mt-2 flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
+                  {errors.businessObject.message}
+                </p>
+              )}
+            </div>
+
+            {/* Version */}
             <div className="soft-stagger">
               <LabelWithTooltip
                 htmlFor="version"
                 label="Version"
                 required
-                tooltip="The API version in format v1, v2, v3, etc. This allows multiple versions of the same API to coexist in Apigee, enabling smooth versioning and migration strategies."
+                tooltip="La version de l'API au format v1, v2, v3, etc. Permet de gérer plusieurs versions d'une même API."
               />
               <Controller
                 name="version"
@@ -217,10 +343,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                     {...field}
                     id="version"
                     placeholder="v1"
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.version ? 'border-[var(--error-base)]' : ''}
-                    `}
+                    className={`soft-input font-mono text-sm ${errors.version ? 'border-[var(--error-base)]' : ''}`}
                   />
                 )}
               />
@@ -233,11 +356,13 @@ export const Step1_ApiConfiguration: React.FC = () => {
             </div>
           </div>
 
+          {/* Proxy Name Preview */}
           {proxyName && (
             <Alert className="soft-alert info mb-6">
               <Info className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                Proxy Name: <code className="pill-badge font-mono text-xs">{proxyName}</code>
+                <span className="font-semibold">Proxy Name:</span>{' '}
+                <code className="pill-badge font-mono text-xs">{proxyName}</code>
               </AlertDescription>
             </Alert>
           )}
@@ -247,7 +372,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
               htmlFor="description"
               label="Description"
               required
-              tooltip="A clear description of your API's purpose and functionality. This appears in the Apigee UI and documentation, helping developers understand what the API does and when to use it."
+              tooltip="Auto-générée à partir du nom du proxy. Modifiable manuellement si besoin. La description apparaît dans l'interface Apigee et aide les développeurs à comprendre l'API."
             />
             <Controller
               name="description"
@@ -258,6 +383,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
                   id="description"
                   placeholder="Describe your API proxy purpose and functionality..."
                   rows={3}
+                  onKeyDown={() => setIsDescriptionManuallyEdited(true)}
                   className={`
                     soft-input text-sm resize-none
                     ${errors.description ? 'border-[var(--error-base)]' : ''}
@@ -265,12 +391,31 @@ export const Step1_ApiConfiguration: React.FC = () => {
                 />
               )}
             />
-            {errors.description && (
-              <p className="text-xs text-[var(--error-base)] mt-2 flex items-center gap-1">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
-                {errors.description.message}
-              </p>
-            )}
+            <div className="flex items-center justify-between mt-2">
+              {errors.description ? (
+                <p className="text-xs text-[var(--error-base)] flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
+                  {errors.description.message}
+                </p>
+              ) : (
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {isDescriptionManuallyEdited ? '✎ Modifiée manuellement' : '✨ Auto-générée'}
+                </span>
+              )}
+              {isDescriptionManuallyEdited && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDescriptionManuallyEdited(false);
+                    const autoDesc = generateDescription();
+                    if (autoDesc) setValue('description', autoDesc, { shouldValidate: true });
+                  }}
+                  className="text-xs text-[var(--lavender-500)] hover:text-[var(--lavender-600)] underline"
+                >
+                  Régénérer
+                </button>
+              )}
+            </div>
           </div>
         </SoftSection>
 

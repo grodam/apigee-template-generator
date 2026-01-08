@@ -1,4 +1,30 @@
-export function generateProxyName(entity: string, apiname: string, version: string): string {
+/**
+ * Generate proxy name following the convention:
+ * [entity].[domain].[backendapp1-backendapp2-...].[businessobject].[version]
+ *
+ * @param entity - 'elis' or 'ext'
+ * @param domain - Business domain (finance, rh, supply-chain, etc.)
+ * @param backendApps - Array of backend application names
+ * @param businessObject - Business object (invoice, customer, order, etc.)
+ * @param version - Version (v1, v2, etc.)
+ * @returns Formatted proxy name
+ */
+export function generateProxyName(
+  entity: string,
+  domain: string,
+  backendApps: string[],
+  businessObject: string,
+  version: string
+): string {
+  const backendAppsStr = backendApps.join('-');
+  return `${entity}.${domain}.${backendAppsStr}.${businessObject}.${version}`;
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use the new generateProxyName with all parameters
+ */
+export function generateProxyNameLegacy(entity: string, apiname: string, version: string): string {
   return `${entity}.${apiname}.${version}`;
 }
 

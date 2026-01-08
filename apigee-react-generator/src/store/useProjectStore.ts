@@ -59,31 +59,97 @@ interface ProjectState {
   getCompleteConfig: () => ApiConfiguration | null;
 }
 
-const createDefaultEnvironmentConfig = (env: string, proxyName: string): EnvironmentConfig => ({
-  name: env,
-  targetServers: [{
-    name: `${proxyName}.backend`,
-    host: `backend-${env}.elis.com`,
-    isEnabled: true,
-    port: 443,
-    sSLInfo: {
-      enabled: true,
-      clientAuthEnabled: false,
-    }
-  }],
-  apiProducts: [{
-    name: `${proxyName}-product-${env}`,
-    displayName: `${proxyName} Product ${env.toUpperCase()}`,
-    approvalType: 'auto',
-    environments: [env],
-    attributes: [
-      { name: 'access', value: env === 'prod1' ? 'private' : 'public' }
-    ]
-  }],
-  developers: [],
-  developerApps: [],
-  kvms: []
-});
+// Helper to remove trailing '1' from environment name (dev1 -> dev, prod1 -> prod)
+const normalizeEnvName = (env: string): string => env.replace(/1$/, '');
+
+// Helper to capitalize first letter
+const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+
+interface EnvConfigParams {
+  env: string;
+  proxyName: string;
+  entity: string;
+  backendApps: string[];
+  businessObject: string;
+  version: string;
+}
+
+// Generate API Product description from naming components
+const generateProductDescription = (params: EnvConfigParams): string => {
+  const { entity, backendApps, businessObject, version } = params;
+  const envNormalized = normalizeEnvName(params.env);
+  const entityLabel = entity === 'elis' ? 'internal' : 'external';
+  const backendList = backendApps.join(', ').toUpperCase();
+  return `API Product for ${businessObject} (${version}) - Environment: ${envNormalized.toUpperCase()}. Backend: ${backendList}. Type: ${entityLabel}.`;
+};
+
+const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentConfig => {
+  const { env, proxyName, entity, backendApps, businessObject, version } = params;
+  const envNormalized = normalizeEnvName(env);
+  // Target Server Name: [entity].[backendapp].[version].backend
+  const targetServerName = `${entity}.${backendApps.join('-')}.${version}.backend`;
+  // Product Name: [proxyName].[env without '1']
+  const productName = `${proxyName}.${envNormalized}`;
+  // Display Name: businessObject (lowercase)
+  const displayName = businessObject.toLowerCase();
+  // Description: auto-generated
+  const description = generateProductDescription(params);
+
+  return {
+    name: env,
+    targetServers: [{
+      name: targetServerName,
+      host: `backend-${env}.elis.com`,
+      isEnabled: true,
+      port: 443,
+      sSLInfo: {
+        enabled: true,
+        clientAuthEnabled: false,
+      }
+    }],
+    apiProducts: [{
+      name: productName,
+      displayName: displayName,
+      description: description,
+      approvalType: 'auto',
+      environments: [env],
+      attributes: [
+        { name: 'access', value: env === 'prod1' ? 'private' : 'public' }
+      ]
+    }],
+    developers: [],
+    developerApps: [],
+    kvms: []
+  };
+};
+
+// Update environment config with new proxy name while preserving user customizations
+const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: EnvConfigParams): EnvironmentConfig => {
+  const { env, proxyName, entity, backendApps, businessObject, version } = params;
+  const envNormalized = normalizeEnvName(env);
+  // Target Server Name: [entity].[backendapp].[version].backend
+  const targetServerName = `${entity}.${backendApps.join('-')}.${version}.backend`;
+  // Product Name: [proxyName].[env without '1']
+  const productName = `${proxyName}.${envNormalized}`;
+  // Display Name: businessObject (lowercase)
+  const displayName = businessObject.toLowerCase();
+  // Description: auto-generated
+  const description = generateProductDescription(params);
+
+  return {
+    ...envConfig,
+    targetServers: envConfig.targetServers.map((ts, index) => ({
+      ...ts,
+      name: index === 0 ? targetServerName : ts.name,
+    })),
+    apiProducts: envConfig.apiProducts.map((product, index) => ({
+      ...product,
+      name: index === 0 ? productName : product.name,
+      displayName: index === 0 ? displayName : product.displayName,
+      description: index === 0 ? description : product.description,
+    })),
+  };
+};
 
 export const useProjectStore = create<ProjectState>()(
   persist(
@@ -107,22 +173,65 @@ export const useProjectStore = create<ProjectState>()(
       updateApiConfig: (config: Partial<ApiConfiguration>) => set((state) => {
         const newConfig = { ...state.apiConfig, ...config };
 
-        // Auto-calculate proxyName if entity, apiname, and version are present
-        if (newConfig.entity && newConfig.apiname && newConfig.version) {
-          newConfig.proxyName = generateProxyName(newConfig.entity, newConfig.apiname, newConfig.version);
+        // Auto-calculate proxyName using the new naming convention:
+        // [entity].[domain].[backendapp1-backendapp2-...].[businessobject].[version]
+        if (newConfig.entity && newConfig.domain && newConfig.backendApps?.length && newConfig.businessObject && newConfig.version) {
+          const newProxyName = generateProxyName(
+            newConfig.entity,
+            newConfig.domain,
+            newConfig.backendApps,
+            newConfig.businessObject,
+            newConfig.version
+          );
 
-          // Initialize environments with defaults if not present
+          const proxyNameChanged = newConfig.proxyName !== newProxyName;
+          newConfig.proxyName = newProxyName;
+
+          // Keep apiname in sync for backward compatibility
+          newConfig.apiname = newConfig.businessObject;
+
+          // Common params for environment config
+          const envConfigParams = {
+            proxyName: newConfig.proxyName,
+            entity: newConfig.entity,
+            backendApps: newConfig.backendApps,
+            businessObject: newConfig.businessObject,
+            version: newConfig.version,
+          };
+
+          // Initialize or update environments
           if (!newConfig.environments) {
+            // Create new environments if not present
             newConfig.environments = {
-              dev1: createDefaultEnvironmentConfig('dev1', newConfig.proxyName),
-              uat1: createDefaultEnvironmentConfig('uat1', newConfig.proxyName),
-              staging: createDefaultEnvironmentConfig('staging', newConfig.proxyName),
-              prod1: createDefaultEnvironmentConfig('prod1', newConfig.proxyName),
+              dev1: createDefaultEnvironmentConfig({ ...envConfigParams, env: 'dev1' }),
+              uat1: createDefaultEnvironmentConfig({ ...envConfigParams, env: 'uat1' }),
+              staging: createDefaultEnvironmentConfig({ ...envConfigParams, env: 'staging' }),
+              prod1: createDefaultEnvironmentConfig({ ...envConfigParams, env: 'prod1' }),
+            };
+          } else if (proxyNameChanged) {
+            // Update existing environments with new proxy name
+            newConfig.environments = {
+              dev1: updateEnvironmentWithProxyName(newConfig.environments.dev1, { ...envConfigParams, env: 'dev1' }),
+              uat1: updateEnvironmentWithProxyName(newConfig.environments.uat1, { ...envConfigParams, env: 'uat1' }),
+              staging: updateEnvironmentWithProxyName(newConfig.environments.staging, { ...envConfigParams, env: 'staging' }),
+              prod1: updateEnvironmentWithProxyName(newConfig.environments.prod1, { ...envConfigParams, env: 'prod1' }),
             };
           }
         }
 
-        return { apiConfig: newConfig };
+        // Auto-generate repository name: [backendapp]-[version]
+        const newRepoName = newConfig.backendApps?.length && newConfig.version
+          ? `${newConfig.backendApps.join('-')}-${newConfig.version}`
+          : '';
+
+        return {
+          apiConfig: newConfig,
+          // Update Azure DevOps repository name if it was empty or auto-generated
+          azureDevOpsConfig: newRepoName ? {
+            ...state.azureDevOpsConfig,
+            repositoryName: newRepoName
+          } : state.azureDevOpsConfig
+        };
       }),
 
       setOpenAPISpec: (spec: string) => set({ openAPISpec: spec }),
@@ -173,7 +282,9 @@ export const useProjectStore = create<ProjectState>()(
       getCompleteConfig: () => {
         const { apiConfig } = get();
 
-        if (!apiConfig.entity || !apiConfig.apiname || !apiConfig.version ||
+        // Check all required fields including new naming convention fields
+        if (!apiConfig.entity || !apiConfig.domain || !apiConfig.backendApps?.length ||
+            !apiConfig.businessObject || !apiConfig.version ||
             !apiConfig.description || !apiConfig.proxyBasepath || !apiConfig.targetPath ||
             !apiConfig.authSouthbound || !apiConfig.oasFormat || !apiConfig.oasVersion) {
           return null;

@@ -1,9 +1,14 @@
 export interface ApiConfiguration {
-  // Informations de base
-  entity: string;                    // Ex: "elis"
-  apiname: string;                   // Ex: "customer"
+  // Informations de base - Naming Convention: [entity].[domain].[backendApps].[businessObject].[version]
+  entity: 'elis' | 'ext';            // Ex: "elis" ou "ext"
+  domain: string;                    // Ex: "finance", "rh", "supply-chain"
+  backendApps: string[];             // Ex: ["sap", "salesforce"] -> "sap-salesforce"
+  businessObject: string;            // Ex: "invoice", "customer", "order"
   version: string;                   // Ex: "v1"
   description: string;               // Description de l'API
+
+  // Legacy field kept for compatibility (auto-calculated)
+  apiname: string;                   // Deprecated: use businessObject instead
 
   // Configuration OpenAPI
   oasVersion: string;                // "2.0" | "3.0.0" | "3.0.1" | "3.0.3" | "3.1.0"
@@ -19,7 +24,7 @@ export interface ApiConfiguration {
   authSouthbound: "Basic" | "OAuth2-ClientCredentials" | "None";
 
   // Nom du proxy calculé
-  proxyName: string;                 // Calculé: {entity}.{apiname}.{version}
+  proxyName: string;                 // Calculé: {entity}.{domain}.{backendApps}.{businessObject}.{version}
 
   // Configuration des environnements
   environments: {
