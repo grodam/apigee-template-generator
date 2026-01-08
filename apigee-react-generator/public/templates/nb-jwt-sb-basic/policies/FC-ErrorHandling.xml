@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<FaultRules>
-    <FaultRule name="ErrorHandling">
-        <Step>
-            <Name>AM-NotFound</Name>
-            <Condition>(fault.name = "ExecutionFailed")</Condition>
-        </Step>
-    </FaultRule>
-</FaultRules>
+<FlowCallout continueOnError="false" enabled="true" name="FC-ErrorHandling">
+    <DisplayName>FC-ErrorHandling</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <SharedFlowBundle>sf-common_error_handling</SharedFlowBundle>
+</FlowCallout>
