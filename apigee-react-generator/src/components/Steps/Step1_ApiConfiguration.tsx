@@ -27,8 +27,12 @@ const apiConfigSchema = z.object({
   version: z.string()
     .regex(/^v[0-9]+$/, 'Version must be in format v1, v2, etc.'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  proxyBasepath: z.string().min(1, 'Proxy basepath is required'),
-  targetPath: z.string().min(1, 'Target path is required'),
+  proxyBasepath: z.string()
+    .min(1, 'Proxy basepath is required')
+    .regex(/^\//, 'Proxy basepath must start with /'),
+  targetPath: z.string()
+    .min(1, 'Target path is required')
+    .regex(/^\//, 'Target path must start with /'),
   mockUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   globalRateLimit: z.string()
     .regex(/^[0-9]+(pm|ps)$/, 'Format: {number}pm or {number}ps')
