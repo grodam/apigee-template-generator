@@ -203,10 +203,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
           {/* Naming convention info */}
           <div className="mb-6 p-4 rounded-xl bg-[var(--lavender-50)] border border-[var(--lavender-200)]">
             <p className="text-sm text-[var(--text-secondary)]">
-              <span className="font-semibold text-[var(--lavender-600)]">{t('step1.proxyName.format')}</span>{' '}
-              <code className="font-mono text-xs bg-white px-2 py-1 rounded">
-                [entity].[domain].[backendApps].[businessObject].[version]
-              </code>
+              <span className="font-semibold text-[var(--lavender-600)]">{t('step1.proxyName.format')}</span>
             </p>
           </div>
 
