@@ -50,7 +50,7 @@ export class ConfigGenerator {
           description: product.description || this.config.description,
           approvalType: product.approvalType,
           attributes: product.attributes || [
-            { name: "access", value: env === 'prod1' ? 'private' : 'public' }
+            { name: "access", value: "private" }
           ],
           environments: product.environments,
           operationGroup: product.operationGroup || this.generateOperationGroup(),
@@ -119,9 +119,9 @@ export class ConfigGenerator {
       targetPath: this.config.targetPath,
       mockUrl: this.config.mockUrl,
       globalRateLimit: this.config.globalRateLimit,
-      authSouthbound: this.config.authSouthbound,
+      authSouthbound: this.config.authSouthbound?.toLowerCase(),
       oasVersion: this.config.oasVersion,
-      oasFormat: this.config.oasFormat
+      oasFormat: 'json'
     };
   }
 }

@@ -66,8 +66,9 @@ export class PolicyGenerator {
 
   private async generateKVMPolicy(policies: Map<string, string>): Promise<void> {
     // Generate one KVM policy per backend app
-    // KVM name format: [backendapp].backend
+    // KVM name format: [backendapp].[version].backend
     const backendApps = this.config.backendApps || [];
+    const version = this.config.version || 'v1';
 
     if (backendApps.length === 0) return;
 
@@ -76,7 +77,7 @@ export class PolicyGenerator {
     const kvmConfigs = referenceEnv?.kvms || [];
 
     for (const backendApp of backendApps) {
-      const kvmName = `${backendApp}.backend`;
+      const kvmName = `${backendApp}.${version}.backend`;
       const policyNameSuffix = backendApps.length > 1 ? `-${backendApp}` : '';
 
       // Find the KVM config for this backend app to get custom entries

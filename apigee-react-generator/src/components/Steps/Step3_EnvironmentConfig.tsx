@@ -134,7 +134,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
           displayName: `${apiConfig.proxyName} Product ${selectedEnv.toUpperCase()}`,
           approvalType: 'auto',
           environments: [selectedEnv],
-          attributes: [{ name: 'access', value: selectedEnv === 'prod1' ? 'private' : 'public' }]
+          attributes: [{ name: 'access', value: 'private' }]
         }];
 
     updatedProducts[0] = {
@@ -161,7 +161,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                   displayName: `${apiConfig.proxyName} Product ${env.toUpperCase()}`,
                   approvalType: 'auto',
                   environments: [env],
-                  attributes: [{ name: 'access', value: env === 'prod1' ? 'private' : 'public' }]
+                  attributes: [{ name: 'access', value: 'private' }]
                 }];
 
             // Adapter la valeur pour l'environnement cible

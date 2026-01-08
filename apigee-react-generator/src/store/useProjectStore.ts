@@ -95,9 +95,9 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
   // Description: auto-generated
   const description = generateProductDescription(params);
 
-  // Create one KVM per backend app with name format: [backendapp].backend
+  // Create one KVM per backend app with name format: [backendapp].[version].backend
   const kvms = backendApps.map(backendApp => ({
-    name: `${backendApp}.backend`,
+    name: `${backendApp}.${version}.backend`,
     encrypted: true,
     entry: []
   }));
@@ -121,7 +121,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
       approvalType: 'auto',
       environments: [env],
       attributes: [
-        { name: 'access', value: env === 'prod1' ? 'private' : 'public' }
+        { name: 'access', value: 'private' }
       ]
     }],
     developers: [],
@@ -143,10 +143,10 @@ const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: En
   // Description: auto-generated
   const description = generateProductDescription(params);
 
-  // Create one KVM per backend app with name format: [backendapp].backend
+  // Create one KVM per backend app with name format: [backendapp].[version].backend
   // Preserve existing KVM entries if KVM with same name exists
   const newKvms = backendApps.map(backendApp => {
-    const kvmName = `${backendApp}.backend`;
+    const kvmName = `${backendApp}.${version}.backend`;
     const existingKvm = envConfig.kvms?.find(kvm => kvm.name === kvmName);
     return existingKvm || {
       name: kvmName,

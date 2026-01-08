@@ -415,8 +415,8 @@ extends:
     // Mettre à jour les paths pour utiliser le basepath Apigee
     if (publicSpec.paths) {
       const newPaths: Record<string, any> = {};
-      const basePath = this.config.proxyBasepath.startsWith('/') 
-        ? this.config.proxyBasepath 
+      const basePath = this.config.proxyBasepath.startsWith('/')
+        ? this.config.proxyBasepath
         : '/' + this.config.proxyBasepath;
       for (const [pathKey, pathItem] of Object.entries(publicSpec.paths)) {
         newPaths[basePath + pathKey] = pathItem;
@@ -424,7 +424,25 @@ extends:
       publicSpec.paths = newPaths;
     }
 
-    project.files.set('src/main/resources/api-config/swagger.json', JSON.stringify(publicSpec, null, 2));
+    // Réordonner les clés: openapi, info, servers, components, security, paths, puis le reste
+    const orderedSpec: Record<string, any> = {};
+
+    // Clés prioritaires dans l'ordre souhaité
+    if (publicSpec.openapi) orderedSpec.openapi = publicSpec.openapi;
+    if (publicSpec.info) orderedSpec.info = publicSpec.info;
+    if (publicSpec.servers) orderedSpec.servers = publicSpec.servers;
+    if (publicSpec.components) orderedSpec.components = publicSpec.components;
+    if (publicSpec.security) orderedSpec.security = publicSpec.security;
+    if (publicSpec.paths) orderedSpec.paths = publicSpec.paths;
+
+    // Ajouter les autres clés restantes (tags, externalDocs, etc.)
+    for (const key of Object.keys(publicSpec)) {
+      if (!orderedSpec[key]) {
+        orderedSpec[key] = publicSpec[key];
+      }
+    }
+
+    project.files.set('src/main/resources/api-config/swagger.json', JSON.stringify(orderedSpec, null, 2));
   }
 
   private processConditionals(template: string): string {
