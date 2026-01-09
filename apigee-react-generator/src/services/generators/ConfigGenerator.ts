@@ -11,18 +11,11 @@ export class ConfigGenerator {
   }
 
   generateEdgeEnvJson(env: string, envConfig: EnvironmentConfig): any {
-    // Map KVMs and remove empty entries arrays
-    const kvms = (envConfig.kvms || []).map(kvm => {
-      const kvmObj: any = {
-        name: kvm.name,
-        encrypted: kvm.encrypted,
-      };
-      // Only include entries if not empty
-      if (kvm.entries && kvm.entries.length > 0) {
-        kvmObj.entries = kvm.entries;
-      }
-      return kvmObj;
-    });
+    // Map KVMs - entries are NOT included here, they go only in KVM policy files
+    const kvms = (envConfig.kvms || []).map(kvm => ({
+      name: kvm.name,
+      encrypted: kvm.encrypted,
+    }));
 
     return {
       version: "1.0",

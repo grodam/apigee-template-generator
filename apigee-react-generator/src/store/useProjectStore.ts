@@ -89,7 +89,7 @@ const generateProductDescription = (params: EnvConfigParams): string => {
   const envNormalized = normalizeEnvName(params.env);
   const entityLabel = entity === 'elis' ? 'internal' : 'external';
   const backendList = backendApps.join(', ').toUpperCase();
-  return `API Product for ${businessObject} (${version}) - Environment: ${envNormalized.toUpperCase()}. Backend: ${backendList}. Type: ${entityLabel}.`;
+  return `API Product for ${businessObject} (${version}) - Environment: ${envNormalized.toUpperCase()}.\nBackend: ${backendList}.\nType: ${entityLabel}.`;
 };
 
 const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentConfig => {
@@ -115,7 +115,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
     name: env,
     targetServers: [{
       name: targetServerName,
-      host: `backend-${env}.elis.com`,
+      host: '',
       isEnabled: true,
       port: 443,
       sSLInfo: {
@@ -272,6 +272,51 @@ export const useProjectStore = create<ProjectState>()(
         set((state) => {
           const envs = state.apiConfig.environments;
           if (!envs) return state;
+
+          // If updating dev1, sync KVM entries to all other environments
+          if (env === 'dev1' && config.kvms) {
+            const syncedEnvironments = {
+              dev1: config,
+              uat1: {
+                ...envs.uat1,
+                kvms: config.kvms.map(devKvm => {
+                  const existingKvm = envs.uat1.kvms?.find(k => k.name === devKvm.name);
+                  return {
+                    ...devKvm,
+                    // Keep the same name, encrypted status, and entries from dev1
+                    entries: devKvm.entries || []
+                  };
+                })
+              },
+              staging: {
+                ...envs.staging,
+                kvms: config.kvms.map(devKvm => {
+                  return {
+                    ...devKvm,
+                    entries: devKvm.entries || []
+                  };
+                })
+              },
+              prod1: {
+                ...envs.prod1,
+                kvms: config.kvms.map(devKvm => {
+                  return {
+                    ...devKvm,
+                    entries: devKvm.entries || []
+                  };
+                })
+              },
+            };
+
+            return {
+              apiConfig: {
+                ...state.apiConfig,
+                environments: syncedEnvironments
+              }
+            };
+          }
+
+          // For other environments, just update that environment
           return {
             apiConfig: {
               ...state.apiConfig,
@@ -342,9 +387,10 @@ export const useProjectStore = create<ProjectState>()(
           defaultBranch: state.azureDevOpsConfig.defaultBranch,
           // repositoryName is NOT persisted - it's dynamic per project
           repositoryName: DEFAULT_AZURE_DEVOPS_CONFIG.repositoryName,
-          createRepository: state.azureDevOpsConfig.createRepository,
-          createPipelines: state.azureDevOpsConfig.createPipelines,
-          pushAfterGeneration: state.azureDevOpsConfig.pushAfterGeneration,
+          // createRepository and pushAfterGeneration are always true (not configurable)
+          createRepository: true,
+          createPipelines: DEFAULT_AZURE_DEVOPS_CONFIG.createPipelines,
+          pushAfterGeneration: true,
           enabled: state.azureDevOpsConfig.enabled,
         },
         templateOverrides: state.templateOverrides,

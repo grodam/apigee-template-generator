@@ -408,15 +408,8 @@ export class AzureDevOpsService {
 
       let repository: AzureDevOpsRepository;
 
-      // Step 2: Create repository if it doesn't exist and createRepository is enabled
+      // Step 2: Create repository if it doesn't exist
       if (!exists) {
-        if (!config.createRepository) {
-          return {
-            success: false,
-            message: `Repository '${config.repositoryName}' does not exist. Enable 'Create repository automatically' option.`
-          };
-        }
-
         repository = await this.createRepository(
           config.project,
           config.repositoryName,

@@ -37,27 +37,27 @@ export default {
 
   // App Header
   app: {
-    title: 'Apigee Template Generator',
-    subtitle: 'Générez des proxies API Apigee professionnels',
-    footer: 'Apigee Template Generator - Génération de proxies Apigee à partir de spécifications OpenAPI',
+    title: 'Apigee Proxy Builder',
+    subtitle: 'Build and Push Apigee API proxies from specifications',
+    footer: 'Apigee Proxy Builder - Génération de proxies Apigee à partir de spécifications OpenAPI',
   },
 
   // Wizard Navigation
   wizard: {
     steps: {
-      configuration: 'Configuration',
-      openapi: 'OpenAPI',
+      configuration: 'Config. Proxy',
+      openapi: 'Spécification',
       environments: 'Environnements',
-      generate: 'Génération',
-      azureDevOps: 'Azure DevOps',
+      generate: 'Build',
+      azureDevOps: 'Repository',
       export: 'Export',
     },
     progress: 'Étape {{current}} sur {{total}}',
   },
 
-  // Step 1: API Configuration
+  // Step 1: Proxy Configuration
   step1: {
-    title: 'Configuration API',
+    title: 'Configuration du Proxy',
     subtitle: 'Configurez les paramètres de votre proxy API',
     sections: {
       proxyNaming: 'Convention de nommage du proxy',
@@ -137,9 +137,9 @@ export default {
     },
   },
 
-  // Step 2: OpenAPI Editor
+  // Step 2: API Specification
   step2: {
-    title: 'Spécification OpenAPI',
+    title: 'Spécification API',
     subtitle: 'Chargez et validez votre spécification OpenAPI',
     uploadButton: 'Charger un fichier JSON/YAML',
     dragDrop: 'Glissez-déposez votre fichier OpenAPI ici, ou cliquez sur le bouton ci-dessus',
@@ -159,9 +159,9 @@ export default {
     },
   },
 
-  // Step 3: Environment Configuration
+  // Step 3: Environment Settings
   step3: {
-    title: 'Configuration des environnements',
+    title: 'Paramètres d\'environnement',
     subtitle: 'Configurez les serveurs cibles et les produits API pour chaque environnement',
     alerts: {
       completeApiConfig: 'Veuillez d\'abord compléter la configuration API à l\'étape 1',
@@ -205,9 +205,9 @@ export default {
     },
   },
 
-  // Step 4: Generation
+  // Step 4: Build Project
   step4: {
-    title: 'Générer le projet Apigee',
+    title: 'Build du Projet',
     subtitle: 'Générez le bundle complet du proxy Apigee',
     checklist: {
       title: 'Checklist de pré-génération',
@@ -247,10 +247,10 @@ export default {
     },
   },
 
-  // Step 5: Azure DevOps
+  // Step 5: Repository Integration
   step5: {
-    title: 'Intégration Azure DevOps',
-    subtitle: 'Configurez Azure DevOps pour créer automatiquement un repository et pousser votre code généré',
+    title: 'Intégration Repository',
+    subtitle: 'Poussez votre projet généré vers Azure DevOps',
     enableIntegration: 'Activer l\'intégration Azure DevOps',
     disabledMessage: 'Activez l\'intégration Azure DevOps pour pousser votre projet généré vers un repository',
     sections: {
@@ -290,10 +290,10 @@ export default {
     projectReady: 'Projet généré ! Vous pouvez maintenant pousser votre code vers Azure DevOps.',
   },
 
-  // Step 6: Export
+  // Step 6: Export Project
   step6: {
-    title: 'Export et déploiement',
-    subtitle: 'Téléchargez votre projet généré et déployez vers Azure DevOps',
+    title: 'Export du Projet',
+    subtitle: 'Téléchargez votre bundle proxy Apigee généré',
     download: {
       button: 'Télécharger le ZIP',
       exporting: 'Export...',

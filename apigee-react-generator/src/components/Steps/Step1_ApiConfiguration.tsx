@@ -13,26 +13,35 @@ import { Info, HelpCircle } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
 import { AUTH_TYPES } from '../../utils/constants';
 
+// Kebab-case regex: lowercase letter, then optionally (lowercase letters/numbers),
+// then optionally repeated (-lowercase letter followed by lowercase letters/numbers)
+const kebabCaseRegex = /^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/;
+const kebabCaseMessage = 'Must be kebab-case (lowercase, words separated by single hyphens)';
+
+// Path kebab-case: starts with /, then kebab-case segments separated by /
+const pathKebabCaseRegex = /^\/([a-z][a-z0-9]*(-[a-z][a-z0-9]*)*)(\/[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*)*$/;
+const pathKebabCaseMessage = 'Must start with / and use kebab-case';
+
 const apiConfigSchema = z.object({
   entity: z.enum(['elis', 'ext'], { errorMap: () => ({ message: 'Entity must be "elis" or "ext"' }) }),
   domain: z.string()
     .min(1, 'Domain is required')
-    .regex(/^[a-z][a-z0-9-]*$/, 'Use lowercase letters, numbers, and hyphens'),
+    .regex(kebabCaseRegex, kebabCaseMessage),
   backendApps: z.string()
     .min(1, 'At least one backend app is required')
-    .regex(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/, 'Format: app1 or app1-app2-app3 (lowercase)'),
+    .regex(/^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/, 'Format: app1 or app1-app2-app3 (kebab-case, lowercase)'),
   businessObject: z.string()
     .min(1, 'Business object is required')
-    .regex(/^[a-z][a-z0-9-]*$/, 'Use lowercase letters, numbers, and hyphens'),
+    .regex(kebabCaseRegex, kebabCaseMessage),
   version: z.string()
     .regex(/^v[0-9]+$/, 'Version must be in format v1, v2, etc.'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   proxyBasepath: z.string()
     .min(1, 'Proxy basepath is required')
-    .regex(/^\//, 'Proxy basepath must start with /'),
+    .regex(pathKebabCaseRegex, pathKebabCaseMessage),
   targetPath: z.string()
     .min(1, 'Target path is required')
-    .regex(/^\//, 'Target path must start with /'),
+    .regex(/^\//, 'Must start with /'),
   mockUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   globalRateLimit: z.string()
     .regex(/^[0-9]+(pm|ps)$/, 'Format: {number}pm or {number}ps')
@@ -108,9 +117,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
       version: apiConfig.version || '',
       description: apiConfig.description || '',
       proxyBasepath: apiConfig.proxyBasepath || '',
-      targetPath: apiConfig.targetPath || '/v1',
+      targetPath: apiConfig.targetPath || '',
       mockUrl: apiConfig.mockUrl || '',
-      globalRateLimit: apiConfig.globalRateLimit || '',
+      globalRateLimit: apiConfig.globalRateLimit || '100pm',
       authSouthbound: apiConfig.authSouthbound || 'Basic',
     }
   });
@@ -135,7 +144,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
     const businessObjectCapitalized = businessObject.charAt(0).toUpperCase() + businessObject.slice(1);
     const domainCapitalized = domain.charAt(0).toUpperCase() + domain.slice(1);
 
-    return `API proxy for ${businessObjectCapitalized} management in the ${domainCapitalized} domain. Backend: ${backendAppsList}. Type: ${entityLabel}.`;
+    return `API proxy for ${businessObjectCapitalized} management in the ${domainCapitalized} domain.\nBackend: ${backendAppsList}.\nType: ${entityLabel}.`;
   }, [entity, domain, backendApps, businessObject]);
 
   // Auto-generate description when proxy name components change (if not manually edited)
@@ -174,9 +183,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
         version: formData.version || '',
         description: formData.description || '',
         proxyBasepath: formData.proxyBasepath || '',
-        targetPath: formData.targetPath || '/v1',
+        targetPath: formData.targetPath || '',
         mockUrl: formData.mockUrl || '',
-        globalRateLimit: formData.globalRateLimit || '',
+        globalRateLimit: formData.globalRateLimit || '100pm',
         authSouthbound: formData.authSouthbound || 'Basic',
         oasFormat: apiConfig.oasFormat || 'json',
         oasVersion: apiConfig.oasVersion || '3.0.0',
@@ -196,7 +205,7 @@ export const Step1_ApiConfiguration: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-1 text-[var(--text-primary)]">{t('step1.title')}</h2>
@@ -206,13 +215,6 @@ export const Step1_ApiConfiguration: React.FC = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information Section */}
         <SoftSection id="01" title={t('step1.sections.proxyNaming')}>
-          {/* Naming convention info */}
-          <div className="mb-6 p-4 rounded-md bg-[var(--accent-50)] border border-[var(--accent-200)]">
-            <p className="text-sm text-[var(--text-secondary)]">
-              <span className="font-semibold text-[var(--accent-600)]">{t('step1.proxyName.format')}</span>
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             {/* Entity */}
             <div className="soft-stagger">

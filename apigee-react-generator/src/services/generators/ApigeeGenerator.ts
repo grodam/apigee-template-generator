@@ -378,11 +378,43 @@ extends:
     // swagger.json - spec publique Apigee avec URLs Apigee (pas backend)
     const publicSpec = JSON.parse(JSON.stringify(this.openAPI)); // Deep copy
 
-    // Remplacer les servers par les URLs Apigee (pas les URLs backend)
+    // Supprimer les rubriques servers et security vides ou en doublon de l'original
+    if (publicSpec.servers && (Array.isArray(publicSpec.servers) && publicSpec.servers.length === 0)) {
+      delete publicSpec.servers;
+    }
+    if (publicSpec.security && (Array.isArray(publicSpec.security) && publicSpec.security.length === 0)) {
+      delete publicSpec.security;
+    }
+
+    // Nettoyer les security vides au niveau des opérations dans paths
+    if (publicSpec.paths) {
+      for (const pathKey of Object.keys(publicSpec.paths)) {
+        const pathItem = publicSpec.paths[pathKey];
+        for (const method of Object.keys(pathItem)) {
+          const operation = pathItem[method];
+          if (operation && typeof operation === 'object') {
+            // Supprimer security vide au niveau opération
+            if (operation.security && Array.isArray(operation.security) && operation.security.length === 0) {
+              delete operation.security;
+            }
+            // Supprimer servers vide au niveau opération
+            if (operation.servers && Array.isArray(operation.servers) && operation.servers.length === 0) {
+              delete operation.servers;
+            }
+          }
+        }
+      }
+    }
+
+    // Remplacer les servers par les URLs Apigee avec le basepath en suffixe
+    const basePath = this.config.proxyBasepath.startsWith('/')
+      ? this.config.proxyBasepath
+      : '/' + this.config.proxyBasepath;
+
     publicSpec.servers = [
-      { url: 'https://dev-api.elis.com', description: 'DEV Env' },
-      { url: 'https://uat-api.elis.com', description: 'UAT Env' },
-      { url: 'https://api.elis.com', description: 'PROD Env' }
+      { url: 'https://dev-api.elis.com' + basePath, description: 'DEV Env' },
+      { url: 'https://uat-api.elis.com' + basePath, description: 'UAT Env' },
+      { url: 'https://api.elis.com' + basePath, description: 'PROD Env' }
     ];
 
     // Mettre à jour le info avec le titre et description Apigee
@@ -413,17 +445,7 @@ extends:
     // Remplacer la section security par OAuth2
     publicSpec.security = [{ oauth2: [] }];
 
-    // Mettre à jour les paths pour utiliser le basepath Apigee
-    if (publicSpec.paths) {
-      const newPaths: Record<string, any> = {};
-      const basePath = this.config.proxyBasepath.startsWith('/')
-        ? this.config.proxyBasepath
-        : '/' + this.config.proxyBasepath;
-      for (const [pathKey, pathItem] of Object.entries(publicSpec.paths)) {
-        newPaths[basePath + pathKey] = pathItem;
-      }
-      publicSpec.paths = newPaths;
-    }
+    // Les paths restent inchangés car le basepath est maintenant dans les URLs servers
 
     // Réordonner les clés: openapi, info, servers, components, security, paths, puis le reste
     const orderedSpec: Record<string, any> = {};

@@ -56,6 +56,7 @@
   --text-secondary: #475569;
   --text-muted: #64748b;
   --text-faint: #94a3b8;
+  --text-placeholder: #cbd5e1;
   --text-on-accent: #ffffff;
 
   /* === BACKGROUNDS === */
@@ -264,6 +265,7 @@
   /* Input - Clean and functional */
   .soft-input {
     width: 100%;
+    height: 2.5rem; /* 40px - matches h-10 for consistency */
     background: var(--bg-primary);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
@@ -284,7 +286,7 @@
   }
 
   .soft-input::placeholder {
-    color: var(--text-faint);
+    color: var(--text-placeholder);
   }
 
   /* Button - Primary action */
@@ -420,9 +422,23 @@
     border-radius: var(--radius-md);
     padding: var(--space-3) var(--space-4);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-3);
     border: 1px solid;
+  }
+
+  /* Override shadcn Alert absolute positioning for icons */
+  .soft-alert > svg {
+    position: static !important;
+    flex-shrink: 0;
+  }
+
+  .soft-alert > svg ~ * {
+    padding-left: 0 !important;
+  }
+
+  .soft-alert > svg + div {
+    transform: none !important;
   }
 
   .soft-alert.info {

@@ -82,7 +82,7 @@ export class PolicyGenerator {
 
       // Find the KVM config for this backend app to get custom entries
       const kvmConfig = kvmConfigs.find(kvm => kvm.name === kvmName);
-      const customEntries = kvmConfig?.entry || [];
+      const customEntries = kvmConfig?.entries || [];
 
       // Default entries that are already in the policy templates
       const basicDefaultEntries = ['backend_id', 'backend_secret'];

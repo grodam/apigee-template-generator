@@ -176,7 +176,7 @@ export const Step5_AzureDevOps: React.FC = () => {
   }, [apiConfig.proxyName]);
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{t('step5.title')}</h1>
@@ -213,8 +213,18 @@ export const Step5_AzureDevOps: React.FC = () => {
                 </div>
 
                 {isSettingsConfigured ? (
-                  <div className="bg-[var(--bg-secondary)] rounded-lg p-4 space-y-2">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-[var(--bg-secondary)] rounded-lg p-4 relative">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSettingsModalOpen(true)}
+                      className="soft-button secondary absolute top-4 right-4"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      {t('step5.modifySettings')}
+                    </Button>
+                    <div className="grid grid-cols-2 gap-4 text-sm pr-36">
                       <div>
                         <span className="text-[var(--text-muted)]">{t('step5.config.organization')}</span>
                         <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.organization}</span>
@@ -232,16 +242,6 @@ export const Step5_AzureDevOps: React.FC = () => {
                         <span className="ml-2 text-[var(--text-primary)] font-mono">****{t('step5.config.configured')}****</span>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSettingsModalOpen(true)}
-                      className="soft-button secondary mt-2"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      {t('step5.modifySettings')}
-                    </Button>
                   </div>
                 ) : (
                   <Alert className="soft-alert warning">
@@ -314,119 +314,65 @@ export const Step5_AzureDevOps: React.FC = () => {
                 </div>
               </div>
 
-              {/* Options */}
-              <div className="space-y-4">
-                <div className="section-header">
-                  <h3>{t('step5.sections.options')}</h3>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="create-repository"
-                      checked={azureDevOpsConfig.createRepository}
-                      onCheckedChange={(checked) => updateAzureDevOpsConfig({ createRepository: !!checked })}
-                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
-                    />
-                    <Label htmlFor="create-repository" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
-                      {t('step5.options.createRepo')}
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="push-after-generation"
-                      checked={azureDevOpsConfig.pushAfterGeneration}
-                      onCheckedChange={(checked) => updateAzureDevOpsConfig({ pushAfterGeneration: !!checked })}
-                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
-                    />
-                    <Label htmlFor="push-after-generation" className="text-sm font-normal cursor-pointer text-[var(--text-primary)]">
-                      {t('step5.options.autoPush')}
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="create-pipelines"
-                      checked={azureDevOpsConfig.createPipelines}
-                      onCheckedChange={(checked) => updateAzureDevOpsConfig({ createPipelines: !!checked })}
-                      className="border-[var(--border-default)] data-[state=checked]:bg-[var(--accent-500)] data-[state=checked]:border-[var(--accent-500)]"
-                    />
-                    <Label htmlFor="create-pipelines" className="text-sm font-normal cursor-pointer text-[var(--text-secondary)]">
-                      {t('step5.options.createPipelines')}
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Manual Push Section */}
+              {/* Push Section */}
               {generatedProject && (
                 <div className="space-y-4">
-                  <Alert className="soft-alert info">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription className="text-sm font-medium">
-                      {t('step5.projectReady')}
-                    </AlertDescription>
-                  </Alert>
+                  {/* Progress indicator */}
+                  {isPushing && pushProgress && (
+                    <Alert className="soft-alert info">
+                      <Upload className="h-4 w-4 animate-pulse" />
+                      <AlertDescription className="text-sm">
+                        Pushing batch <strong>{pushProgress.currentBatch}</strong> of <strong>{pushProgress.totalBatches}</strong>...
+                        ({pushProgress.totalFiles} files total)
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                  <div className="space-y-4">
-                    {/* Progress indicator */}
-                    {isPushing && pushProgress && (
-                      <Alert className="soft-alert info">
-                        <Upload className="h-4 w-4 animate-pulse" />
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      onClick={handlePushToAzureDevOps}
+                      disabled={isPushing || !isSettingsConfigured || !azureDevOpsConfig.repositoryName}
+                      className="soft-button flex items-center gap-2"
+                    >
+                      <Upload className={`h-4 w-4 ${isPushing ? 'animate-pulse' : ''}`} />
+                      {isPushing ? t('step5.push.pushing') : t('step5.push.button')}
+                    </Button>
+
+                    {pushStatus === 'success' && (
+                      <div className="flex items-center gap-2 text-[var(--mint-base)]">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-sm">{pushMessage}</span>
+                      </div>
+                    )}
+
+                    {pushStatus === 'error' && (
+                      <Alert variant="destructive" className="soft-alert error mt-2">
+                        <AlertCircle className="h-4 w-4" />
                         <AlertDescription className="text-sm">
-                          Pushing batch <strong>{pushProgress.currentBatch}</strong> of <strong>{pushProgress.totalBatches}</strong>...
-                          ({pushProgress.totalFiles} files total)
+                          <strong>Push Failed:</strong> {pushMessage}
                         </AlertDescription>
                       </Alert>
                     )}
+                  </div>
 
-                    <div className="flex items-center gap-4">
+                  {repositoryUrl && pushStatus === 'success' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         type="button"
-                        onClick={handlePushToAzureDevOps}
-                        disabled={isPushing || !isSettingsConfigured || !azureDevOpsConfig.repositoryName}
-                        className="soft-button flex items-center gap-2"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(repositoryUrl, '_blank')}
+                        className="soft-button secondary flex items-center gap-2"
                       >
-                        <Upload className={`h-4 w-4 ${isPushing ? 'animate-pulse' : ''}`} />
-                        {isPushing ? t('step5.push.pushing') : t('step5.push.button')}
+                        <ExternalLink className="h-4 w-4" />
+                        {t('step5.push.openRepo')}
                       </Button>
-
-                      {pushStatus === 'success' && (
-                        <div className="flex items-center gap-2 text-[var(--mint-base)]">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span className="text-sm">{pushMessage}</span>
-                        </div>
-                      )}
-
-                      {pushStatus === 'error' && (
-                        <Alert variant="destructive" className="soft-alert error mt-2">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="text-sm">
-                            <strong>Push Failed:</strong> {pushMessage}
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        {repositoryUrl}
+                      </p>
                     </div>
-
-                    {repositoryUrl && pushStatus === 'success' && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(repositoryUrl, '_blank')}
-                          className="soft-button secondary flex items-center gap-2"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          {t('step5.push.openRepo')}
-                        </Button>
-                        <p className="text-sm text-[var(--text-secondary)]">
-                          {repositoryUrl}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               )}
 

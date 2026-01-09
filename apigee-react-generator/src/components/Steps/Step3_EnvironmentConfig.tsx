@@ -66,7 +66,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       ? [...currentEnvConfig.targetServers]
       : [{
           name: `${apiConfig.proxyName}.backend`,
-          host: `backend-${selectedEnv}.elis.com`,
+          host: '',
           isEnabled: true,
           port: 443,
           sSLInfo: { enabled: true, clientAuthEnabled: false }
@@ -215,7 +215,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
   const isConfigComplete = apiConfig.entity && apiConfig.apiname && apiConfig.version;
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight mb-1">{t('step3.title')}</h2>
@@ -286,10 +286,9 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                         id={`host-${env}`}
                         value={targetServer?.host || ''}
                         onChange={(e) => handleTargetServerChange('host', e.target.value)}
-                        placeholder={`e.g., backend-${env}.elis.com`}
+                        placeholder={`backend-${env}.elis.com`}
                         className="soft-input font-mono text-sm"
                       />
-                      <p className="text-sm text-[var(--text-muted)]">e.g., backend-{env}.elis.com</p>
                     </div>
 
                     <div className="space-y-2">

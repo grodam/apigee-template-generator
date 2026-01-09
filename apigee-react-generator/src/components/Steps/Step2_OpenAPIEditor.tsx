@@ -121,7 +121,7 @@ export const Step2_OpenAPIEditor: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{t('step2.title')}</h1>

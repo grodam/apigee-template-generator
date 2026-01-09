@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      'path': 'path-browserify',
       'buffer': 'buffer/',
       'util': 'util/',
       'process': 'process/browser',
@@ -23,6 +24,6 @@ export default defineConfig({
         global: 'globalThis',
       }
     },
-    include: ['process', 'util', 'buffer']
+    include: ['process', 'util', 'buffer', 'path-browserify']
   }
 })

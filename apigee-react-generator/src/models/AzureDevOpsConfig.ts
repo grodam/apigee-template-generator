@@ -4,9 +4,9 @@ export interface AzureDevOpsConfig {
   project: string;                     // Project name
   repositoryName: string;              // Repository name
   personalAccessToken?: string;        // PAT token (not stored, only used during push)
-  createRepository: boolean;           // Auto-create repository if it doesn't exist
-  pushAfterGeneration: boolean;        // Automatically push code after generation
-  createPipelines: boolean;            // Create CI/CD pipelines
+  createRepository: boolean;           // Always true - auto-create repository if it doesn't exist
+  pushAfterGeneration: boolean;        // Unused - kept for backward compatibility
+  createPipelines: boolean;            // Unused - kept for backward compatibility
   defaultBranch: string;               // Default branch (main, master, develop, etc.)
 }
 
