@@ -21,6 +21,56 @@ A modern web application for generating professional Apigee API proxy bundles fr
 - **Internationalization**: English and French language support
 - **Modern UI**: Clean, utility-first design inspired by Linear and GitHub
 
+---
+
+## Quick Start
+
+### 1. Start the Generator Application
+
+```bash
+# Clone and install
+git clone https://github.com/grodam/apigee-template-generator.git
+cd apigee-template-generator/apigee-react-generator
+npm install
+
+# Start the application
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+### 2. Generate Your Proxy
+
+1. **Step 1**: Configure API settings (entity, domain, backend apps, version...)
+2. **Step 2**: Upload your OpenAPI specification (JSON/YAML)
+3. **Step 3**: Review environment configurations
+4. **Step 4**: Click "Generate Project"
+5. **Step 5**: (Optional) Push to Azure DevOps
+6. **Step 6**: Download ZIP
+
+### 3. Deploy to Apigee
+
+```bash
+# Extract the generated ZIP
+unzip [proxyName].zip
+cd [proxyName]
+
+# Deploy using Maven
+mvn install -Pgoogleapi \
+  -Denv=dev1 \
+  -Dorg=YOUR_APIGEE_ORG \
+  -Dbearer=YOUR_ACCESS_TOKEN
+
+# Or deploy using apigeecli
+apigeecli apis create bundle \
+  -f src/main/apigee/gateway/apiproxy \
+  -n [proxyName] \
+  --org YOUR_APIGEE_ORG \
+  --token YOUR_ACCESS_TOKEN
+```
+
+---
+
 ## Installation
 
 ### Prerequisites

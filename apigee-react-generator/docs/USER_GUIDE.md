@@ -6,6 +6,73 @@ L'**Apigee Template Generator** est une application web permettant de générer 
 
 ---
 
+## Démarrage rapide
+
+### 1. Installation et lancement
+
+```bash
+# Cloner le repository
+git clone https://github.com/grodam/apigee-template-generator.git
+cd apigee-template-generator/apigee-react-generator
+
+# Installer les dépendances
+npm install
+
+# Démarrer l'application
+npm run dev
+```
+
+L'application sera accessible sur http://localhost:5173
+
+### 2. Générer un proxy
+
+1. **Étape 1** : Configurer les paramètres API (entité, domaine, applications backend, version...)
+2. **Étape 2** : Charger votre spécification OpenAPI (JSON/YAML)
+3. **Étape 3** : Vérifier les configurations d'environnement
+4. **Étape 4** : Cliquer sur "Générer le projet"
+5. **Étape 5** : (Optionnel) Pousser vers Azure DevOps
+6. **Étape 6** : Télécharger le ZIP
+
+### 3. Déployer sur Apigee
+
+```bash
+# Extraire le ZIP généré
+unzip [proxyName].zip
+cd [proxyName]
+
+# Déployer avec Maven
+mvn install -Pgoogleapi \
+  -Denv=dev1 \
+  -Dorg=VOTRE_ORG_APIGEE \
+  -Dbearer=VOTRE_ACCESS_TOKEN
+
+# Ou déployer avec apigeecli
+apigeecli apis create bundle \
+  -f src/main/apigee/gateway/apiproxy \
+  -n [proxyName] \
+  --org VOTRE_ORG_APIGEE \
+  --token VOTRE_ACCESS_TOKEN
+```
+
+### 4. Déployer la configuration d'environnement
+
+```bash
+# Déployer les target servers
+apigeecli targetservers import \
+  -f config/env/dev1/edge-env.json \
+  --org VOTRE_ORG_APIGEE \
+  --env dev1 \
+  --token VOTRE_ACCESS_TOKEN
+
+# Déployer les API products
+apigeecli products import \
+  -f config/env/dev1/edge-org.json \
+  --org VOTRE_ORG_APIGEE \
+  --token VOTRE_ACCESS_TOKEN
+```
+
+---
+
 ## Architecture de l'interface
 
 ### Design System
