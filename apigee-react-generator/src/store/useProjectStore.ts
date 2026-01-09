@@ -3,8 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ApiConfiguration, EnvironmentConfig } from '../models/ApiConfiguration';
 import type { ParsedOpenAPI } from '../models/OpenAPISpec';
 import type { GeneratedProject } from '../models/GeneratedProject';
-import type { AzureDevOpsConfig } from '../models/AzureDevOpsConfig';
-import { DEFAULT_AZURE_DEVOPS_CONFIG } from '../models/AzureDevOpsConfig';
+import type { AzureDevOpsConfig, TemplateRepoConfig } from '../models/AzureDevOpsConfig';
+import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 
 interface ProjectState {
@@ -21,12 +21,15 @@ interface ProjectState {
   // Azure DevOps Configuration
   azureDevOpsConfig: AzureDevOpsConfig;
 
+  // Template Repository Configuration
+  templateRepoConfig: TemplateRepoConfig;
+
   // Generated project
   generatedProject: GeneratedProject | null;
 
   // Settings modal state
   isSettingsModalOpen: boolean;
-  settingsActiveTab: 'templates' | 'azure-devops';
+  settingsActiveTab: 'templates' | 'template-sync' | 'azure-devops';
 
   // Template overrides (persisted)
   templateOverrides: Record<string, string>;
@@ -46,9 +49,12 @@ interface ProjectState {
   // Azure DevOps actions
   updateAzureDevOpsConfig: (config: Partial<AzureDevOpsConfig>) => void;
 
+  // Template Repository actions
+  updateTemplateRepoConfig: (config: Partial<TemplateRepoConfig>) => void;
+
   // Settings modal actions
   setSettingsModalOpen: (open: boolean) => void;
-  setSettingsActiveTab: (tab: 'templates' | 'azure-devops') => void;
+  setSettingsActiveTab: (tab: 'templates' | 'template-sync' | 'azure-devops') => void;
 
   // Template override actions
   setTemplateOverride: (id: string, content: string) => void;
@@ -187,6 +193,7 @@ export const useProjectStore = create<ProjectState>()(
       openAPISpec: '',
       parsedOpenAPI: null,
       azureDevOpsConfig: DEFAULT_AZURE_DEVOPS_CONFIG,
+      templateRepoConfig: DEFAULT_TEMPLATE_REPO_CONFIG,
       generatedProject: null,
       isSettingsModalOpen: false,
       settingsActiveTab: 'templates' as const,
@@ -341,9 +348,17 @@ export const useProjectStore = create<ProjectState>()(
           }
         })),
 
+      updateTemplateRepoConfig: (config: Partial<TemplateRepoConfig>) =>
+        set((state) => ({
+          templateRepoConfig: {
+            ...state.templateRepoConfig,
+            ...config
+          }
+        })),
+
       setSettingsModalOpen: (open: boolean) => set({ isSettingsModalOpen: open }),
 
-      setSettingsActiveTab: (tab: 'templates' | 'azure-devops') => set({ settingsActiveTab: tab }),
+      setSettingsActiveTab: (tab: 'templates' | 'template-sync' | 'azure-devops') => set({ settingsActiveTab: tab }),
 
       setTemplateOverride: (id: string, content: string) =>
         set((state) => ({
@@ -392,6 +407,17 @@ export const useProjectStore = create<ProjectState>()(
           createPipelines: DEFAULT_AZURE_DEVOPS_CONFIG.createPipelines,
           pushAfterGeneration: true,
           enabled: state.azureDevOpsConfig.enabled,
+        },
+        // Persist template repository config
+        templateRepoConfig: {
+          enabled: state.templateRepoConfig.enabled,
+          organization: state.templateRepoConfig.organization,
+          project: state.templateRepoConfig.project,
+          repositoryName: state.templateRepoConfig.repositoryName,
+          branch: state.templateRepoConfig.branch,
+          autoSyncOnStartup: state.templateRepoConfig.autoSyncOnStartup,
+          lastSyncCommit: state.templateRepoConfig.lastSyncCommit,
+          lastSyncDate: state.templateRepoConfig.lastSyncDate,
         },
         templateOverrides: state.templateOverrides,
       }),

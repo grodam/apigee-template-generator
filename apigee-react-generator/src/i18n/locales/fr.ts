@@ -313,6 +313,7 @@ export default {
     title: 'Paramètres',
     tabs: {
       templates: 'Templates',
+      templateSync: 'Sync Templates',
       azureDevOps: 'Azure DevOps',
     },
   },
@@ -360,6 +361,63 @@ export default {
     importZip: 'Importer ZIP',
     modified: 'modifié',
     selectToEdit: 'Sélectionnez un template pour l\'éditer',
+  },
+
+  // Template Sync Settings
+  templateSync: {
+    title: 'Synchronisation des templates',
+    description: 'Synchroniser les templates depuis un repository Azure DevOps',
+    enable: 'Activer la synchronisation des templates',
+    enableDescription: 'Quand activé, les templates seront chargés depuis le repository configuré',
+    fields: {
+      organization: {
+        label: 'Organisation',
+        placeholder: 'elisdevops',
+        help: 'Organisation Azure DevOps contenant les templates',
+      },
+      project: {
+        label: 'Projet',
+        placeholder: 'Apigee',
+        help: 'Projet contenant le repository de templates',
+      },
+      repository: {
+        label: 'Repository',
+        placeholder: 'apigee-templates',
+        help: 'Nom du repository contenant les templates',
+      },
+      branch: {
+        label: 'Branche',
+        placeholder: 'main',
+        help: 'Branche depuis laquelle synchroniser les templates',
+      },
+      autoSync: {
+        label: 'Sync auto au démarrage',
+        help: 'Vérifier automatiquement les mises à jour au lancement de l\'application',
+      },
+    },
+    status: {
+      title: 'Statut de synchronisation',
+      notSynced: 'Pas encore synchronisé',
+      lastSync: 'Dernière sync',
+      commit: 'Commit',
+      files: 'fichiers',
+      source: 'Source',
+      remote: 'Azure DevOps',
+      local: 'Fichiers locaux',
+    },
+    actions: {
+      sync: 'Synchroniser',
+      syncing: 'Synchronisation...',
+      testConnection: 'Tester la connexion',
+      testing: 'Test en cours...',
+    },
+    messages: {
+      syncSuccess: 'Templates synchronisés avec succès !',
+      syncError: 'Échec de la synchronisation des templates',
+      connectionSuccess: 'Connexion réussie !',
+      connectionError: 'Échec de la connexion',
+      proxyRequired: 'Le serveur proxy doit être lancé pour la sync des templates',
+    },
   },
 
   // Language

@@ -313,6 +313,7 @@ export default {
     title: 'Settings',
     tabs: {
       templates: 'Templates',
+      templateSync: 'Template Sync',
       azureDevOps: 'Azure DevOps',
     },
   },
@@ -360,6 +361,63 @@ export default {
     importZip: 'Import ZIP',
     modified: 'modified',
     selectToEdit: 'Select a template to edit',
+  },
+
+  // Template Sync Settings
+  templateSync: {
+    title: 'Template Synchronization',
+    description: 'Synchronize templates from an Azure DevOps repository',
+    enable: 'Enable template synchronization',
+    enableDescription: 'When enabled, templates will be loaded from the configured repository',
+    fields: {
+      organization: {
+        label: 'Organization',
+        placeholder: 'elisdevops',
+        help: 'Azure DevOps organization containing the templates',
+      },
+      project: {
+        label: 'Project',
+        placeholder: 'Apigee',
+        help: 'Project containing the templates repository',
+      },
+      repository: {
+        label: 'Repository',
+        placeholder: 'apigee-templates',
+        help: 'Name of the repository containing templates',
+      },
+      branch: {
+        label: 'Branch',
+        placeholder: 'main',
+        help: 'Branch to sync templates from',
+      },
+      autoSync: {
+        label: 'Auto-sync on startup',
+        help: 'Automatically check for updates when the application starts',
+      },
+    },
+    status: {
+      title: 'Sync Status',
+      notSynced: 'Not synced yet',
+      lastSync: 'Last sync',
+      commit: 'Commit',
+      files: 'files',
+      source: 'Source',
+      remote: 'Azure DevOps',
+      local: 'Local files',
+    },
+    actions: {
+      sync: 'Sync Now',
+      syncing: 'Syncing...',
+      testConnection: 'Test Connection',
+      testing: 'Testing...',
+    },
+    messages: {
+      syncSuccess: 'Templates synchronized successfully!',
+      syncError: 'Failed to synchronize templates',
+      connectionSuccess: 'Connection successful!',
+      connectionError: 'Connection failed',
+      proxyRequired: 'The proxy server must be running for template sync',
+    },
   },
 
   // Language

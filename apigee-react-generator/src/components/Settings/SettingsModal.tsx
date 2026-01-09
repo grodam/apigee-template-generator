@@ -6,11 +6,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileCode2, Cloud, Settings } from 'lucide-react';
+import { FileCode2, Cloud, Settings, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
 import { TemplateManager } from './TemplateManager/TemplateManager';
 import { AzureDevOpsSettings } from './AzureDevOpsSettings/AzureDevOpsSettings';
+import { TemplateSyncSettings } from './TemplateSyncSettings/TemplateSyncSettings';
 
 export function SettingsModal() {
   const { t } = useTranslation();
@@ -39,7 +40,7 @@ export function SettingsModal() {
           <div className="w-56 border-r border-[var(--border-default)] bg-white/30 p-4">
             <Tabs
               value={settingsActiveTab}
-              onValueChange={(v) => setSettingsActiveTab(v as 'templates' | 'azure-devops')}
+              onValueChange={(v) => setSettingsActiveTab(v as 'templates' | 'template-sync' | 'azure-devops')}
               orientation="vertical"
               className="h-full"
             >
@@ -50,6 +51,13 @@ export function SettingsModal() {
                 >
                   <FileCode2 className="h-4 w-4" />
                   {t('settings.tabs.templates')}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="template-sync"
+                  className="w-full justify-start gap-3 px-4 py-3 rounded-md text-left font-medium transition-all duration-200 data-[state=active]:bg-[var(--accent-200)] data-[state=active]:text-[var(--accent-700)] data-[state=inactive]:text-[var(--text-secondary)] data-[state=inactive]:hover:bg-[var(--bg-tertiary)]"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {t('settings.tabs.templateSync')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="azure-devops"
@@ -67,6 +75,9 @@ export function SettingsModal() {
             <Tabs value={settingsActiveTab} className="h-full">
               <TabsContent value="templates" className="h-full m-0 p-0 data-[state=inactive]:hidden">
                 <TemplateManager />
+              </TabsContent>
+              <TabsContent value="template-sync" className="h-full m-0 p-6 data-[state=inactive]:hidden overflow-y-auto">
+                <TemplateSyncSettings />
               </TabsContent>
               <TabsContent value="azure-devops" className="h-full m-0 p-6 data-[state=inactive]:hidden overflow-y-auto">
                 <AzureDevOpsSettings />

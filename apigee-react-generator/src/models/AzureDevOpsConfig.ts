@@ -10,6 +10,18 @@ export interface AzureDevOpsConfig {
   defaultBranch: string;               // Default branch (main, master, develop, etc.)
 }
 
+// Configuration for template repository synchronization
+export interface TemplateRepoConfig {
+  enabled: boolean;                    // Enable template sync from Azure DevOps
+  organization: string;                // Azure DevOps organization (can be different from push org)
+  project: string;                     // Project name containing the templates repo
+  repositoryName: string;              // Template repository name (e.g., 'apigee-templates')
+  branch: string;                      // Branch to sync from (e.g., 'main')
+  lastSyncCommit?: string;             // Last synced commit SHA
+  lastSyncDate?: string;               // ISO date of last sync
+  autoSyncOnStartup: boolean;          // Auto-sync when app starts
+}
+
 export interface AzureDevOpsRepository {
   id: string;
   name: string;
@@ -36,4 +48,13 @@ export const DEFAULT_AZURE_DEVOPS_CONFIG: AzureDevOpsConfig = {
   pushAfterGeneration: true,
   createPipelines: false,
   defaultBranch: 'main'
+};
+
+export const DEFAULT_TEMPLATE_REPO_CONFIG: TemplateRepoConfig = {
+  enabled: false,
+  organization: 'elisdevops',
+  project: 'Apigee',
+  repositoryName: 'apigee-templates',
+  branch: 'main',
+  autoSyncOnStartup: true
 };

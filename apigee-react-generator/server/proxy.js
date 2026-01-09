@@ -48,9 +48,20 @@ app.post('/api/azure-devops-proxy', (req, res) => {
         console.error('Response:', data);
       }
 
+      // Try to parse as JSON, fallback to raw data
+      let parsedData = null;
+      if (data) {
+        try {
+          parsedData = JSON.parse(data);
+        } catch (e) {
+          // Response is not JSON (might be XML or plain text for file downloads)
+          parsedData = data;
+        }
+      }
+
       res.status(proxyRes.statusCode).json({
         statusCode: proxyRes.statusCode,
-        data: data ? JSON.parse(data) : null,
+        data: parsedData,
         headers: proxyRes.headers
       });
     });

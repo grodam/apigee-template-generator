@@ -2,14 +2,19 @@ import { useTranslation } from 'react-i18next';
 import { WizardContainer } from './components/Wizard/WizardContainer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { FileCode2, Settings } from 'lucide-react'
+import { FileCode2, Settings, RefreshCw } from 'lucide-react'
 import { SettingsModal } from './components/Settings/SettingsModal'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { useProjectStore } from './store/useProjectStore'
+import { useTemplateSync } from './hooks/useTemplateSync'
 
 function App() {
   const { t } = useTranslation();
   const setSettingsModalOpen = useProjectStore((state) => state.setSettingsModalOpen)
+  const templateRepoConfig = useProjectStore((state) => state.templateRepoConfig)
+
+  // Initialize template sync on startup
+  const templateSyncState = useTemplateSync();
 
   return (
     <div className="min-h-screen bg-[var(--bg-secondary)]">
@@ -29,6 +34,19 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Template sync indicator */}
+              {templateRepoConfig.enabled && (
+                <div className="flex items-center gap-1.5">
+                  {templateSyncState.isSyncing ? (
+                    <RefreshCw className="h-3.5 w-3.5 text-[var(--accent-500)] animate-spin" />
+                  ) : templateSyncState.source === 'remote' ? (
+                    <Badge variant="outline" className="text-[10px] font-medium py-0 px-1.5 h-5 gap-1 border-green-300 text-green-600 bg-green-50">
+                      <RefreshCw className="h-3 w-3" />
+                      Synced
+                    </Badge>
+                  ) : null}
+                </div>
+              )}
               <LanguageSwitcher />
               <Button
                 variant="ghost"

@@ -1,5 +1,6 @@
 import type { TemplateFile, TemplateTreeNode, TemplateCategory, TemplateExport } from '../../models/Template';
-import { TemplateLoader } from './TemplateLoader';
+import { TemplateLoader, type TemplateSource } from './TemplateLoader';
+import { templatesCacheService, type SyncInfo } from './TemplatesCacheService';
 import JSZip from 'jszip';
 
 // Template definitions - combining file-based and inline templates
@@ -317,6 +318,8 @@ class TemplateRegistry {
   private templateLoader: TemplateLoader;
   private initialized: boolean = false;
   private overrides: Map<string, string> = new Map();
+  private usingRemoteTemplates: boolean = false;
+  private templateSources: Map<string, TemplateSource> = new Map();
 
   private constructor() {
     this.templateLoader = new TemplateLoader();
@@ -330,6 +333,50 @@ class TemplateRegistry {
   }
 
   /**
+   * Enable loading templates from remote cache (synced from Azure DevOps)
+   */
+  async enableRemoteTemplates(enabled: boolean): Promise<void> {
+    this.usingRemoteTemplates = enabled;
+    this.templateLoader.setUseRemoteCache(enabled);
+
+    // Re-initialize if already initialized
+    if (this.initialized) {
+      this.initialized = false;
+      this.templates.clear();
+      this.templateSources.clear();
+      await this.initialize(this.overrides);
+    }
+  }
+
+  /**
+   * Check if remote templates are available in cache
+   */
+  async hasRemoteTemplates(): Promise<boolean> {
+    return this.templateLoader.isRemoteCacheAvailable();
+  }
+
+  /**
+   * Get sync info from cache
+   */
+  async getSyncInfo(): Promise<SyncInfo | null> {
+    return templatesCacheService.getSyncInfo();
+  }
+
+  /**
+   * Check if using remote templates
+   */
+  isUsingRemoteTemplates(): boolean {
+    return this.usingRemoteTemplates;
+  }
+
+  /**
+   * Get template source for a specific template
+   */
+  getTemplateSourceType(id: string): TemplateSource | undefined {
+    return this.templateSources.get(id);
+  }
+
+  /**
    * Initialize the registry by loading all templates
    */
   async initialize(overrides?: Map<string, string>): Promise<void> {
@@ -339,17 +386,24 @@ class TemplateRegistry {
 
     for (const def of TEMPLATE_DEFINITIONS) {
       let content = '';
+      let sourceType: TemplateSource = 'local';
 
       if (def.source === 'file') {
         try {
-          content = await this.templateLoader.load(def.path);
+          const result = await this.templateLoader.loadWithSource(def.path);
+          content = result.content;
+          sourceType = result.source;
         } catch (error) {
           console.warn(`Failed to load template ${def.path}:`, error);
           continue;
         }
       } else {
         content = INLINE_TEMPLATES[def.id] || '';
+        sourceType = 'local'; // Inline templates are always local
       }
+
+      // Track the source
+      this.templateSources.set(def.id, sourceType);
 
       // Apply override if exists
       const finalContent = this.overrides.get(def.id) || content;
