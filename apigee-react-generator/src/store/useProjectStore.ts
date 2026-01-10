@@ -29,7 +29,7 @@ interface ProjectState {
 
   // Settings modal state
   isSettingsModalOpen: boolean;
-  settingsActiveTab: 'templates' | 'template-sync' | 'azure-devops';
+  settingsActiveTab: 'azure-devops' | 'template-sync';
 
   // Template overrides (persisted)
   templateOverrides: Record<string, string>;
@@ -54,7 +54,7 @@ interface ProjectState {
 
   // Settings modal actions
   setSettingsModalOpen: (open: boolean) => void;
-  setSettingsActiveTab: (tab: 'templates' | 'template-sync' | 'azure-devops') => void;
+  setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync') => void;
 
   // Template override actions
   setTemplateOverride: (id: string, content: string) => void;
@@ -77,9 +77,6 @@ const getEnvSuffix = (env: string, separator: string = '-'): string => {
   return `${separator}${normalized}`;
 };
 
-// Helper to capitalize first letter
-const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
-
 interface EnvConfigParams {
   env: string;
   proxyName: string;
@@ -91,16 +88,15 @@ interface EnvConfigParams {
 
 // Generate API Product description from naming components
 const generateProductDescription = (params: EnvConfigParams): string => {
-  const { entity, backendApps, businessObject, version } = params;
-  const envNormalized = normalizeEnvName(params.env);
+  const { env, entity, backendApps, businessObject, version } = params;
+  const envLabel = normalizeEnvName(env).toUpperCase();
   const entityLabel = entity === 'elis' ? 'internal' : 'external';
   const backendList = backendApps.join(', ').toUpperCase();
-  return `API Product for ${businessObject} (${version}) - Environment: ${envNormalized.toUpperCase()}.\nBackend: ${backendList}.\nType: ${entityLabel}.`;
+  return `API Product for ${businessObject} (${version}) - Environment: ${envLabel}.\nBackend: ${backendList}.\nType: ${entityLabel}.`;
 };
 
 const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentConfig => {
   const { env, proxyName, entity, backendApps, businessObject, version } = params;
-  const envNormalized = normalizeEnvName(env);
   // Target Server Name: [entity].[backendapp].[version].backend
   const targetServerName = `${entity}.${backendApps.join('-')}.${version}.backend`;
   // Product Name: [proxyName].[env] (prod: no suffix, staging: .stg)
@@ -196,7 +192,7 @@ export const useProjectStore = create<ProjectState>()(
       templateRepoConfig: DEFAULT_TEMPLATE_REPO_CONFIG,
       generatedProject: null,
       isSettingsModalOpen: false,
-      settingsActiveTab: 'templates' as const,
+      settingsActiveTab: 'azure-devops' as const,
       templateOverrides: {},
 
       setCurrentStep: (step: number) => set({ currentStep: step }),
@@ -286,14 +282,11 @@ export const useProjectStore = create<ProjectState>()(
               dev1: config,
               uat1: {
                 ...envs.uat1,
-                kvms: config.kvms.map(devKvm => {
-                  const existingKvm = envs.uat1.kvms?.find(k => k.name === devKvm.name);
-                  return {
-                    ...devKvm,
-                    // Keep the same name, encrypted status, and entries from dev1
-                    entries: devKvm.entries || []
-                  };
-                })
+                kvms: config.kvms.map(devKvm => ({
+                  ...devKvm,
+                  // Keep the same name, encrypted status, and entries from dev1
+                  entries: devKvm.entries || []
+                }))
               },
               staging: {
                 ...envs.staging,
@@ -358,7 +351,7 @@ export const useProjectStore = create<ProjectState>()(
 
       setSettingsModalOpen: (open: boolean) => set({ isSettingsModalOpen: open }),
 
-      setSettingsActiveTab: (tab: 'templates' | 'template-sync' | 'azure-devops') => set({ settingsActiveTab: tab }),
+      setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync') => set({ settingsActiveTab: tab }),
 
       setTemplateOverride: (id: string, content: string) =>
         set((state) => ({
@@ -402,10 +395,8 @@ export const useProjectStore = create<ProjectState>()(
           defaultBranch: state.azureDevOpsConfig.defaultBranch,
           // repositoryName is NOT persisted - it's dynamic per project
           repositoryName: DEFAULT_AZURE_DEVOPS_CONFIG.repositoryName,
-          // createRepository and pushAfterGeneration are always true (not configurable)
+          // createRepository is always true (not configurable)
           createRepository: true,
-          createPipelines: DEFAULT_AZURE_DEVOPS_CONFIG.createPipelines,
-          pushAfterGeneration: true,
           enabled: state.azureDevOpsConfig.enabled,
         },
         // Persist template repository config
