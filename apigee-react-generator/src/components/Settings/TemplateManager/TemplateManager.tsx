@@ -17,7 +17,7 @@ export function TemplateManager() {
   const [editedContent, setEditedContent] = useState<string>('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const { templateOverrides, setTemplateOverride, removeTemplateOverride } = useProjectStore();
+  const { templateOverrides, setTemplateOverride } = useProjectStore();
 
   useEffect(() => {
     loadTemplates();

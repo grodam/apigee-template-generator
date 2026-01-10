@@ -5,16 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
-import { Step1_ApiConfiguration } from '../Steps/Step1_ApiConfiguration';
-import { Step2_OpenAPIEditor } from '../Steps/Step2_OpenAPIEditor';
+import { Step1_OpenAPIEditor } from '../Steps/Step1_OpenAPIEditor';
+import { Step2_ApiConfiguration } from '../Steps/Step2_ApiConfiguration';
 import { Step3_EnvironmentConfig } from '../Steps/Step3_EnvironmentConfig';
 import { Step4_Generation } from '../Steps/Step4_Generation';
 import { Step5_AzureDevOps } from '../Steps/Step5_AzureDevOps';
 import { Step6_Export } from '../Steps/Step6_Export';
 
+// Steps reordered: OpenAPI first, then Configuration
 const steps = [
-  { id: 0, name: 'Configuration', labelKey: 'wizard.steps.configuration' },
-  { id: 1, name: 'OpenAPI', labelKey: 'wizard.steps.openapi' },
+  { id: 0, name: 'OpenAPI', labelKey: 'wizard.steps.openapi' },
+  { id: 1, name: 'Configuration', labelKey: 'wizard.steps.configuration' },
   { id: 2, name: 'Environments', labelKey: 'wizard.steps.environments' },
   { id: 3, name: 'Generate', labelKey: 'wizard.steps.generate' },
   { id: 4, name: 'AzureDevOps', labelKey: 'wizard.steps.azureDevOps' },
@@ -48,9 +49,9 @@ export const WizardContainer: React.FC = () => {
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <Step1_ApiConfiguration />;
+        return <Step1_OpenAPIEditor />;
       case 1:
-        return <Step2_OpenAPIEditor />;
+        return <Step2_ApiConfiguration />;
       case 2:
         return <Step3_EnvironmentConfig />;
       case 3:
@@ -60,13 +61,13 @@ export const WizardContainer: React.FC = () => {
       case 5:
         return <Step6_Export />;
       default:
-        return <Step1_ApiConfiguration />;
+        return <Step1_OpenAPIEditor />;
     }
   };
 
   const canGoNext = () => {
     switch (currentStep) {
-      case 1: // OpenAPI step
+      case 0: // OpenAPI step (now first)
         return parsedOpenAPI !== null;
       case 3: // Generation step
         return generatedProject !== null;

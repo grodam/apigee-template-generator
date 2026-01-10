@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI 3: Wizard Focus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .step-done {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-current {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+        }
+
+        .step-pending {
+            background: #e5e7eb;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-8">
+
+    <div class="glass rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden">
+        <!-- HEADER -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">New API Proxy</h1>
+                    <p class="text-indigo-200 mt-1">Step 2 of 5 – OpenAPI Specification</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="flex -space-x-2">
+                        <div
+                            class="h-10 w-10 rounded-full step-done flex items-center justify-center text-sm font-bold border-2 border-white">
+                            1</div>
+                        <div
+                            class="h-10 w-10 rounded-full step-current flex items-center justify-center text-sm font-bold border-2 border-white">
+                            2</div>
+                        <div
+                            class="h-10 w-10 rounded-full step-pending flex items-center justify-center text-sm font-bold border-2 border-white">
+                            3</div>
+                        <div
+                            class="h-10 w-10 rounded-full step-pending flex items-center justify-center text-sm font-bold border-2 border-white">
+                            4</div>
+                        <div
+                            class="h-10 w-10 rounded-full step-pending flex items-center justify-center text-sm font-bold border-2 border-white">
+                            5</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="p-10">
+            <div class="text-center mb-10">
+                <div
+                    class="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-indigo-100 text-indigo-600 mb-4">
+                    <i data-lucide="file-code-2" class="h-8 w-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">Upload your OpenAPI Spec</h2>
+                <p class="text-slate-500 mt-2 max-w-md mx-auto">We'll automatically detect endpoints, security schemes,
+                    and generate the proxy configuration.</p>
+            </div>
+
+            <!-- DROP ZONE -->
+            <div
+                class="border-2 border-dashed border-indigo-300 rounded-2xl p-12 text-center hover:border-indigo-500 hover:bg-indigo-50 transition-all cursor-pointer group">
+                <div
+                    class="inline-flex items-center justify-center h-14 w-14 rounded-full bg-indigo-100 text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="upload-cloud" class="h-7 w-7"></i>
+                </div>
+                <p class="text-lg font-semibold text-slate-700">Drag & drop your file here</p>
+                <p class="text-slate-400 mt-1">or <span class="text-indigo-600 font-medium underline">browse
+                        files</span></p>
+                <p class="text-xs text-slate-400 mt-4">Supports JSON and YAML (OpenAPI 2.0 / 3.x)</p>
+            </div>
+
+            <!-- OR -->
+            <div class="flex items-center gap-4 my-8">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="text-slate-400 font-medium">OR</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
+            </div>
+
+            <!-- URL INPUT -->
+            <div class="flex gap-4">
+                <input type="text" placeholder="https://api.example.com/swagger.json"
+                    class="flex-1 px-5 py-4 border border-slate-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <button
+                    class="px-6 py-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                    <i data-lucide="link" class="h-5 w-5"></i> Fetch
+                </button>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="px-10 py-6 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+            <button class="px-6 py-3 text-slate-600 font-medium hover:text-slate-900 flex items-center gap-2">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i> Back
+            </button>
+            <button
+                class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                disabled>
+                Continue <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

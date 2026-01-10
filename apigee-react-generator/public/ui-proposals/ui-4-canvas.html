@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI 4: Visual Canvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8;
+        }
+
+        .dot-grid {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .node {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s;
+        }
+
+        .node:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col">
+
+    <!-- TOOLBAR -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-slate-800 font-semibold">
+                <i data-lucide="hexagon" class="h-5 w-5 text-indigo-600"></i> ApigeeGen
+            </div>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <span class="text-sm text-slate-500">customer-service-v1</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-600"><i data-lucide="mouse-pointer-2"
+                    class="h-5 w-5"></i></button>
+            <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-600"><i data-lucide="plus-square"
+                    class="h-5 w-5"></i></button>
+            <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-600"><i data-lucide="link-2"
+                    class="h-5 w-5"></i></button>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+                <i data-lucide="download" class="h-4 w-4"></i> Export
+            </button>
+        </div>
+    </header>
+
+    <!-- CANVAS -->
+    <div class="flex-1 dot-grid overflow-auto relative p-8">
+
+        <!-- Node 1: Proxy -->
+        <div class="node absolute bg-white rounded-xl border border-slate-200 w-72" style="left: 80px; top: 120px;">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-indigo-50 rounded-t-xl">
+                <i data-lucide="globe" class="h-4 w-4 text-indigo-600"></i>
+                <span class="font-semibold text-indigo-800 text-sm">Proxy Endpoint</span>
+            </div>
+            <div class="p-4 space-y-3 text-sm">
+                <div>
+                    <label class="text-xs text-slate-500 uppercase font-semibold">Base Path</label>
+                    <div class="font-mono text-slate-800">/v1/customers</div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 uppercase font-semibold">Flows</label>
+                    <div class="text-slate-800">12 endpoints</div>
+                </div>
+            </div>
+            <div class="absolute top-1/2 -right-3 w-6 h-6 rounded-full bg-indigo-500 border-4 border-white shadow">
+            </div>
+        </div>
+
+        <!-- Node 2: Policy -->
+        <div class="node absolute bg-white rounded-xl border border-slate-200 w-72" style="left: 450px; top: 100px;">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-amber-50 rounded-t-xl">
+                <i data-lucide="shield-check" class="h-4 w-4 text-amber-600"></i>
+                <span class="font-semibold text-amber-800 text-sm">Security Policy</span>
+            </div>
+            <div class="p-4 space-y-3 text-sm">
+                <div>
+                    <label class="text-xs text-slate-500 uppercase font-semibold">Type</label>
+                    <div class="text-slate-800">OAuth2 Verify Access Token</div>
+                </div>
+            </div>
+            <div class="absolute top-1/2 -left-3 w-6 h-6 rounded-full bg-slate-300 border-4 border-white shadow"></div>
+            <div class="absolute top-1/2 -right-3 w-6 h-6 rounded-full bg-amber-500 border-4 border-white shadow"></div>
+        </div>
+
+        <!-- Node 3: Target -->
+        <div class="node absolute bg-white rounded-xl border border-slate-200 w-72" style="left: 820px; top: 180px;">
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-emerald-50 rounded-t-xl">
+                <i data-lucide="server" class="h-4 w-4 text-emerald-600"></i>
+                <span class="font-semibold text-emerald-800 text-sm">Target Endpoint</span>
+            </div>
+            <div class="p-4 space-y-3 text-sm">
+                <div>
+                    <label class="text-xs text-slate-500 uppercase font-semibold">Backend URL</label>
+                    <div class="font-mono text-slate-800 truncate">https://backend.internal.com</div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 uppercase font-semibold">Auth</label>
+                    <div class="text-slate-800">Basic (KVM)</div>
+                </div>
+            </div>
+            <div class="absolute top-1/2 -left-3 w-6 h-6 rounded-full bg-slate-300 border-4 border-white shadow"></div>
+        </div>
+
+        <!-- Connection Lines (SVG) -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none">
+            <path d="M 352 170 C 400 170, 400 150, 450 150" stroke="#94a3b8" stroke-width="2" fill="none"
+                stroke-dasharray="5,5"></path>
+            <path d="M 722 150 C 770 150, 770 230, 820 230" stroke="#94a3b8" stroke-width="2" fill="none"
+                stroke-dasharray="5,5"></path>
+        </svg>
+
+    </div>
+
+    <!-- MINIMAP -->
+    <div
+        class="absolute bottom-6 right-6 w-40 h-28 bg-white border border-slate-200 rounded-lg shadow-lg opacity-80 z-10">
+        <div class="absolute inset-2 bg-slate-50 rounded"></div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

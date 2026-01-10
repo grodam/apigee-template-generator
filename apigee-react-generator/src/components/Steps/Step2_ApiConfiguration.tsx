@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,9 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, HelpCircle } from 'lucide-react';
+import { Info, HelpCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
-import { AUTH_TYPES } from '../../utils/constants';
 
 // Kebab-case regex: lowercase letter, then optionally (lowercase letters/numbers),
 // then optionally repeated (-lowercase letter followed by lowercase letters/numbers)
@@ -22,8 +21,12 @@ const kebabCaseMessage = 'Must be kebab-case (lowercase, words separated by sing
 const pathKebabCaseRegex = /^\/([a-z][a-z0-9]*(-[a-z][a-z0-9]*)*)(\/[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*)*$/;
 const pathKebabCaseMessage = 'Must start with / and use kebab-case';
 
+// More flexible target path regex to allow KVM variables like {private.envid}
+const targetPathRegex = /^(\{[a-zA-Z_.]+\})?\/.*$|^\/.*$/;
+const targetPathMessage = 'Must start with / or a KVM variable';
+
 const apiConfigSchema = z.object({
-  entity: z.enum(['elis', 'ext'], { errorMap: () => ({ message: 'Entity must be "elis" or "ext"' }) }),
+  entity: z.enum(['elis', 'ext']).refine(val => ['elis', 'ext'].includes(val), { message: 'Entity must be "elis" or "ext"' }),
   domain: z.string()
     .min(1, 'Domain is required')
     .regex(kebabCaseRegex, kebabCaseMessage),
@@ -41,7 +44,7 @@ const apiConfigSchema = z.object({
     .regex(pathKebabCaseRegex, pathKebabCaseMessage),
   targetPath: z.string()
     .min(1, 'Target path is required')
-    .regex(/^\//, 'Must start with /'),
+    .regex(targetPathRegex, targetPathMessage),
   mockUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   globalRateLimit: z.string()
     .regex(/^[0-9]+(pm|ps)$/, 'Format: {number}pm or {number}ps')
@@ -69,14 +72,17 @@ const SoftSection: React.FC<{
   </div>
 );
 
-// Label with tooltip
-const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: string; required?: boolean }> = ({
+// Simple label without tooltip (tooltip moved inside input)
+const SimpleLabel: React.FC<{
+  htmlFor: string;
+  label: string;
+  required?: boolean;
+}> = ({
   htmlFor,
   label,
-  tooltip,
-  required = false
+  required = false,
 }) => (
-  <div className="inline-flex items-baseline gap-1.5 mb-3">
+  <div className="inline-flex items-center gap-1.5 mb-3">
     <Label
       htmlFor={htmlFor}
       className="soft-label"
@@ -84,6 +90,31 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
       {label}
       {required && <span className="text-[var(--error-base)] ml-0.5">*</span>}
     </Label>
+  </div>
+);
+
+// Icons inside input: help tooltip and optional sparkle
+const InputIcons: React.FC<{
+  tooltip: string;
+  showSparkle?: boolean;
+  sparkleSource?: string;
+  position?: 'center' | 'top';
+}> = ({ tooltip, showSparkle = false, sparkleSource = 'OpenAPI spec', position = 'center' }) => (
+  <div className={`absolute right-3 ${position === 'center' ? 'top-1/2 -translate-y-1/2' : 'top-3'} inline-flex items-center gap-1.5`}>
+    {showSparkle && (
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center">
+              <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="soft-tooltip">
+            <p className="text-sm leading-relaxed">Auto-filled from {sparkleSource}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )}
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -91,7 +122,7 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
             <HelpCircle className="h-3.5 w-3.5 text-[var(--text-muted)] cursor-help hover:text-[var(--accent-500)] transition-colors" />
           </span>
         </TooltipTrigger>
-        <TooltipContent side="right" className="soft-tooltip">
+        <TooltipContent side="top" className="soft-tooltip">
           <p className="text-sm leading-relaxed">{tooltip}</p>
         </TooltipContent>
       </Tooltip>
@@ -99,12 +130,15 @@ const LabelWithTooltip: React.FC<{ htmlFor: string; label: string; tooltip: stri
   </div>
 );
 
-export const Step1_ApiConfiguration: React.FC = () => {
+export const Step2_ApiConfiguration: React.FC = () => {
   const { t } = useTranslation();
-  const { apiConfig, updateApiConfig } = useProjectStore();
+  const { apiConfig, updateApiConfig, autoDetectedConfig, applyAutoDetectedConfig } = useProjectStore();
 
   // Track if description was manually edited by user
   const [isDescriptionManuallyEdited, setIsDescriptionManuallyEdited] = React.useState(false);
+
+  // Track which fields have been auto-filled
+  const [autoFilledFields, setAutoFilledFields] = React.useState<Set<string>>(new Set());
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ApiConfigFormData>({
     resolver: zodResolver(apiConfigSchema),
@@ -147,20 +181,47 @@ export const Step1_ApiConfiguration: React.FC = () => {
     return `API proxy for ${businessObjectCapitalized} management in the ${domainCapitalized} domain.\nBackend: ${backendAppsList}.\nType: ${entityLabel}.`;
   }, [entity, domain, backendApps, businessObject]);
 
+  // Apply auto-detected values on mount
+  useEffect(() => {
+    if (autoDetectedConfig) {
+      const newAutoFilledFields = new Set<string>();
+
+      // Apply auth type
+      if (autoDetectedConfig.auth.type && !apiConfig.authSouthbound) {
+        setValue('authSouthbound', autoDetectedConfig.auth.type, { shouldValidate: true });
+        newAutoFilledFields.add('authSouthbound');
+      }
+
+      // Apply target path
+      if (autoDetectedConfig.targetPath && !apiConfig.targetPath) {
+        setValue('targetPath', autoDetectedConfig.targetPath, { shouldValidate: true });
+        newAutoFilledFields.add('targetPath');
+      }
+
+      // Note: Description is NOT auto-filled from spec - it's generated from proxy name components
+
+      setAutoFilledFields(newAutoFilledFields);
+
+      // Apply to store as well
+      applyAutoDetectedConfig();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Auto-generate description when proxy name components change (if not manually edited)
   React.useEffect(() => {
-    if (!isDescriptionManuallyEdited && domain && backendApps && businessObject) {
+    if (!isDescriptionManuallyEdited && domain && backendApps && businessObject && !autoFilledFields.has('description')) {
       const autoDescription = generateDescription();
       if (autoDescription) {
         setValue('description', autoDescription, { shouldValidate: true });
       }
     }
-  }, [entity, domain, backendApps, businessObject, isDescriptionManuallyEdited, generateDescription, setValue]);
+  }, [entity, domain, backendApps, businessObject, isDescriptionManuallyEdited, generateDescription, setValue, autoFilledFields]);
 
   // Also check on mount if we need to auto-generate (for when form loads with values but empty description)
   React.useEffect(() => {
     const currentDesc = apiConfig.description;
-    if (!currentDesc && apiConfig.domain && apiConfig.backendApps?.length && apiConfig.businessObject) {
+    if (!currentDesc && apiConfig.domain && apiConfig.backendApps?.length && apiConfig.businessObject && !autoFilledFields.has('description')) {
       const autoDescription = generateDescription();
       if (autoDescription) {
         setValue('description', autoDescription, { shouldValidate: true });
@@ -218,28 +279,43 @@ export const Step1_ApiConfiguration: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             {/* Entity */}
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="entity"
                 label={t('step1.fields.entity.label')}
                 required
-                tooltip={t('step1.fields.entity.tooltip')}
               />
               <Controller
                 name="entity"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      id="entity"
-                      className={`soft-input font-mono text-sm ${errors.entity ? 'border-[var(--error-base)]' : ''}`}
-                    >
-                      <SelectValue placeholder={t('step1.fields.entity.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] rounded-md shadow-lg">
-                      <SelectItem value="elis" className="text-sm font-mono">{t('step1.fields.entity.options.elis')}</SelectItem>
-                      <SelectItem value="ext" className="text-sm font-mono">{t('step1.fields.entity.options.ext')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="entity"
+                        className={`soft-input font-mono text-sm ${errors.entity ? 'border-[var(--error-base)]' : ''}`}
+                      >
+                        <SelectValue placeholder={t('step1.fields.entity.placeholder')} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] rounded-md shadow-lg">
+                        <SelectItem value="elis" className="text-sm font-mono">{t('step1.fields.entity.options.elis')}</SelectItem>
+                        <SelectItem value="ext" className="text-sm font-mono">{t('step1.fields.entity.options.ext')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex items-center">
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center">
+                              <HelpCircle className="h-3.5 w-3.5 text-[var(--text-muted)] cursor-help hover:text-[var(--accent-500)] transition-colors" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="soft-tooltip">
+                            <p className="text-sm leading-relaxed">{t('step1.fields.entity.tooltip')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
                 )}
               />
               {errors.entity && (
@@ -252,22 +328,24 @@ export const Step1_ApiConfiguration: React.FC = () => {
 
             {/* Domain */}
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="domain"
                 label={t('step1.fields.domain.label')}
                 required
-                tooltip={t('step1.fields.domain.tooltip')}
               />
               <Controller
                 name="domain"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="domain"
-                    placeholder={t('step1.fields.domain.placeholder')}
-                    className={`soft-input font-mono text-sm ${errors.domain ? 'border-[var(--error-base)]' : ''}`}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="domain"
+                      placeholder={t('step1.fields.domain.placeholder')}
+                      className={`soft-input font-mono text-sm pr-10 ${errors.domain ? 'border-[var(--error-base)]' : ''}`}
+                    />
+                    <InputIcons tooltip={t('step1.fields.domain.tooltip')} />
+                  </div>
                 )}
               />
               {errors.domain && (
@@ -280,22 +358,24 @@ export const Step1_ApiConfiguration: React.FC = () => {
 
             {/* Backend Apps */}
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="backendApps"
                 label={t('step1.fields.backendApps.label')}
                 required
-                tooltip={t('step1.fields.backendApps.tooltip')}
               />
               <Controller
                 name="backendApps"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="backendApps"
-                    placeholder={t('step1.fields.backendApps.placeholder')}
-                    className={`soft-input font-mono text-sm ${errors.backendApps ? 'border-[var(--error-base)]' : ''}`}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="backendApps"
+                      placeholder={t('step1.fields.backendApps.placeholder')}
+                      className={`soft-input font-mono text-sm pr-10 ${errors.backendApps ? 'border-[var(--error-base)]' : ''}`}
+                    />
+                    <InputIcons tooltip={t('step1.fields.backendApps.tooltip')} />
+                  </div>
                 )}
               />
               {errors.backendApps && (
@@ -308,22 +388,24 @@ export const Step1_ApiConfiguration: React.FC = () => {
 
             {/* Business Object */}
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="businessObject"
                 label={t('step1.fields.businessObject.label')}
                 required
-                tooltip={t('step1.fields.businessObject.tooltip')}
               />
               <Controller
                 name="businessObject"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="businessObject"
-                    placeholder={t('step1.fields.businessObject.placeholder')}
-                    className={`soft-input font-mono text-sm ${errors.businessObject ? 'border-[var(--error-base)]' : ''}`}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="businessObject"
+                      placeholder={t('step1.fields.businessObject.placeholder')}
+                      className={`soft-input font-mono text-sm pr-10 ${errors.businessObject ? 'border-[var(--error-base)]' : ''}`}
+                    />
+                    <InputIcons tooltip={t('step1.fields.businessObject.tooltip')} />
+                  </div>
                 )}
               />
               {errors.businessObject && (
@@ -336,22 +418,24 @@ export const Step1_ApiConfiguration: React.FC = () => {
 
             {/* Version */}
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="version"
                 label={t('step1.fields.version.label')}
                 required
-                tooltip={t('step1.fields.version.tooltip')}
               />
               <Controller
                 name="version"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="version"
-                    placeholder={t('step1.fields.version.placeholder')}
-                    className={`soft-input font-mono text-sm ${errors.version ? 'border-[var(--error-base)]' : ''}`}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="version"
+                      placeholder={t('step1.fields.version.placeholder')}
+                      className={`soft-input font-mono text-sm pr-10 ${errors.version ? 'border-[var(--error-base)]' : ''}`}
+                    />
+                    <InputIcons tooltip={t('step1.fields.version.tooltip')} />
+                  </div>
                 )}
               />
               {errors.version && (
@@ -375,41 +459,51 @@ export const Step1_ApiConfiguration: React.FC = () => {
           )}
 
           <div className="soft-stagger">
-            <LabelWithTooltip
+            <SimpleLabel
               htmlFor="description"
               label={t('step1.fields.description.label')}
               required
-              tooltip={t('step1.fields.description.tooltip')}
             />
             <Controller
               name="description"
               control={control}
               render={({ field }) => (
-                <Textarea
-                  {...field}
-                  id="description"
-                  placeholder={t('step1.fields.description.placeholder')}
-                  rows={3}
-                  onKeyDown={() => setIsDescriptionManuallyEdited(true)}
-                  className={`
-                    soft-input font-mono text-sm resize-none
-                    ${errors.description ? 'border-[var(--error-base)]' : ''}
-                  `}
-                />
+                <div className="relative">
+                  <Textarea
+                    {...field}
+                    id="description"
+                    placeholder={t('step1.fields.description.placeholder')}
+                    rows={3}
+                    onKeyDown={() => {
+                      setIsDescriptionManuallyEdited(true);
+                      setAutoFilledFields(prev => {
+                        const next = new Set(prev);
+                        next.delete('description');
+                        return next;
+                      });
+                    }}
+                    className={`
+                      soft-input font-mono text-sm resize-none pr-14
+                      ${errors.description ? 'border-[var(--error-base)]' : ''}
+                    `}
+                  />
+                  <InputIcons
+                    tooltip={t('step1.fields.description.tooltip')}
+                    showSparkle={!isDescriptionManuallyEdited && !!field.value}
+                    sparkleSource="proxy name"
+                    position="top"
+                  />
+                </div>
               )}
             />
             <div className="flex items-center justify-between mt-2">
-              {errors.description ? (
+              {errors.description && (
                 <p className="text-xs text-[var(--error-base)] flex items-center gap-1">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--error-base)]"></span>
                   {errors.description.message}
                 </p>
-              ) : (
-                <span className="text-xs text-[var(--text-muted)]">
-                  {isDescriptionManuallyEdited ? t('common.manuallyModified') : t('common.autoGenerated')}
-                </span>
               )}
-              {isDescriptionManuallyEdited && (
+              {isDescriptionManuallyEdited && !errors.description && (
                 <button
                   type="button"
                   onClick={() => {
@@ -417,8 +511,9 @@ export const Step1_ApiConfiguration: React.FC = () => {
                     const autoDesc = generateDescription();
                     if (autoDesc) setValue('description', autoDesc, { shouldValidate: true });
                   }}
-                  className="text-xs text-[var(--accent-500)] hover:text-[var(--accent-600)] underline"
+                  className="text-xs text-[var(--accent-500)] hover:text-[var(--accent-600)] underline flex items-center gap-1"
                 >
+                  <RefreshCw className="h-3 w-3" />
                   {t('common.regenerate')}
                 </button>
               )}
@@ -430,25 +525,27 @@ export const Step1_ApiConfiguration: React.FC = () => {
         <SoftSection id="02" title={t('step1.sections.routing')}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="proxyBasepath"
                 label={t('step1.fields.proxyBasepath.label')}
                 required
-                tooltip={t('step1.fields.proxyBasepath.tooltip')}
               />
               <Controller
                 name="proxyBasepath"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="proxyBasepath"
-                    placeholder={t('step1.fields.proxyBasepath.placeholder')}
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.proxyBasepath ? 'border-[var(--error-base)]' : ''}
-                    `}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="proxyBasepath"
+                      placeholder={t('step1.fields.proxyBasepath.placeholder')}
+                      className={`
+                        soft-input font-mono text-sm pr-10
+                        ${errors.proxyBasepath ? 'border-[var(--error-base)]' : ''}
+                      `}
+                    />
+                    <InputIcons tooltip={t('step1.fields.proxyBasepath.tooltip')} />
+                  </div>
                 )}
               />
               {errors.proxyBasepath && (
@@ -460,25 +557,39 @@ export const Step1_ApiConfiguration: React.FC = () => {
             </div>
 
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="targetPath"
                 label={t('step1.fields.targetPath.label')}
                 required
-                tooltip={t('step1.fields.targetPath.tooltip')}
               />
               <Controller
                 name="targetPath"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="targetPath"
-                    placeholder={t('step1.fields.targetPath.placeholder')}
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.targetPath ? 'border-[var(--error-base)]' : ''}
-                    `}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="targetPath"
+                      placeholder={t('step1.fields.targetPath.placeholder')}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setAutoFilledFields(prev => {
+                          const next = new Set(prev);
+                          next.delete('targetPath');
+                          return next;
+                        });
+                      }}
+                      className={`
+                        soft-input font-mono text-sm pr-14
+                        ${errors.targetPath ? 'border-[var(--error-base)]' : ''}
+                      `}
+                    />
+                    <InputIcons
+                      tooltip={t('step1.fields.targetPath.tooltip')}
+                      showSparkle={autoFilledFields.has('targetPath')}
+                      sparkleSource="OpenAPI spec"
+                    />
+                  </div>
                 )}
               />
               {errors.targetPath && (
@@ -495,67 +606,108 @@ export const Step1_ApiConfiguration: React.FC = () => {
         <SoftSection id="03" title={t('step1.sections.security')}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="authSouthbound"
                 label={t('step1.fields.authSouthbound.label')}
                 required
-                tooltip={t('step1.fields.authSouthbound.tooltip')}
               />
               <Controller
                 name="authSouthbound"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      id="authSouthbound"
-                      className="soft-input font-mono text-sm"
+                  <div className="relative">
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setAutoFilledFields(prev => {
+                          const next = new Set(prev);
+                          next.delete('authSouthbound');
+                          return next;
+                        });
+                      }}
                     >
-                      <SelectValue placeholder={t('step1.fields.authSouthbound.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] rounded-md shadow-lg font-mono">
-                      <SelectItem
-                        value="None"
-                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
+                      <SelectTrigger
+                        id="authSouthbound"
+                        className="soft-input font-mono text-sm"
                       >
-                        {t('step1.fields.authSouthbound.options.none')}
-                      </SelectItem>
-                      <SelectItem
-                        value="Basic"
-                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
-                      >
-                        {t('step1.fields.authSouthbound.options.basic')}
-                      </SelectItem>
-                      <SelectItem
-                        value="OAuth2-ClientCredentials"
-                        className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
-                      >
-                        {t('step1.fields.authSouthbound.options.oauth2')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                        <SelectValue placeholder={t('step1.fields.authSouthbound.placeholder')} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[var(--bg-primary)] border-[var(--border-default)] rounded-md shadow-lg font-mono">
+                        <SelectItem
+                          value="None"
+                          className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
+                        >
+                          {t('step1.fields.authSouthbound.options.none')}
+                        </SelectItem>
+                        <SelectItem
+                          value="Basic"
+                          className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
+                        >
+                          {t('step1.fields.authSouthbound.options.basic')}
+                        </SelectItem>
+                        <SelectItem
+                          value="OAuth2-ClientCredentials"
+                          className="text-sm text-[var(--text-primary)] focus:bg-[var(--accent-100)] focus:text-[var(--accent-600)] rounded-md"
+                        >
+                          {t('step1.fields.authSouthbound.options.oauth2')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 pointer-events-auto">
+                      {autoFilledFields.has('authSouthbound') && (
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center">
+                                <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="soft-tooltip">
+                              <p className="text-sm leading-relaxed">Auto-filled from OpenAPI spec</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center">
+                              <HelpCircle className="h-3.5 w-3.5 text-[var(--text-muted)] cursor-help hover:text-[var(--accent-500)] transition-colors" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="soft-tooltip">
+                            <p className="text-sm leading-relaxed">{t('step1.fields.authSouthbound.tooltip')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
                 )}
               />
             </div>
 
             <div className="soft-stagger">
-              <LabelWithTooltip
+              <SimpleLabel
                 htmlFor="globalRateLimit"
                 label={t('step1.fields.globalRateLimit.label')}
-                tooltip={t('step1.fields.globalRateLimit.tooltip')}
               />
               <Controller
                 name="globalRateLimit"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    {...field}
-                    id="globalRateLimit"
-                    placeholder={t('step1.fields.globalRateLimit.placeholder')}
-                    className={`
-                      soft-input font-mono text-sm
-                      ${errors.globalRateLimit ? 'border-[var(--error-base)]' : ''}
-                    `}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="globalRateLimit"
+                      placeholder={t('step1.fields.globalRateLimit.placeholder')}
+                      className={`
+                        soft-input font-mono text-sm pr-10
+                        ${errors.globalRateLimit ? 'border-[var(--error-base)]' : ''}
+                      `}
+                    />
+                    <InputIcons tooltip={t('step1.fields.globalRateLimit.tooltip')} />
+                  </div>
                 )}
               />
               {errors.globalRateLimit && (
@@ -571,24 +723,26 @@ export const Step1_ApiConfiguration: React.FC = () => {
         {/* Optional Configuration Section */}
         <SoftSection id="04" title={t('step1.sections.optional')}>
           <div className="soft-stagger">
-            <LabelWithTooltip
+            <SimpleLabel
               htmlFor="mockUrl"
               label={t('step1.fields.mockUrl.label')}
-              tooltip={t('step1.fields.mockUrl.tooltip')}
             />
             <Controller
               name="mockUrl"
               control={control}
               render={({ field }) => (
-                <Input
-                  {...field}
-                  id="mockUrl"
-                  placeholder={t('step1.fields.mockUrl.placeholder')}
-                  className={`
-                    soft-input font-mono text-sm
-                    ${errors.mockUrl ? 'border-[var(--error-base)]' : ''}
-                  `}
-                />
+                <div className="relative">
+                  <Input
+                    {...field}
+                    id="mockUrl"
+                    placeholder={t('step1.fields.mockUrl.placeholder')}
+                    className={`
+                      soft-input font-mono text-sm pr-10
+                      ${errors.mockUrl ? 'border-[var(--error-base)]' : ''}
+                    `}
+                  />
+                  <InputIcons tooltip={t('step1.fields.mockUrl.tooltip')} />
+                </div>
               )}
             />
             {errors.mockUrl && (

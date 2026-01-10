@@ -4,6 +4,7 @@ import type { ApiConfiguration, EnvironmentConfig } from '../models/ApiConfigura
 import type { ParsedOpenAPI } from '../models/OpenAPISpec';
 import type { GeneratedProject } from '../models/GeneratedProject';
 import type { AzureDevOpsConfig, TemplateRepoConfig } from '../models/AzureDevOpsConfig';
+import type { AutoDetectedConfig } from '../models/AutoDetectedConfig';
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 
@@ -17,6 +18,9 @@ interface ProjectState {
   // OpenAPI Specification
   openAPISpec: string;
   parsedOpenAPI: ParsedOpenAPI | null;
+
+  // Auto-detected configuration from OpenAPI spec
+  autoDetectedConfig: AutoDetectedConfig | null;
 
   // Azure DevOps Configuration
   azureDevOpsConfig: AzureDevOpsConfig;
@@ -42,6 +46,8 @@ interface ProjectState {
   updateApiConfig: (config: Partial<ApiConfiguration>) => void;
   setOpenAPISpec: (spec: string) => void;
   setParsedOpenAPI: (parsed: ParsedOpenAPI | null) => void;
+  setAutoDetectedConfig: (config: AutoDetectedConfig | null) => void;
+  applyAutoDetectedConfig: () => void;
   setGeneratedProject: (project: GeneratedProject | null) => void;
 
   updateEnvironmentConfig: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', config: EnvironmentConfig) => void;
@@ -188,6 +194,7 @@ export const useProjectStore = create<ProjectState>()(
       apiConfig: {},
       openAPISpec: '',
       parsedOpenAPI: null,
+      autoDetectedConfig: null,
       azureDevOpsConfig: DEFAULT_AZURE_DEVOPS_CONFIG,
       templateRepoConfig: DEFAULT_TEMPLATE_REPO_CONFIG,
       generatedProject: null,
@@ -269,6 +276,80 @@ export const useProjectStore = create<ProjectState>()(
 
       setParsedOpenAPI: (parsed: ParsedOpenAPI | null) => set({ parsedOpenAPI: parsed }),
 
+      setAutoDetectedConfig: (config: AutoDetectedConfig | null) => set({ autoDetectedConfig: config }),
+
+      applyAutoDetectedConfig: () => set((state) => {
+        const autoConfig = state.autoDetectedConfig;
+        if (!autoConfig) return state;
+
+        const newApiConfig = { ...state.apiConfig };
+
+        // Apply auth type
+        if (autoConfig.auth.type) {
+          newApiConfig.authSouthbound = autoConfig.auth.type;
+        }
+
+        // Apply target path (variabilized or simple)
+        if (autoConfig.hasVariablePath && autoConfig.variabilizedBasePath) {
+          newApiConfig.targetPath = autoConfig.variabilizedBasePath.targetPathTemplate;
+        } else if (autoConfig.targetPath) {
+          newApiConfig.targetPath = autoConfig.targetPath;
+        }
+
+        // Note: Description is NOT auto-filled from spec - it's generated from proxy name components
+
+        // Apply environment hosts if environments exist
+        if (newApiConfig.environments && autoConfig.environmentHosts) {
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+
+          for (const envName of envNames) {
+            const envHost = autoConfig.environmentHosts[envName];
+            if (envHost && newApiConfig.environments[envName]) {
+              const envConfig = newApiConfig.environments[envName];
+              if (envConfig.targetServers.length > 0) {
+                envConfig.targetServers[0] = {
+                  ...envConfig.targetServers[0],
+                  host: envHost.host,
+                  port: envHost.port,
+                };
+              }
+
+              // Add KVM entries for variabilized paths
+              if (autoConfig.hasVariablePath && autoConfig.variabilizedBasePath) {
+                for (const kvmVar of autoConfig.variabilizedBasePath.kvmVariables) {
+                  const varValue = kvmVar.values[envName] || '';
+
+                  // Find or create KVM for this variable
+                  const existingKvmIndex = envConfig.kvms?.findIndex(
+                    kvm => kvm.entries?.some(e => e.name === kvmVar.variableName)
+                  );
+
+                  if (envConfig.kvms && existingKvmIndex !== undefined && existingKvmIndex >= 0) {
+                    // Update existing KVM entry
+                    const kvm = envConfig.kvms[existingKvmIndex];
+                    const entryIndex = kvm.entries?.findIndex(e => e.name === kvmVar.variableName);
+                    if (entryIndex !== undefined && entryIndex >= 0 && kvm.entries) {
+                      kvm.entries[entryIndex].value = varValue;
+                    }
+                  } else if (envConfig.kvms && envConfig.kvms.length > 0) {
+                    // Add entry to first KVM
+                    if (!envConfig.kvms[0].entries) {
+                      envConfig.kvms[0].entries = [];
+                    }
+                    envConfig.kvms[0].entries.push({
+                      name: kvmVar.variableName,
+                      value: varValue
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        return { apiConfig: newApiConfig };
+      }),
+
       setGeneratedProject: (project: GeneratedProject | null) => set({ generatedProject: project }),
 
       updateEnvironmentConfig: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', config: EnvironmentConfig) =>
@@ -276,47 +357,7 @@ export const useProjectStore = create<ProjectState>()(
           const envs = state.apiConfig.environments;
           if (!envs) return state;
 
-          // If updating dev1, sync KVM entries to all other environments
-          if (env === 'dev1' && config.kvms) {
-            const syncedEnvironments = {
-              dev1: config,
-              uat1: {
-                ...envs.uat1,
-                kvms: config.kvms.map(devKvm => ({
-                  ...devKvm,
-                  // Keep the same name, encrypted status, and entries from dev1
-                  entries: devKvm.entries || []
-                }))
-              },
-              staging: {
-                ...envs.staging,
-                kvms: config.kvms.map(devKvm => {
-                  return {
-                    ...devKvm,
-                    entries: devKvm.entries || []
-                  };
-                })
-              },
-              prod1: {
-                ...envs.prod1,
-                kvms: config.kvms.map(devKvm => {
-                  return {
-                    ...devKvm,
-                    entries: devKvm.entries || []
-                  };
-                })
-              },
-            };
-
-            return {
-              apiConfig: {
-                ...state.apiConfig,
-                environments: syncedEnvironments
-              }
-            };
-          }
-
-          // For other environments, just update that environment
+          // Update only the specified environment (no sync between environments)
           return {
             apiConfig: {
               ...state.apiConfig,

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, AlertCircle, Play, Sparkles } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ApigeeProjectGenerator } from '../../services/generators/ApigeeGenerator';

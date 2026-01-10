@@ -1,19 +1,24 @@
 import type { ApiConfiguration } from '../../models/ApiConfiguration';
 import type { GeneratedProject } from '../../models/GeneratedProject';
 import type { AzureDevOpsConfig } from '../../models/AzureDevOpsConfig';
+import type { OpenAPIDocument } from '../../types/openapi';
 import { TemplateLoader } from '../templates/TemplateLoader';
 import { FlowGenerator } from './FlowGenerator';
 import { PolicyGenerator } from './PolicyGenerator';
 import { ConfigGenerator } from './ConfigGenerator';
 import { DEFAULT_GROUP_ID, DEFAULT_VERSION, ENVIRONMENTS } from '../../utils/constants';
+import { escapeXml } from '../../utils/xmlUtils';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('ApigeeGenerator');
 
 export class ApigeeProjectGenerator {
   private config: ApiConfiguration;
-  private openAPI: any;
+  private openAPI: OpenAPIDocument;
   private templateLoader: TemplateLoader;
   private azureDevOpsConfig?: AzureDevOpsConfig;
 
-  constructor(config: ApiConfiguration, openAPI: any, azureDevOpsConfig?: AzureDevOpsConfig) {
+  constructor(config: ApiConfiguration, openAPI: OpenAPIDocument, azureDevOpsConfig?: AzureDevOpsConfig) {
     this.config = config;
     this.openAPI = openAPI;
     this.templateLoader = new TemplateLoader();
@@ -80,7 +85,7 @@ export class ApigeeProjectGenerator {
 
       project.files.set('pom.xml', pom);
     } catch (error) {
-      console.error('Error generating root POM:', error);
+      log.error('Error generating root POM', error);
       throw error;
     }
   }
@@ -95,7 +100,7 @@ export class ApigeeProjectGenerator {
 
       project.files.set('src/main/apigee/gateway/pom.xml', pom);
     } catch (error) {
-      console.error('Error generating gateway POM:', error);
+      log.error('Error generating gateway POM', error);
       throw error;
     }
   }
@@ -104,18 +109,19 @@ export class ApigeeProjectGenerator {
     try {
       const template = await this.templateLoader.load('proxy-template.xml');
 
+      // Sanitize values for safe XML injection
       const proxyXml = template
-        .replace(/{{proxyName}}/g, this.config.proxyName)
-        .replace(/{{displayName}}/g, `${this.config.apiname} - ${this.config.version}`)
-        .replace(/{{description}}/g, this.config.description)
-        .replace(/{{basepath}}/g, this.config.proxyBasepath);
+        .replace(/{{proxyName}}/g, escapeXml(this.config.proxyName))
+        .replace(/{{displayName}}/g, escapeXml(`${this.config.apiname} - ${this.config.version}`))
+        .replace(/{{description}}/g, escapeXml(this.config.description))
+        .replace(/{{basepath}}/g, escapeXml(this.config.proxyBasepath));
 
       project.files.set(
         `src/main/apigee/gateway/apiproxy/${this.config.proxyName}.xml`,
         proxyXml
       );
     } catch (error) {
-      console.error('Error generating proxy root:', error);
+      log.error('Error generating proxy root', error);
       throw error;
     }
   }
@@ -140,7 +146,7 @@ export class ApigeeProjectGenerator {
         proxyEndpoint
       );
     } catch (error) {
-      console.error('Error generating proxy endpoints:', error);
+      log.error('Error generating proxy endpoints', error);
       throw error;
     }
   }
@@ -175,7 +181,7 @@ export class ApigeeProjectGenerator {
         );
       }
     } catch (error) {
-      console.error('Error generating target endpoints:', error);
+      log.error('Error generating target endpoints', error);
       throw error;
     }
   }
@@ -356,7 +362,7 @@ extends:
   - 'https://cdn.jsdelivr.net/npm/@stoplight/spectral-owasp-ruleset@1.4.3/dist/ruleset.min.js'`;
       project.files.set('src/main/apigee/spectral-lint/.spectral.yaml', spectral);
     } catch (error) {
-      console.error('Error copying linting files:', error);
+      log.error('Error copying linting files', error);
     }
   }
 

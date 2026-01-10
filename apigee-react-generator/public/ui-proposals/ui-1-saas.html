@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI 1: Modern SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .sidebar-item.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: #4f46e5;
+            border-left: 2px solid #4f46e5;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-white min-h-screen flex">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-950 border-r border-slate-800 flex flex-col">
+        <div class="p-6 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div
+                    class="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <i data-lucide="zap" class="h-5 w-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white">ApigeeGen</h1>
+                    <p class="text-xs text-slate-500">Proxy Builder</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-1">
+            <a href="#" class="sidebar-item active flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium">
+                <i data-lucide="settings-2" class="h-4 w-4"></i> Configuration
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i data-lucide="file-code" class="h-4 w-4"></i> OpenAPI Spec
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i data-lucide="globe" class="h-4 w-4"></i> Environments
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i data-lucide="package" class="h-4 w-4"></i> Generate
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50">
+                <i data-lucide="download" class="h-4 w-4"></i> Export
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">GR
+                </div>
+                <div class="flex-1 truncate">
+                    <div class="text-sm font-medium truncate">Groda</div>
+                    <div class="text-xs text-slate-500 truncate">developer</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col">
+        <header class="h-16 border-b border-slate-800 flex items-center justify-between px-8">
+            <div>
+                <h2 class="text-lg font-semibold">Project Configuration</h2>
+                <p class="text-sm text-slate-400">Define your API proxy settings</p>
+            </div>
+            <button
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors">
+                Save & Continue
+            </button>
+        </header>
+
+        <div class="flex-1 p-8 overflow-y-auto">
+            <div class="max-w-3xl space-y-8">
+                <!-- Card 1 -->
+                <div class="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="tag"
+                            class="h-4 w-4 text-indigo-400"></i> Basic Information</h3>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Proxy Name</label>
+                            <input type="text" value="customer-service-v1"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Base Path</label>
+                            <input type="text" value="/v1/customer"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+                    <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="shield"
+                            class="h-4 w-4 text-amber-400"></i> Security</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label
+                            class="flex items-center gap-3 p-4 bg-slate-900 border-2 border-indigo-500 rounded-xl cursor-pointer">
+                            <input type="radio" name="auth" checked class="accent-indigo-500">
+                            <div>
+                                <div class="font-medium">Basic Auth</div>
+                                <div class="text-xs text-slate-400">KVM-based credentials</div>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-center gap-3 p-4 bg-slate-900 border border-slate-700 rounded-xl cursor-pointer hover:border-slate-600">
+                            <input type="radio" name="auth" class="accent-indigo-500">
+                            <div>
+                                <div class="font-medium">OAuth 2.0</div>
+                                <div class="text-xs text-slate-400">Client Credentials</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

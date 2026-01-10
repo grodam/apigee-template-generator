@@ -1,16 +1,17 @@
 import type { ApiConfiguration, EnvironmentConfig } from '../../models/ApiConfiguration';
+import type { OpenAPIDocument } from '../../types/openapi';
 import { extractPathPrefixes } from '../../utils/stringUtils';
 
 export class ConfigGenerator {
   private config: ApiConfiguration;
-  private openAPI: any;
+  private openAPI: OpenAPIDocument;
 
-  constructor(config: ApiConfiguration, openAPI: any) {
+  constructor(config: ApiConfiguration, openAPI: OpenAPIDocument) {
     this.config = config;
     this.openAPI = openAPI;
   }
 
-  generateEdgeEnvJson(env: string, envConfig: EnvironmentConfig): any {
+  generateEdgeEnvJson(env: string, envConfig: EnvironmentConfig): object {
     // Map KVMs - entries are NOT included here, they go only in KVM policy files
     const kvms = (envConfig.kvms || []).map(kvm => ({
       name: kvm.name,
@@ -45,7 +46,7 @@ export class ConfigGenerator {
     };
   }
 
-  generateEdgeOrgJson(env: string, envConfig: EnvironmentConfig): any {
+  generateEdgeOrgJson(_env: string, envConfig: EnvironmentConfig): object {
     return {
       version: "1.0",
       orgConfig: {
@@ -104,8 +105,8 @@ export class ConfigGenerator {
     return operations;
   }
 
-  private formatDeveloperApps(apps: any[]): Record<string, any[]> {
-    const formatted: Record<string, any[]> = {};
+  private formatDeveloperApps(_apps: unknown[]): Record<string, unknown[]> {
+    const formatted: Record<string, unknown[]> = {};
 
     // Cette logique dépend de la structure de vos données
     // Pour l'instant, retourner un objet vide

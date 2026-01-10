@@ -7,6 +7,10 @@
 
 import type { TemplateRepoConfig } from '../../models/AzureDevOpsConfig';
 import { templatesCacheService, type CachedTemplate, type SyncInfo } from './TemplatesCacheService';
+import { config as appConfig } from '../../utils/config';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('TemplatesSyncService');
 
 export interface SyncProgress {
   status: 'idle' | 'checking' | 'downloading' | 'complete' | 'error';
@@ -25,7 +29,7 @@ export interface FileItem {
 }
 
 class TemplatesSyncService {
-  private proxyUrl = 'http://localhost:3001/api/azure-devops-proxy';
+  private proxyUrl = appConfig.proxyUrl;
 
   /**
    * Make an API request via proxy
@@ -72,7 +76,7 @@ class TemplatesSyncService {
 
       const response = await this.makeRequest(url, token);
       if (!response.ok) {
-        console.error('Failed to get refs:', response.status);
+        log.error('Failed to get refs:', response.status);
         return null;
       }
 
@@ -83,7 +87,7 @@ class TemplatesSyncService {
 
       return null;
     } catch (error) {
-      console.error('Error getting latest commit:', error);
+      log.error('Error getting latest commit:', error);
       return null;
     }
   }
@@ -295,11 +299,11 @@ class TemplatesSyncService {
               syncedAt
             });
           } else {
-            console.warn(`Empty content for ${file.path}`);
+            log.warn(`Empty content for ${file.path}`);
             failedFiles.push(file.path);
           }
         } catch (error: any) {
-          console.error(`Failed to download ${file.path}:`, error.message || error);
+          log.error(`Failed to download ${file.path}:`, error.message || error);
           failedFiles.push(file.path);
           // Continue with other files
         }
@@ -312,7 +316,7 @@ class TemplatesSyncService {
 
       // Log summary
       if (failedFiles.length > 0) {
-        console.warn(`Sync completed with ${failedFiles.length} failed files:`, failedFiles);
+        log.warn(`Sync completed with ${failedFiles.length} failed files:`, failedFiles);
       }
 
       // Step 4: Clear old cache and store new templates

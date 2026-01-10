@@ -1,13 +1,20 @@
 import type { ApiConfiguration } from '../../models/ApiConfiguration';
+import type { OpenAPIDocument, OpenAPIPathItem, OpenAPIOperation, SecurityRequirement, HttpMethod } from '../../types/openapi';
 import { TemplateLoader } from '../templates/TemplateLoader';
 import { scopeToPolicyName } from '../../utils/stringUtils';
+import { escapeXml } from '../../utils/xmlUtils';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('PolicyGenerator');
+
+const SUPPORTED_METHODS: HttpMethod[] = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'];
 
 export class PolicyGenerator {
   private config: ApiConfiguration;
-  private openAPI: any;
+  private openAPI: OpenAPIDocument;
   private templateLoader: TemplateLoader;
 
-  constructor(config: ApiConfiguration, openAPI: any) {
+  constructor(config: ApiConfiguration, openAPI: OpenAPIDocument) {
     this.config = config;
     this.openAPI = openAPI;
     this.templateLoader = new TemplateLoader();
@@ -107,7 +114,8 @@ export class PolicyGenerator {
           }
 
           policies.set(policyName, policy);
-        } catch {
+        } catch (error) {
+          log.warn(`Template not found for ${policyName}, using fallback`, error);
           policies.set(policyName, this.generateKVMPolicyBasic(kvmName, policyNameSuffix, customEntries));
         }
       } else if (this.config.authSouthbound === 'OAuth2-ClientCredentials') {
@@ -129,7 +137,8 @@ export class PolicyGenerator {
           }
 
           policies.set(policyName, policy);
-        } catch {
+        } catch (error) {
+          log.warn(`Template not found for ${policyName}, using fallback`, error);
           policies.set(policyName, this.generateKVMPolicyOAuth2(kvmName, policyNameSuffix, customEntries));
         }
       }
@@ -153,9 +162,10 @@ export class PolicyGenerator {
     if (this.config.globalRateLimit) {
       try {
         const template = await this.templateLoader.load('policies/SA-GlobalRate-template.xml');
-        const policy = template.replace(/{{rate}}/g, this.config.globalRateLimit);
+        const policy = template.replace(/{{rate}}/g, escapeXml(this.config.globalRateLimit));
         policies.set('SA-GlobalRate.xml', policy);
-      } catch {
+      } catch (error) {
+        log.warn('Template not found for SA-GlobalRate, using fallback', error);
         policies.set('SA-GlobalRate.xml', this.generateSpikeArrest(this.config.globalRateLimit));
       }
     }
@@ -166,7 +176,8 @@ export class PolicyGenerator {
       try {
         const template = await this.templateLoader.load('policies/SC-GetTokenCC-template.xml');
         policies.set('SC-GetTokenCC.xml', template);
-      } catch {
+      } catch (error) {
+        log.warn('Template not found for SC-GetTokenCC, using fallback', error);
         policies.set('SC-GetTokenCC.xml', this.generateServiceCalloutOAuth2());
       }
     }
@@ -196,25 +207,26 @@ export class PolicyGenerator {
     const scopes = new Set<string>();
 
     // Scopes globaux
-    const globalSecurity = this.openAPI.security || [];
+    const globalSecurity: SecurityRequirement[] = this.openAPI.security || [];
     for (const secReq of globalSecurity) {
-      for (const [, reqScopes] of Object.entries(secReq)) {
-        for (const scope of reqScopes as string[]) {
+      for (const reqScopes of Object.values(secReq)) {
+        for (const scope of reqScopes) {
           scopes.add(scope);
         }
       }
     }
 
     // Scopes par opération
-    for (const pathItem of Object.values(this.openAPI.paths || {})) {
-      const methods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'];
+    const paths = this.openAPI.paths || {};
+    for (const pathItem of Object.values(paths)) {
+      const typedPathItem = pathItem as OpenAPIPathItem;
 
-      for (const method of methods) {
-        const operation = (pathItem as any)[method];
+      for (const method of SUPPORTED_METHODS) {
+        const operation = typedPathItem[method] as OpenAPIOperation | undefined;
         if (operation?.security) {
           for (const secReq of operation.security) {
-            for (const [, reqScopes] of Object.entries(secReq)) {
-              for (const scope of reqScopes as string[]) {
+            for (const reqScopes of Object.values(secReq)) {
+              for (const scope of reqScopes) {
                 scopes.add(scope);
               }
             }

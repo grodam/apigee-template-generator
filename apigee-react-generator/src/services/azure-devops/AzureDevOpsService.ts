@@ -1,19 +1,21 @@
 import type { AzureDevOpsConfig, AzureDevOpsRepository, AzureDevOpsPipeline } from '../../models/AzureDevOpsConfig';
 import type { GeneratedProject } from '../../models/GeneratedProject';
+import { config as appConfig } from '../../utils/config';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('AzureDevOpsService');
 
 export class AzureDevOpsService {
   private baseUrl: string;
   private token: string;
-  private organization: string;
   private useProxy: boolean;
   private proxyUrl: string;
 
   constructor(organization: string, token: string, useProxy: boolean = true) {
-    this.organization = organization;
     this.token = token;
     this.baseUrl = `https://dev.azure.com/${organization}`;
     this.useProxy = useProxy;
-    this.proxyUrl = 'http://localhost:3001/api/azure-devops-proxy';
+    this.proxyUrl = appConfig.proxyUrl;
   }
 
   /**
@@ -74,7 +76,7 @@ export class AzureDevOpsService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Azure DevOps connection test failed:', response.status, errorData);
+        log.error(`Azure DevOps connection test failed: ${response.status}`, { status: response.status, data: errorData });
 
         if (response.status === 401) {
           throw new Error('Authentication failed. Please check your Personal Access Token.');
@@ -85,7 +87,7 @@ export class AzureDevOpsService {
 
       return response.ok;
     } catch (error: any) {
-      console.error('Azure DevOps connection test failed:', error);
+      log.error('Azure DevOps connection test failed:', error);
       throw error;
     }
   }
@@ -131,7 +133,7 @@ export class AzureDevOpsService {
   async createRepository(
     projectName: string,
     repositoryName: string,
-    defaultBranch: string = 'main'
+    _defaultBranch: string = 'main'
   ): Promise<AzureDevOpsRepository> {
     try {
       // First, get the project ID
@@ -176,7 +178,7 @@ export class AzureDevOpsService {
         webUrl: data.webUrl
       };
     } catch (error: any) {
-      console.error('Failed to create repository:', error);
+      log.error('Failed to create repository:', error);
       throw new Error(error.message || 'Failed to create repository in Azure DevOps');
     }
   }
@@ -263,7 +265,7 @@ export class AzureDevOpsService {
       }
     } catch (error) {
       // If we can't get existing files, assume none exist
-      console.log('Could not fetch existing files, assuming empty repository');
+      log.debug('Could not fetch existing files, assuming empty repository');
     }
 
     return existingFiles;
@@ -316,7 +318,7 @@ export class AzureDevOpsService {
         }
       } catch (error) {
         // Branch doesn't exist yet, will create it
-        console.log('Branch does not exist yet, will create it');
+        log.debug('Branch does not exist yet, will create it');
       }
 
       // Split changes into batches (Azure DevOps has a limit per push)
@@ -389,7 +391,7 @@ export class AzureDevOpsService {
         }
       }
     } catch (error: any) {
-      console.error('Failed to push files:', error);
+      log.error('Failed to push files:', error);
       throw new Error(error.message || 'Failed to push files to repository');
     }
   }
@@ -429,7 +431,7 @@ export class AzureDevOpsService {
         repositoryUrl: repository.webUrl
       };
     } catch (error: any) {
-      console.error('Push to Azure DevOps failed:', error);
+      log.error('Push to Azure DevOps failed:', error);
 
       let errorMessage = error.message || 'Failed to push to Azure DevOps';
 
@@ -477,14 +479,15 @@ export class AzureDevOpsService {
   }
 
   /**
-   * Create CI/CD pipeline (Future implementation)
+   * Create CI/CD pipeline
+   * @todo Implement pipeline creation functionality
    */
   async createPipeline(
-    projectName: string,
-    repositoryName: string,
-    pipelineName: string
+    _projectName: string,
+    _repositoryName: string,
+    _pipelineName: string
   ): Promise<AzureDevOpsPipeline> {
-    // Future implementation
+    log.warn('Pipeline creation is not yet implemented');
     throw new Error('Pipeline creation not yet implemented');
   }
 

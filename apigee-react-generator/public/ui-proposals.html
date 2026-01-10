@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apigee UI Proposals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 py-12 px-6">
+
+    <div class="max-w-5xl mx-auto text-center mb-12">
+        <h1 class="text-4xl font-bold text-slate-900 mb-3">UI Proposals</h1>
+        <p class="text-lg text-slate-500">5 completely different interface concepts for your Apigee Proxy Generator.</p>
+    </div>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- Card 1 -->
+        <a href="ui-proposals/ui-1-saas.html" target="_blank"
+            class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all overflow-hidden group">
+            <div class="h-48 bg-gradient-to-br from-slate-900 to-slate-700 relative overflow-hidden">
+                <iframe src="ui-proposals/ui-1-saas.html"
+                    class="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"></iframe>
+            </div>
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="h-5 w-5 text-indigo-500"></i> Modern SaaS
+                </h2>
+                <p class="text-slate-500 text-sm">Dark sidebar, card-based forms. Clean and professional. Inspired by
+                    Linear, Vercel.</p>
+            </div>
+        </a>
+
+        <!-- Card 2 -->
+        <a href="ui-proposals/ui-2-ide.html" target="_blank"
+            class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-green-300 transition-all overflow-hidden group">
+            <div class="h-48 bg-[#0d1117] relative overflow-hidden">
+                <iframe src="ui-proposals/ui-2-ide.html"
+                    class="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"></iframe>
+            </div>
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i data-lucide="terminal" class="h-5 w-5 text-green-500"></i> Terminal / IDE
+                </h2>
+                <p class="text-slate-500 text-sm">Developer-centric design. Config-as-code, file tree, output panel.
+                    Inspired by VS Code, GitHub.</p>
+            </div>
+        </a>
+
+        <!-- Card 3 -->
+        <a href="ui-proposals/ui-3-wizard.html" target="_blank"
+            class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all overflow-hidden group">
+            <div class="h-48 bg-gradient-to-br from-indigo-500 to-purple-600 relative overflow-hidden">
+                <iframe src="ui-proposals/ui-3-wizard.html"
+                    class="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"></iframe>
+            </div>
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i data-lucide="wand-2" class="h-5 w-5 text-purple-500"></i> Wizard Focus
+                </h2>
+                <p class="text-slate-500 text-sm">Step-by-step journey with visual progress. Gradient background,
+                    centered content. Inspired by Typeform.</p>
+            </div>
+        </a>
+
+        <!-- Card 4 -->
+        <a href="ui-proposals/ui-4-canvas.html" target="_blank"
+            class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-sky-300 transition-all overflow-hidden group">
+            <div class="h-48 bg-[#f0f4f8] relative overflow-hidden">
+                <iframe src="ui-proposals/ui-4-canvas.html"
+                    class="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"></iframe>
+            </div>
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                    <i data-lucide="workflow" class="h-5 w-5 text-sky-500"></i> Visual Canvas
+                </h2>
+                <p class="text-slate-500 text-sm">Drag-and-drop node editor. See the flow visually. Inspired by Figma,
+                    n8n, React Flow.</p>
+            </div>
+        </a>
+
+        <!-- Card 5 (Full Width) -->
+        <a href="ui-proposals/ui-5-chat.html" target="_blank"
+            class="md:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-violet-300 transition-all overflow-hidden group flex">
+            <div class="w-1/2 h-64 bg-white relative overflow-hidden border-r border-slate-100">
+                <iframe src="ui-proposals/ui-5-chat.html"
+                    class="absolute inset-0 w-[200%] h-[200%] origin-top-left scale-50 pointer-events-none"></iframe>
+            </div>
+            <div class="w-1/2 p-8 flex flex-col justify-center">
+                <h2 class="text-2xl font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="message-square" class="h-6 w-6 text-violet-500"></i> Chat Assistant
+                </h2>
+                <p class="text-slate-500">Natural language interface. Just tell the AI what you need, it asks clarifying
+                    questions, and builds the config for you.</p>
+                <p class="text-violet-600 font-medium mt-4 flex items-center gap-1">
+                    Try it <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                </p>
+            </div>
+        </a>
+
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

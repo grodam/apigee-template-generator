@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Info, Plus, Trash2, Key, Server, Package } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info, Plus, Trash2, Key, Server, Package, Sparkles } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
@@ -39,8 +40,11 @@ const SectionCard: React.FC<{
 
 export const Step3_EnvironmentConfig: React.FC = () => {
   const { t } = useTranslation();
-  const { apiConfig, updateApiConfig, updateEnvironmentConfig } = useProjectStore();
+  const { apiConfig, updateApiConfig, updateEnvironmentConfig, autoDetectedConfig } = useProjectStore();
   const [selectedEnv, setSelectedEnv] = useState<Environment>('dev1');
+  const [autoFilledHosts, setAutoFilledHosts] = useState<Set<string>>(new Set());
+  const [autoFilledKvmEntries, setAutoFilledKvmEntries] = useState<Set<string>>(new Set());
+  const hasAppliedAutoFill = useRef(false);
 
   // Initialize environments if not present
   useEffect(() => {
@@ -49,6 +53,91 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       updateApiConfig({});
     }
   }, [apiConfig.entity, apiConfig.apiname, apiConfig.version, apiConfig.environments, updateApiConfig]);
+
+  // Apply auto-detected hosts on mount (only once)
+  useEffect(() => {
+    if (hasAppliedAutoFill.current) return;
+    if (!autoDetectedConfig || !apiConfig.environments) return;
+    if (!autoDetectedConfig.environmentHosts || Object.keys(autoDetectedConfig.environmentHosts).length === 0) return;
+
+    hasAppliedAutoFill.current = true;
+    const newAutoFilledHosts = new Set<string>();
+
+    // Apply detected hosts to each environment
+    for (const env of ENVIRONMENTS) {
+      const envHost = autoDetectedConfig.environmentHosts[env];
+      const envConfig = apiConfig.environments[env];
+
+      if (envHost?.host && envConfig) {
+        const targetServer = envConfig.targetServers[0];
+
+        // Build updated config with all changes at once
+        let updatedEnvConfig = { ...envConfig };
+
+        // Update target server host if empty
+        if (targetServer && !targetServer.host) {
+          const updatedTargetServers = [...envConfig.targetServers];
+          updatedTargetServers[0] = {
+            ...targetServer,
+            host: envHost.host,
+            port: envHost.port,
+          };
+          updatedEnvConfig = {
+            ...updatedEnvConfig,
+            targetServers: updatedTargetServers,
+          };
+          newAutoFilledHosts.add(env);
+        }
+
+        // Apply KVM variables from variabilized paths
+        if (autoDetectedConfig.hasVariablePath && autoDetectedConfig.variabilizedBasePath) {
+          const kvmVars = autoDetectedConfig.variabilizedBasePath.kvmVariables;
+          let updatedKvms = [...(updatedEnvConfig.kvms || [])];
+
+          for (const kvmVar of kvmVars) {
+            const varValue = kvmVar.values[env] || '';
+
+            if (updatedKvms.length > 0) {
+              const existingEntryIndex = updatedKvms[0].entries?.findIndex(
+                e => e.name === kvmVar.variableName
+              );
+
+              if (existingEntryIndex !== undefined && existingEntryIndex >= 0 && updatedKvms[0].entries) {
+                updatedKvms[0].entries[existingEntryIndex].value = varValue;
+              } else {
+                if (!updatedKvms[0].entries) {
+                  updatedKvms[0].entries = [];
+                }
+                updatedKvms[0].entries.push({
+                  name: kvmVar.variableName,
+                  value: varValue
+                });
+              }
+            }
+          }
+
+          updatedEnvConfig = {
+            ...updatedEnvConfig,
+            kvms: updatedKvms,
+          };
+        }
+
+        // Apply all changes in a single update
+        updateEnvironmentConfig(env, updatedEnvConfig);
+      }
+    }
+
+    setAutoFilledHosts(newAutoFilledHosts);
+
+    // Track auto-filled KVM entries
+    if (autoDetectedConfig.hasVariablePath && autoDetectedConfig.variabilizedBasePath) {
+      const newAutoFilledKvmEntries = new Set<string>();
+      for (const kvmVar of autoDetectedConfig.variabilizedBasePath.kvmVariables) {
+        newAutoFilledKvmEntries.add(kvmVar.variableName);
+      }
+      setAutoFilledKvmEntries(newAutoFilledKvmEntries);
+    }
+  }, [autoDetectedConfig, apiConfig.environments, updateEnvironmentConfig]);
 
   const currentEnvConfig = apiConfig.environments?.[selectedEnv];
 
@@ -83,7 +172,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
     });
   };
 
-  const handleApiProductChange = (field: string, value: any) => {
+  const handleApiProductChange = (field: string, value: unknown) => {
     if (!currentEnvConfig) {
       console.warn('Environment config not initialized');
       return;
@@ -94,7 +183,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       : [{
           name: `${apiConfig.proxyName}-product-${selectedEnv}`,
           displayName: `${apiConfig.proxyName} Product ${selectedEnv.toUpperCase()}`,
-          approvalType: 'auto',
+          approvalType: 'auto' as const,
           environments: [selectedEnv],
           attributes: [{ name: 'access', value: 'private' }]
         }];
@@ -268,33 +357,76 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                     <Label htmlFor={`targetServerName-${env}`} className="soft-label">
                       {t('step3.targetServer.name')}
                     </Label>
-                    <Input
-                      id={`targetServerName-${env}`}
-                      value={targetServer?.name || ''}
-                      disabled
-                      className="soft-input font-mono text-sm opacity-60"
-                    />
-                    <p className="text-sm text-[var(--text-muted)]">{t('step3.targetServer.autoGenerated')}</p>
+                    <div className="relative">
+                      <Input
+                        id={`targetServerName-${env}`}
+                        value={targetServer?.name || ''}
+                        disabled
+                        className="soft-input font-mono text-sm opacity-60 pr-10"
+                      />
+                      {targetServer?.name && (
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="soft-tooltip">
+                              <p className="text-sm leading-relaxed">Auto-generated from proxy name</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor={`host-${env}`} className="soft-label">
-                        {t('step3.targetServer.host')}
-                      </Label>
-                      <Input
-                        id={`host-${env}`}
-                        value={targetServer?.host || ''}
-                        onChange={(e) => handleTargetServerChange('host', e.target.value)}
-                        placeholder={`backend-${env}.elis.com`}
-                        className="soft-input font-mono text-sm"
-                      />
+                      <div className="h-5 flex items-center">
+                        <Label htmlFor={`host-${env}`} className="soft-label">
+                          {t('step3.targetServer.host')}
+                        </Label>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id={`host-${env}`}
+                          value={targetServer?.host || ''}
+                          onChange={(e) => {
+                            handleTargetServerChange('host', e.target.value);
+                            // Remove auto-fill indicator when user modifies
+                            setAutoFilledHosts(prev => {
+                              const next = new Set(prev);
+                              next.delete(env);
+                              return next;
+                            });
+                          }}
+                          placeholder={`backend-${env}.elis.com`}
+                          className="soft-input font-mono text-sm pr-10"
+                        />
+                        {autoFilledHosts.has(env) && (
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                  <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="soft-tooltip">
+                                <p className="text-sm leading-relaxed">Auto-filled from OpenAPI spec</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor={`port-${env}`} className="soft-label">
-                        {t('step3.targetServer.port')}
-                      </Label>
+                      <div className="h-5 flex items-center">
+                        <Label htmlFor={`port-${env}`} className="soft-label">
+                          {t('step3.targetServer.port')}
+                        </Label>
+                      </div>
                       <Input
                         id={`port-${env}`}
                         type="number"
@@ -317,24 +449,56 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                       <Label htmlFor={`productName-${env}`} className="soft-label">
                         {t('step3.apiProduct.name')}
                       </Label>
-                      <Input
-                        id={`productName-${env}`}
-                        value={apiProduct?.name || ''}
-                        onChange={(e) => handleApiProductChange('name', e.target.value)}
-                        className="soft-input font-mono text-sm"
-                      />
+                      <div className="relative">
+                        <Input
+                          id={`productName-${env}`}
+                          value={apiProduct?.name || ''}
+                          onChange={(e) => handleApiProductChange('name', e.target.value)}
+                          className="soft-input font-mono text-sm pr-10"
+                        />
+                        {apiProduct?.name && (
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                  <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="soft-tooltip">
+                                <p className="text-sm leading-relaxed">Auto-generated from proxy name</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor={`displayName-${env}`} className="soft-label">
                         {t('step3.apiProduct.displayName')}
                       </Label>
-                      <Input
-                        id={`displayName-${env}`}
-                        value={apiProduct?.displayName || ''}
-                        onChange={(e) => handleApiProductChange('displayName', e.target.value)}
-                        className="soft-input font-mono text-sm"
-                      />
+                      <div className="relative">
+                        <Input
+                          id={`displayName-${env}`}
+                          value={apiProduct?.displayName || ''}
+                          onChange={(e) => handleApiProductChange('displayName', e.target.value)}
+                          className="soft-input font-mono text-sm pr-10"
+                        />
+                        {apiProduct?.displayName && (
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                  <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="soft-tooltip">
+                                <p className="text-sm leading-relaxed">Auto-generated from proxy name</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -342,13 +506,29 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                     <Label htmlFor={`productDescription-${env}`} className="soft-label">
                       {t('step3.apiProduct.description')}
                     </Label>
-                    <Textarea
-                      id={`productDescription-${env}`}
-                      value={apiProduct?.description || ''}
-                      onChange={(e) => handleApiProductChange('description', e.target.value)}
-                      rows={2}
-                      className="soft-input font-mono text-sm"
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id={`productDescription-${env}`}
+                        value={apiProduct?.description || ''}
+                        onChange={(e) => handleApiProductChange('description', e.target.value)}
+                        rows={2}
+                        className="soft-input font-mono text-sm pr-10"
+                      />
+                      {apiProduct?.description && (
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="absolute right-3 top-3 inline-flex items-center">
+                                <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="soft-tooltip">
+                              <p className="text-sm leading-relaxed">Auto-generated from proxy name</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                   </div>
                 </div>
               </SectionCard>
@@ -387,13 +567,29 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                             <Label htmlFor={`kvm-name-${env}-${kvmIndex}`} className="soft-label">
                               {t('step3.kvm.name')}
                             </Label>
-                            <Input
-                              id={`kvm-name-${env}-${kvmIndex}`}
-                              value={kvm.name}
-                              onChange={(e) => handleKVMChange(kvmIndex, 'name', e.target.value)}
-                              placeholder={t('step3.kvm.namePlaceholder')}
-                              className="soft-input font-mono text-sm"
-                            />
+                            <div className="relative">
+                              <Input
+                                id={`kvm-name-${env}-${kvmIndex}`}
+                                value={kvm.name}
+                                onChange={(e) => handleKVMChange(kvmIndex, 'name', e.target.value)}
+                                placeholder={t('step3.kvm.namePlaceholder')}
+                                className="soft-input font-mono text-sm pr-10"
+                              />
+                              {kvm.name && !kvm.name.startsWith('custom-') && (
+                                <TooltipProvider delayDuration={300}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                        <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="soft-tooltip">
+                                      <p className="text-sm leading-relaxed">Auto-generated from proxy name</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -445,19 +641,61 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                         <div className="space-y-2">
                           {kvm.entries?.map((entry, entryIndex) => (
                             <div key={entryIndex} className="flex items-center gap-2">
-                              <Input
-                                placeholder={t('step3.kvm.keyPlaceholder')}
-                                value={entry.name}
-                                onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'name', e.target.value)}
-                                className="flex-1 soft-input font-mono text-sm"
-                              />
-                              <Input
-                                placeholder={t('step3.kvm.valuePlaceholder')}
-                                value={entry.value}
-                                onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'value', e.target.value)}
-                                type={kvm.encrypted ? 'password' : 'text'}
-                                className="flex-1 soft-input font-mono text-sm"
-                              />
+                              <div className="flex-1 relative">
+                                <Input
+                                  placeholder={t('step3.kvm.keyPlaceholder')}
+                                  value={entry.name}
+                                  onChange={(e) => {
+                                    handleKVMEntryChange(kvmIndex, entryIndex, 'name', e.target.value);
+                                    // Remove from auto-filled if user modifies
+                                    if (autoFilledKvmEntries.has(entry.name)) {
+                                      setAutoFilledKvmEntries(prev => {
+                                        const next = new Set(prev);
+                                        next.delete(entry.name);
+                                        return next;
+                                      });
+                                    }
+                                  }}
+                                  className="soft-input font-mono text-sm"
+                                />
+                                {autoFilledKvmEntries.has(entry.name) && (
+                                  <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                          <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="soft-tooltip">
+                                        <p className="text-sm leading-relaxed">Auto-filled from OpenAPI spec</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                              <div className="flex-1 relative">
+                                <Input
+                                  placeholder={t('step3.kvm.valuePlaceholder')}
+                                  value={entry.value}
+                                  onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'value', e.target.value)}
+                                  type={kvm.encrypted ? 'password' : 'text'}
+                                  className="soft-input font-mono text-sm"
+                                />
+                                {autoFilledKvmEntries.has(entry.name) && (
+                                  <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                          <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="soft-tooltip">
+                                        <p className="text-sm leading-relaxed">Auto-filled from OpenAPI spec</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
                               <Button
                                 type="button"
                                 variant="ghost"

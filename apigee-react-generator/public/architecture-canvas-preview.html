@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Architecture Canvas Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+        }
+
+        .tile {
+            transition: all 0.2s;
+        }
+
+        .tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .connector-line {
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #cbd5e1 10%, #cbd5e1 90%, transparent 100%);
+        }
+
+        .arrow-right {
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 10px solid #cbd5e1;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .auto-filled {
+            position: relative;
+        }
+
+        .auto-filled::after {
+            content: '✨';
+            position: absolute;
+            right: -18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body class="p-6">
+
+    <!-- HEADER -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4 rounded-t-xl">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                    <i data-lucide="hexagon" class="h-5 w-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-900">Apigee Proxy Builder</h1>
+                    <p class="text-xs text-slate-500">Build and Push Apigee API proxies from specifications</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="bg-white px-6 py-4 border-x border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-slate-700">Step 3 of 6</span>
+            <span class="text-sm text-slate-500">50% Complete</span>
+        </div>
+        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-indigo-600 rounded-full" style="width: 50%"></div>
+        </div>
+    </div>
+
+    <!-- ========== API ARCHITECTURE CANVAS ========== -->
+    <div class="bg-gradient-to-b from-slate-50 to-white px-6 py-6 border-x border-slate-200">
+
+        <!-- Title -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="layout-grid" class="h-4 w-4 text-slate-400"></i>
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Architecture Overview</span>
+            </div>
+            <button class="text-xs text-indigo-600 font-medium hover:underline flex items-center gap-1">
+                <i data-lucide="maximize-2" class="h-3 w-3"></i> Expand
+            </button>
+        </div>
+
+        <!-- 3 Tiles Layout -->
+        <div class="flex items-stretch gap-0">
+
+            <!-- TILE 1: API PRODUCT -->
+            <div class="tile flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2">
+                    <div class="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                        <i data-lucide="package" class="h-4 w-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-emerald-600 font-medium uppercase">API Product</span>
+                        <div class="text-sm font-bold text-emerald-900">customer-product-v1</div>
+                    </div>
+                </div>
+                <div class="p-4 text-sm">
+                    <div class="data-row">
+                        <span class="text-slate-500">Scopes</span>
+                        <span class="font-medium text-slate-800">read, write</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Quota</span>
+                        <span class="font-medium text-slate-800">1000/min</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Environments</span>
+                        <span class="font-medium text-slate-800">DEV, UAT, PROD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connector Arrow -->
+            <div class="flex items-center px-2">
+                <div class="connector-line w-8"></div>
+                <div class="arrow-right"></div>
+            </div>
+
+            <!-- TILE 2: PROXY -->
+            <div
+                class="tile flex-1 bg-white rounded-xl border-2 border-indigo-300 shadow-sm overflow-hidden ring-2 ring-indigo-100">
+                <div class="px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+                    <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                        <i data-lucide="git-branch" class="h-4 w-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-indigo-600 font-medium uppercase">API Proxy</span>
+                        <div class="text-sm font-bold text-indigo-900">customer-service-v1</div>
+                    </div>
+                </div>
+                <div class="p-4 text-sm">
+                    <div class="data-row">
+                        <span class="text-slate-500">Base Path</span>
+                        <span class="font-mono font-medium text-slate-800">/v1/customers</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">NB Auth</span>
+                        <span class="font-medium text-slate-800">JWT</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Endpoints</span>
+                        <span class="font-medium text-slate-800 auto-filled">12 operations</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Policies</span>
+                        <span class="font-medium text-slate-800">5 active</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connector Arrow -->
+            <div class="flex items-center px-2">
+                <div class="connector-line w-8"></div>
+                <div class="arrow-right"></div>
+            </div>
+
+            <!-- TILE 3: BACKEND -->
+            <div class="tile flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                    <div class="h-7 w-7 rounded-lg bg-amber-500 flex items-center justify-center text-white">
+                        <i data-lucide="server" class="h-4 w-4"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-amber-600 font-medium uppercase">Backend / Target</span>
+                        <div class="text-sm font-bold text-amber-900">customer-backend</div>
+                    </div>
+                </div>
+                <div class="p-4 text-sm">
+                    <div class="data-row">
+                        <span class="text-slate-500">Host (DEV)</span>
+                        <span
+                            class="font-mono font-medium text-slate-800 auto-filled text-xs">api.dev.example.com</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Host (PROD)</span>
+                        <span class="font-mono font-medium text-slate-800 auto-filled text-xs">api.example.com</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">SB Auth</span>
+                        <span class="font-medium text-slate-800 auto-filled">Basic (KVM)</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-slate-500">Target Path</span>
+                        <span
+                            class="font-mono font-medium text-slate-800 auto-filled text-xs">{private.envid}/api/v1</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center justify-end mt-3 gap-4 text-xs text-slate-400">
+            <span class="flex items-center gap-1">✨ Auto-filled from spec</span>
+            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-500"></span> Current
+                focus</span>
+        </div>
+
+    </div>
+    <!-- ========== END CANVAS ========== -->
+
+    <!-- TAB NAVIGATION -->
+    <div class="bg-white px-6 py-3 border-x border-slate-200 flex items-center justify-center gap-2">
+        <button
+            class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 rounded-lg">Specification</button>
+        <button class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 rounded-lg">Proxy
+            Setup</button>
+        <button class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg">Environments</button>
+        <button class="px-4 py-2 text-sm font-medium text-slate-400 rounded-lg cursor-not-allowed">Build</button>
+        <button class="px-4 py-2 text-sm font-medium text-slate-400 rounded-lg cursor-not-allowed">Repository</button>
+        <button class="px-4 py-2 text-sm font-medium text-slate-400 rounded-lg cursor-not-allowed">Export</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="bg-white px-8 py-6 border border-slate-200 rounded-b-xl">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Environment Settings</h2>
+        <p class="text-sm text-slate-500">Configure target servers and API products for each environment</p>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

@@ -1,5 +1,8 @@
 import { TEMPLATE_BASE_PATH } from '../../utils/constants';
 import { templatesCacheService } from './TemplatesCacheService';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('TemplateLoader');
 
 export type TemplateSource = 'cache' | 'local' | 'fallback';
 
@@ -62,7 +65,7 @@ export class TemplateLoader {
           };
         }
       } catch (error) {
-        console.warn(`Failed to load from cache: ${templatePath}`, error);
+        log.warn(`Failed to load from cache: ${templatePath}`, error);
       }
     }
 
@@ -82,7 +85,7 @@ export class TemplateLoader {
         source: this.useRemoteCache ? 'fallback' : 'local'
       };
     } catch (error) {
-      console.error(`Error loading template ${fullPath}:`, error);
+      log.error(`Error loading template ${fullPath}:`, error);
       throw error;
     }
   }
