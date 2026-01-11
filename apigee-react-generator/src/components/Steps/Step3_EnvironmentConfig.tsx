@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Plus, Trash2, Key, Server, Package, Sparkles } from 'lucide-react';
+import { Info, Plus, Trash2, Key, Server, Package, Sparkles, Link2 } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
@@ -40,7 +40,14 @@ const SectionCard: React.FC<{
 
 export const Step3_EnvironmentConfig: React.FC = () => {
   const { t } = useTranslation();
-  const { apiConfig, updateApiConfig, updateEnvironmentConfig, autoDetectedConfig } = useProjectStore();
+  const {
+    apiConfig,
+    updateApiConfig,
+    updateEnvironmentConfig,
+    autoDetectedConfig,
+    generatedBackendInfoEntries,
+    updateBackendInfoValue,
+  } = useProjectStore();
   const [selectedEnv, setSelectedEnv] = useState<Environment>('dev1');
   const [autoFilledHosts, setAutoFilledHosts] = useState<Set<string>>(new Set());
   const [autoFilledKvmEntries, setAutoFilledKvmEntries] = useState<Set<string>>(new Set());
@@ -183,7 +190,7 @@ export const Step3_EnvironmentConfig: React.FC = () => {
       : [{
           name: `${apiConfig.proxyName}-product-${selectedEnv}`,
           displayName: `${apiConfig.proxyName} Product ${selectedEnv.toUpperCase()}`,
-          approvalType: 'auto' as const,
+          approvalType: 'manual' as const,
           environments: [selectedEnv],
           attributes: [{ name: 'access', value: 'private' }]
         }];
@@ -438,6 +445,81 @@ export const Step3_EnvironmentConfig: React.FC = () => {
                   </div>
                 </div>
               </SectionCard>
+
+              {/* Backend Info Variables Section - only show if there are entries */}
+              {generatedBackendInfoEntries.length > 0 && (
+                <SectionCard
+                  title={t('step3.backendInfo.title', 'Backend Info Variables')}
+                  description={t('step3.backendInfo.description', 'URL variabilization variables extracted from OpenAPI spec')}
+                  icon={<Link2 className="h-5 w-5" />}
+                >
+                  <div className="space-y-4">
+                    {/* Variabilized Path Preview */}
+                    {apiConfig.targetPath && apiConfig.targetPath.includes('{private.backend_info_') && (
+                      <div className="bg-[var(--bg-tertiary)] rounded-lg p-4 border border-[var(--border-default)]">
+                        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                          {t('step3.backendInfo.variabilizedPath', 'Variabilized Path')}
+                        </p>
+                        <code className="text-sm font-mono text-[var(--accent-600)] break-all">
+                          {apiConfig.targetPath}
+                        </code>
+                      </div>
+                    )}
+
+                    {/* Backend Info Entries */}
+                    <div className="space-y-3">
+                      {generatedBackendInfoEntries.map((entry) => (
+                        <div key={entry.kvmIndex} className="flex items-center gap-4">
+                          <div className="w-40 shrink-0">
+                            <Label className="soft-label text-sm flex items-center gap-2">
+                              <code className="bg-[var(--bg-tertiary)] px-2 py-0.5 rounded text-xs font-mono">
+                                {entry.variableName}
+                              </code>
+                            </Label>
+                            {entry.originalName && entry.originalName !== entry.variableName && (
+                              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                                from: {entry.originalName}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-1 relative">
+                            <Input
+                              value={entry.values[env] || ''}
+                              onChange={(e) => updateBackendInfoValue(entry.kvmIndex, env, e.target.value)}
+                              placeholder={t('step3.backendInfo.valuePlaceholder', 'Enter value for this environment')}
+                              className="soft-input font-mono text-sm"
+                            />
+                            {entry.isAutoDetected && entry.values[env] && (
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center">
+                                      <Sparkles className="h-3.5 w-3.5 text-[var(--accent-500)] cursor-help" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="soft-tooltip">
+                                    <p className="text-sm leading-relaxed">Auto-detected from URL comparison</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Help text for empty values */}
+                    {generatedBackendInfoEntries.some(e => !e.values[env]) && (
+                      <Alert className="soft-alert info">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          {t('step3.backendInfo.emptyValuesHelp', 'Fill in the values for each environment. These will be used in the variabilized path.')}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </SectionCard>
+              )}
 
               <SectionCard
                 title={t('step3.tabs.apiProduct')}

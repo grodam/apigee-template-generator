@@ -5,6 +5,7 @@ import type { OpenAPIDocument, OpenAPIPathItem, OpenAPIOperation, HttpMethod, Op
 import { getOpenAPIVersion, getSecuritySchemes, isOpenAPI3, isSwagger2 } from '../../types/openapi';
 import type { AutoDetectedConfig, DetectedServer, DetectedAuth, EnvironmentHostConfig, VariabilizedBasePath } from '../../models/AutoDetectedConfig';
 import { detectEnvironment } from '../../models/AutoDetectedConfig';
+import { variabilizeUrls } from '../../utils/urlVariabilizer';
 import { logger } from '../../utils/logger';
 
 const log = logger.scope('OpenAPIParser');
@@ -39,18 +40,54 @@ export class OpenAPIParserService {
     const servers = this.extractServers(api);
     const environmentHosts = this.mapServersToEnvironments(servers);
     const auth = this.extractAuth(securitySchemes, api.security);
+
+    // Use enhanced URL variabilization (handles template vars + URL comparison)
+    const urlVariabilization = variabilizeUrls(servers);
+
+    // Extract legacy target paths for backward compatibility
     const { targetPath, variabilizedBasePath, hasVariablePath } = this.extractTargetPaths(servers);
+
+    // Prefer new variabilization if it has entries, otherwise use legacy
+    const effectiveTargetPath = urlVariabilization.hasVariabilization
+      ? urlVariabilization.variabilizedPath
+      : targetPath;
+
+    const effectiveHasVariablePath = urlVariabilization.hasVariabilization || hasVariablePath;
+
+    // Convert new format to legacy VariabilizedBasePath for backward compatibility
+    const effectiveVariabilizedBasePath = urlVariabilization.hasVariabilization
+      ? this.convertToVariabilizedBasePath(urlVariabilization)
+      : variabilizedBasePath;
 
     return {
       servers,
       environmentHosts,
       auth,
-      targetPath,
-      variabilizedBasePath,
-      hasVariablePath,
+      targetPath: effectiveTargetPath,
+      variabilizedBasePath: effectiveVariabilizedBasePath,
+      hasVariablePath: effectiveHasVariablePath,
       title: api.info?.title,
       description: api.info?.description,
       apiVersion: api.info?.version,
+      urlVariabilization, // New enhanced result
+    };
+  }
+
+  /**
+   * Convert new VariabilizationResult to legacy VariabilizedBasePath format
+   */
+  private convertToVariabilizedBasePath(result: ReturnType<typeof variabilizeUrls>): VariabilizedBasePath | undefined {
+    if (!result.hasVariabilization || result.kvmEntries.length === 0) {
+      return undefined;
+    }
+
+    return {
+      targetPathTemplate: result.variabilizedPath,
+      commonSuffix: '', // Not used in new implementation
+      kvmVariables: result.kvmEntries.map(entry => ({
+        variableName: entry.variableName,
+        values: entry.values,
+      })),
     };
   }
 

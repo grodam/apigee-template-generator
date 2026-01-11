@@ -4,9 +4,12 @@ import type { ApiConfiguration, EnvironmentConfig } from '../models/ApiConfigura
 import type { ParsedOpenAPI } from '../models/OpenAPISpec';
 import type { GeneratedProject } from '../models/GeneratedProject';
 import type { AzureDevOpsConfig, TemplateRepoConfig } from '../models/AzureDevOpsConfig';
-import type { AutoDetectedConfig } from '../models/AutoDetectedConfig';
+import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetectedConfig';
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
+import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
+
+export type Theme = 'light' | 'dark' | 'system';
 
 interface ProjectState {
   // Current step in the wizard
@@ -38,6 +41,12 @@ interface ProjectState {
   // Template overrides (persisted)
   templateOverrides: Record<string, string>;
 
+  // Theme
+  theme: Theme;
+
+  // Generated backend_info KVM entries from URL variabilization
+  generatedBackendInfoEntries: BackendInfoEntry[];
+
   // Actions
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
@@ -51,6 +60,10 @@ interface ProjectState {
   setGeneratedProject: (project: GeneratedProject | null) => void;
 
   updateEnvironmentConfig: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', config: EnvironmentConfig) => void;
+
+  // Backend info actions
+  setGeneratedBackendInfoEntries: (entries: BackendInfoEntry[]) => void;
+  updateBackendInfoValue: (kvmIndex: number, environment: string, value: string) => void;
 
   // Azure DevOps actions
   updateAzureDevOpsConfig: (config: Partial<AzureDevOpsConfig>) => void;
@@ -67,8 +80,14 @@ interface ProjectState {
   removeTemplateOverride: (id: string) => void;
   clearTemplateOverrides: () => void;
 
+  // Theme actions
+  setTheme: (theme: Theme) => void;
+
   // Helper to get complete API config with defaults
   getCompleteConfig: () => ApiConfiguration | null;
+
+  // Reset configuration for new spec import
+  resetForNewSpec: () => void;
 }
 
 // Helper to remove trailing '1' from environment name (dev1 -> dev, prod1 -> prod)
@@ -135,7 +154,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
       name: productName,
       displayName: displayName,
       description: description,
-      approvalType: 'auto',
+      approvalType: 'manual',
       environments: [env],
       attributes: [
         { name: 'access', value: 'private' }
@@ -201,6 +220,8 @@ export const useProjectStore = create<ProjectState>()(
       isSettingsModalOpen: false,
       settingsActiveTab: 'azure-devops' as const,
       templateOverrides: {},
+      theme: 'light' as Theme,
+      generatedBackendInfoEntries: [],
 
       setCurrentStep: (step: number) => set({ currentStep: step }),
 
@@ -283,14 +304,57 @@ export const useProjectStore = create<ProjectState>()(
         if (!autoConfig) return state;
 
         const newApiConfig = { ...state.apiConfig };
+        let newBackendInfoEntries: BackendInfoEntry[] = [];
 
         // Apply auth type
         if (autoConfig.auth.type) {
           newApiConfig.authSouthbound = autoConfig.auth.type;
         }
 
-        // Apply target path (variabilized or simple)
-        if (autoConfig.hasVariablePath && autoConfig.variabilizedBasePath) {
+        // Apply URL variabilization (new enhanced format)
+        if (autoConfig.urlVariabilization?.hasVariabilization) {
+          const urlVar = autoConfig.urlVariabilization;
+
+          // Set variabilized target path
+          newApiConfig.targetPath = urlVar.variabilizedPath;
+
+          // Store generated backend_info entries
+          newBackendInfoEntries = urlVar.kvmEntries;
+
+          // Apply per-environment hosts (for Case 2: URL comparison)
+          if (urlVar.hostsPerEnvironment && Object.keys(urlVar.hostsPerEnvironment).length > 0) {
+            const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+            for (const envName of envNames) {
+              const host = urlVar.hostsPerEnvironment[envName];
+              if (host && newApiConfig.environments?.[envName]) {
+                const envConfig = newApiConfig.environments[envName];
+                if (envConfig.targetServers.length > 0) {
+                  envConfig.targetServers[0] = {
+                    ...envConfig.targetServers[0],
+                    host: host,
+                  };
+                }
+              }
+            }
+          }
+
+          // Merge backend_info KVM entries into environment KVMs
+          if (newBackendInfoEntries.length > 0 && newApiConfig.environments) {
+            const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+            for (const envName of envNames) {
+              const envConfig = newApiConfig.environments[envName];
+              if (envConfig) {
+                envConfig.kvms = mergeKvmEntries(
+                  envConfig.kvms || [],
+                  newBackendInfoEntries,
+                  envName,
+                  newApiConfig.proxyName
+                );
+              }
+            }
+          }
+        } else if (autoConfig.hasVariablePath && autoConfig.variabilizedBasePath) {
+          // Fallback to legacy format
           newApiConfig.targetPath = autoConfig.variabilizedBasePath.targetPathTemplate;
         } else if (autoConfig.targetPath) {
           newApiConfig.targetPath = autoConfig.targetPath;
@@ -298,8 +362,8 @@ export const useProjectStore = create<ProjectState>()(
 
         // Note: Description is NOT auto-filled from spec - it's generated from proxy name components
 
-        // Apply environment hosts if environments exist
-        if (newApiConfig.environments && autoConfig.environmentHosts) {
+        // Apply environment hosts from legacy format if not already applied
+        if (newApiConfig.environments && autoConfig.environmentHosts && !autoConfig.urlVariabilization?.hasVariabilization) {
           const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
 
           for (const envName of envNames) {
@@ -314,7 +378,7 @@ export const useProjectStore = create<ProjectState>()(
                 };
               }
 
-              // Add KVM entries for variabilized paths
+              // Add KVM entries for variabilized paths (legacy)
               if (autoConfig.hasVariablePath && autoConfig.variabilizedBasePath) {
                 for (const kvmVar of autoConfig.variabilizedBasePath.kvmVariables) {
                   const varValue = kvmVar.values[envName] || '';
@@ -347,7 +411,10 @@ export const useProjectStore = create<ProjectState>()(
           }
         }
 
-        return { apiConfig: newApiConfig };
+        return {
+          apiConfig: newApiConfig,
+          generatedBackendInfoEntries: newBackendInfoEntries,
+        };
       }),
 
       setGeneratedProject: (project: GeneratedProject | null) => set({ generatedProject: project }),
@@ -371,6 +438,44 @@ export const useProjectStore = create<ProjectState>()(
                 prod1: EnvironmentConfig;
               }
             }
+          };
+        }),
+
+      setGeneratedBackendInfoEntries: (entries: BackendInfoEntry[]) =>
+        set({ generatedBackendInfoEntries: entries }),
+
+      updateBackendInfoValue: (kvmIndex: number, environment: string, value: string) =>
+        set((state) => {
+          const updatedEntries = updateKvmValue(
+            state.generatedBackendInfoEntries,
+            kvmIndex,
+            environment,
+            value
+          );
+
+          // Also update the KVM in the environment config
+          const newApiConfig = { ...state.apiConfig };
+          if (newApiConfig.environments) {
+            const envConfig = newApiConfig.environments[environment as 'dev1' | 'uat1' | 'staging' | 'prod1'];
+            if (envConfig) {
+              // Find the backend-info KVM and update the entry
+              const backendInfoKvm = envConfig.kvms?.find(
+                kvm => kvm.name.endsWith('.backend-info') || kvm.name === 'backend-info'
+              );
+              if (backendInfoKvm?.entries) {
+                const entryToUpdate = backendInfoKvm.entries.find(
+                  e => e.name === `backend_info_${kvmIndex}`
+                );
+                if (entryToUpdate) {
+                  entryToUpdate.value = value;
+                }
+              }
+            }
+          }
+
+          return {
+            generatedBackendInfoEntries: updatedEntries,
+            apiConfig: newApiConfig,
           };
         }),
 
@@ -410,19 +515,63 @@ export const useProjectStore = create<ProjectState>()(
 
       clearTemplateOverrides: () => set({ templateOverrides: {} }),
 
+      setTheme: (theme: Theme) => {
+        set({ theme });
+        // Apply theme to document
+        const root = document.documentElement;
+        if (theme === 'dark') {
+          root.classList.add('dark');
+        } else if (theme === 'light') {
+          root.classList.remove('dark');
+        } else {
+          // System preference
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        }
+      },
+
       getCompleteConfig: () => {
-        const { apiConfig } = get();
+        const { apiConfig, autoDetectedConfig } = get();
 
         // Check all required fields including new naming convention fields
+        // Note: targetPath is optional - it can come from autoDetectedConfig or be omitted
         if (!apiConfig.entity || !apiConfig.domain || !apiConfig.backendApps?.length ||
             !apiConfig.businessObject || !apiConfig.version ||
-            !apiConfig.description || !apiConfig.proxyBasepath || !apiConfig.targetPath ||
-            !apiConfig.authSouthbound || !apiConfig.oasFormat || !apiConfig.oasVersion) {
+            !apiConfig.proxyBasepath || !apiConfig.authSouthbound) {
           return null;
         }
 
-        return apiConfig as ApiConfiguration;
-      }
+        // Build complete config, using autoDetectedConfig values as fallbacks
+        const completeConfig = {
+          ...apiConfig,
+          // Use description from apiConfig or generate a default
+          description: apiConfig.description || `API Proxy for ${apiConfig.businessObject} ${apiConfig.version}`,
+          // Use targetPath from apiConfig or autoDetectedConfig or default to "/"
+          targetPath: apiConfig.targetPath || autoDetectedConfig?.targetPath || '/',
+          // oasFormat and oasVersion have sensible defaults
+          oasFormat: apiConfig.oasFormat || 'json',
+          oasVersion: apiConfig.oasVersion || '3.0.0',
+        };
+
+        return completeConfig as ApiConfiguration;
+      },
+
+      resetForNewSpec: () => set({
+        // Reset API configuration (keep only what's not auto-filled)
+        apiConfig: {},
+        // Clear parsed OpenAPI
+        parsedOpenAPI: null,
+        // Clear auto-detected config
+        autoDetectedConfig: null,
+        // Clear generated project
+        generatedProject: null,
+        // Clear generated backend info entries
+        generatedBackendInfoEntries: [],
+      })
     }),
     {
       name: 'apigee-generator-settings',
@@ -452,6 +601,8 @@ export const useProjectStore = create<ProjectState>()(
           lastSyncDate: state.templateRepoConfig.lastSyncDate,
         },
         templateOverrides: state.templateOverrides,
+        // Persist theme preference
+        theme: state.theme,
       }),
     }
   )

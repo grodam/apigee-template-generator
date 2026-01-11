@@ -3,6 +3,11 @@
  * These values are extracted from the spec and used to pre-fill the configuration form
  */
 
+import type { BackendInfoEntry, VariabilizationResult } from '../utils/urlVariabilizer';
+
+// Re-export for convenience
+export type { BackendInfoEntry, VariabilizationResult };
+
 /**
  * Server information extracted from OpenAPI spec
  */
@@ -86,6 +91,9 @@ export interface AutoDetectedConfig {
 
   // API version from spec (e.g., "1.0.0")
   apiVersion?: string;
+
+  // Enhanced URL variabilization result (new backend_info_N format)
+  urlVariabilization?: VariabilizationResult;
 }
 
 /**
