@@ -23,6 +23,10 @@
             </Step>
             <Step><Name>AM-SetToken</Name></Step>
             {{/if}}
+            {{#if isApiKey}}
+            <Step><Name>KVM-GetBackendInfos</Name></Step>
+            <Step><Name>AM-SetAPIKey</Name></Step>
+            {{/if}}
         </Request>
         <Response/>
     </PreFlow>

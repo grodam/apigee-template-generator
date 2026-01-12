@@ -145,8 +145,8 @@ export class PolicyGenerator {
           policies.set(policyName, this.generateKVMPolicyOAuth2(kvmName, policyNameSuffix, customEntries));
         }
       } else if (this.config.authSouthbound === 'ApiKey') {
-        // KVM pour API Key authentication
-        const policyName = `KVM-GetBackendInfosAPIKey${policyNameSuffix}.xml`;
+        // KVM pour API Key authentication (same policy name as Basic)
+        const policyName = `KVM-GetBackendInfos${policyNameSuffix}.xml`;
         const apiKeyDefaultEntries = ['backend_api_key'];
 
         policies.set(policyName, this.generateKVMPolicyApiKey(kvmName, policyNameSuffix, customEntries, apiKeyDefaultEntries));
@@ -355,7 +355,7 @@ export class PolicyGenerator {
   }
 
   private generateKVMPolicyApiKey(kvmName: string, policyNameSuffix: string = '', customEntries: Array<{ name: string; value: string }> = [], excludeNames: string[] = []): string {
-    const policyName = `KVM-GetBackendInfosAPIKey${policyNameSuffix}`;
+    const policyName = `KVM-GetBackendInfos${policyNameSuffix}`;
     const customGetElements = this.generateKVMGetElements(customEntries, excludeNames);
     const customGetElementsStr = customGetElements ? '\n' + customGetElements : '';
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

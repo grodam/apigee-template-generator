@@ -506,6 +506,13 @@ extends:
       processed = processed.replace(/{{#if isOAuth2}}[\s\S]*?{{\/if}}/g, '');
     }
 
+    // {{#if isApiKey}}...{{/if}}
+    if (this.config.authSouthbound === 'ApiKey') {
+      processed = processed.replace(/{{#if isApiKey}}([\s\S]*?){{\/if}}/g, '$1');
+    } else {
+      processed = processed.replace(/{{#if isApiKey}}[\s\S]*?{{\/if}}/g, '');
+    }
+
     // {{#if authSouthbound}}...{{/if}}
     if (this.config.authSouthbound && this.config.authSouthbound !== 'None') {
       processed = processed.replace(/{{#if authSouthbound}}([\s\S]*?){{\/if}}/g, '$1');
