@@ -1,6 +1,6 @@
 import type { ApiConfiguration } from '../../models/ApiConfiguration';
 import type { GeneratedProject } from '../../models/GeneratedProject';
-import type { AzureDevOpsConfig } from '../../models/AzureDevOpsConfig';
+import type { AzureDevOpsConfig, PortalConfig } from '../../models/AzureDevOpsConfig';
 import type { OpenAPIDocument } from '../../types/openapi';
 import { TemplateLoader } from '../templates/TemplateLoader';
 import { FlowGenerator } from './FlowGenerator';
@@ -17,12 +17,19 @@ export class ApigeeProjectGenerator {
   private openAPI: OpenAPIDocument;
   private templateLoader: TemplateLoader;
   private azureDevOpsConfig?: AzureDevOpsConfig;
+  private portalConfig?: PortalConfig;
 
-  constructor(config: ApiConfiguration, openAPI: OpenAPIDocument, azureDevOpsConfig?: AzureDevOpsConfig) {
+  constructor(
+    config: ApiConfiguration,
+    openAPI: OpenAPIDocument,
+    azureDevOpsConfig?: AzureDevOpsConfig,
+    portalConfig?: PortalConfig
+  ) {
     this.config = config;
     this.openAPI = openAPI;
     this.templateLoader = new TemplateLoader();
     this.azureDevOpsConfig = azureDevOpsConfig;
+    this.portalConfig = portalConfig;
   }
 
   async generate(): Promise<GeneratedProject> {
@@ -60,6 +67,9 @@ export class ApigeeProjectGenerator {
 
     // 10. Copier la spec OpenAPI
     this.copyOpenAPISpec(project);
+
+    // 10b. Générer les swagger par environnement pour le portail
+    this.generatePortalSwaggerFiles(project);
 
     // 11. Générer les fichiers Git et CI/CD
     this.generateGitFiles(project);
@@ -472,6 +482,142 @@ extends:
     }
 
     project.files.set('src/main/resources/api-config/swagger.json', JSON.stringify(orderedSpec, null, 2));
+  }
+
+  /**
+   * Generate environment-specific swagger files for the API Portal.
+   * Each file contains only the portal URL for that environment and the corresponding Okta OAuth URL.
+   * Files are placed in swagger-portal/ subfolder: swagger-dev1.json, swagger-uat1.json, etc.
+   */
+  private generatePortalSwaggerFiles(project: GeneratedProject): void {
+    if (!this.portalConfig) {
+      log.debug('No portal config provided, skipping portal swagger generation');
+      return;
+    }
+
+    const basePath = this.config.proxyBasepath.startsWith('/')
+      ? this.config.proxyBasepath
+      : '/' + this.config.proxyBasepath;
+
+    // Map environment to portal URL and Okta URL
+    const envConfigs: Array<{
+      env: string;
+      portalUrl: string;
+      oktaUrl: string;
+      description: string;
+    }> = [
+      {
+        env: 'dev1',
+        portalUrl: this.portalConfig.portalUrls.dev1,
+        oktaUrl: this.portalConfig.oktaNonProdUrl,
+        description: 'DEV Environment'
+      },
+      {
+        env: 'uat1',
+        portalUrl: this.portalConfig.portalUrls.uat1,
+        oktaUrl: this.portalConfig.oktaNonProdUrl,
+        description: 'UAT Environment'
+      },
+      {
+        env: 'staging',
+        portalUrl: this.portalConfig.portalUrls.staging,
+        oktaUrl: this.portalConfig.oktaNonProdUrl,
+        description: 'Staging Environment'
+      },
+      {
+        env: 'prod1',
+        portalUrl: this.portalConfig.portalUrls.prod1,
+        oktaUrl: this.portalConfig.oktaProdUrl,
+        description: 'Production Environment'
+      }
+    ];
+
+    for (const envConfig of envConfigs) {
+      const portalSpec = JSON.parse(JSON.stringify(this.openAPI)); // Deep copy
+
+      // Clean up empty servers and security arrays
+      if (portalSpec.servers && Array.isArray(portalSpec.servers) && portalSpec.servers.length === 0) {
+        delete portalSpec.servers;
+      }
+      if (portalSpec.security && Array.isArray(portalSpec.security) && portalSpec.security.length === 0) {
+        delete portalSpec.security;
+      }
+
+      // Clean security at operation level
+      if (portalSpec.paths) {
+        for (const pathKey of Object.keys(portalSpec.paths)) {
+          const pathItem = portalSpec.paths[pathKey];
+          for (const method of Object.keys(pathItem)) {
+            const operation = pathItem[method];
+            if (operation && typeof operation === 'object') {
+              if (operation.security && Array.isArray(operation.security) && operation.security.length === 0) {
+                delete operation.security;
+              }
+              if (operation.servers && Array.isArray(operation.servers) && operation.servers.length === 0) {
+                delete operation.servers;
+              }
+            }
+          }
+        }
+      }
+
+      // Set single server URL for this environment
+      portalSpec.servers = [
+        { url: envConfig.portalUrl + basePath, description: envConfig.description }
+      ];
+
+      // Update info
+      if (portalSpec.info) {
+        portalSpec.info.title = this.config.apiname + ' API';
+        portalSpec.info.description = this.config.description;
+        portalSpec.info.version = this.config.version;
+        portalSpec.info.contact = { name: this.config.entity, url: '', email: '' };
+      }
+
+      // Set OAuth2 security scheme with environment-specific Okta URL
+      if (!portalSpec.components) {
+        portalSpec.components = {};
+      }
+      portalSpec.components.securitySchemes = {
+        oauth2: {
+          type: 'oauth2',
+          description: `For direct access token use the following URL = ${envConfig.oktaUrl}`,
+          flows: {
+            clientCredentials: {
+              tokenUrl: envConfig.portalUrl + '/oauth2',
+              scopes: {}
+            }
+          }
+        }
+      };
+
+      // Set security
+      portalSpec.security = [{ oauth2: [] }];
+
+      // Reorder keys for consistent output
+      const orderedSpec: Record<string, any> = {};
+      if (portalSpec.openapi) orderedSpec.openapi = portalSpec.openapi;
+      if (portalSpec.info) orderedSpec.info = portalSpec.info;
+      if (portalSpec.servers) orderedSpec.servers = portalSpec.servers;
+      if (portalSpec.components) orderedSpec.components = portalSpec.components;
+      if (portalSpec.security) orderedSpec.security = portalSpec.security;
+      if (portalSpec.paths) orderedSpec.paths = portalSpec.paths;
+
+      // Add remaining keys
+      for (const key of Object.keys(portalSpec)) {
+        if (!orderedSpec[key]) {
+          orderedSpec[key] = portalSpec[key];
+        }
+      }
+
+      // Save to swagger-portal/swagger-{env}.json
+      project.files.set(
+        `src/main/resources/api-config/swagger-portal/swagger-${envConfig.env}.json`,
+        JSON.stringify(orderedSpec, null, 2)
+      );
+    }
+
+    log.debug('Generated portal swagger files for all environments');
   }
 
   private processConditionals(template: string): string {

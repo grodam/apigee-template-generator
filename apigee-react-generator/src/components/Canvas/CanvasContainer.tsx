@@ -23,6 +23,7 @@ export const CanvasContainer: React.FC = () => {
     generatedProject,
     setGeneratedProject,
     azureDevOpsConfig,
+    portalConfig,
   } = useProjectStore();
 
   // Card expansion state - allows multiple cards to be expanded
@@ -146,7 +147,7 @@ export const CanvasContainer: React.FC = () => {
 
     try {
       // Generate the project
-      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig);
+      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig, portalConfig);
 
       addConsoleMessage('PARSING OPENAPI SPECIFICATION...', 'info');
       await new Promise(resolve => setTimeout(resolve, 200));

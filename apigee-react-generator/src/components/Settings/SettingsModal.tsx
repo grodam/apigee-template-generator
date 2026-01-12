@@ -6,11 +6,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cloud, Settings, RefreshCw } from 'lucide-react';
+import { Cloud, Settings, RefreshCw, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
 import { AzureDevOpsSettings } from './AzureDevOpsSettings/AzureDevOpsSettings';
 import { TemplateSyncSettings } from './TemplateSyncSettings/TemplateSyncSettings';
+import { PortalSettings } from './PortalSettings/PortalSettings';
 import { cn } from '@/lib/utils';
 
 export function SettingsModal() {
@@ -41,7 +42,7 @@ export function SettingsModal() {
           <div className="w-56 border-r-2 border-[var(--swiss-black)] bg-[var(--swiss-gray-50)] p-0">
             <Tabs
               value={settingsActiveTab}
-              onValueChange={(v) => setSettingsActiveTab(v as 'azure-devops' | 'template-sync')}
+              onValueChange={(v) => setSettingsActiveTab(v as 'azure-devops' | 'template-sync' | 'portal')}
               orientation="vertical"
               className="h-full"
             >
@@ -68,6 +69,17 @@ export function SettingsModal() {
                   <RefreshCw className="h-4 w-4" />
                   {t('settings.tabs.templateSync')}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="portal"
+                  className={cn(
+                    "w-full justify-start gap-3 px-6 py-4 rounded-none text-left text-[11px] font-black uppercase tracking-wider transition-all border-b border-[var(--swiss-gray-200)]",
+                    "data-[state=active]:bg-[var(--swiss-black)] data-[state=active]:text-[var(--swiss-white)]",
+                    "data-[state=inactive]:text-[var(--swiss-gray-500)] data-[state=inactive]:hover:bg-[var(--swiss-gray-100)]"
+                  )}
+                >
+                  <Globe className="h-4 w-4" />
+                  {t('settings.tabs.portal', 'Portal')}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -80,6 +92,9 @@ export function SettingsModal() {
               </TabsContent>
               <TabsContent value="template-sync" className="h-full m-0 p-8 data-[state=inactive]:hidden overflow-y-auto">
                 <TemplateSyncSettings />
+              </TabsContent>
+              <TabsContent value="portal" className="h-full m-0 p-8 data-[state=inactive]:hidden overflow-y-auto">
+                <PortalSettings />
               </TabsContent>
             </Tabs>
           </div>

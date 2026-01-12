@@ -13,6 +13,7 @@ export const Step4_Generation: React.FC = () => {
     parsedOpenAPI,
     setGeneratedProject,
     azureDevOpsConfig,
+    portalConfig,
   } = useProjectStore();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -50,7 +51,7 @@ export const Step4_Generation: React.FC = () => {
     setProgress(0);
 
     try {
-      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig);
+      const generator = new ApigeeProjectGenerator(config, parsedOpenAPI.rawSpec, azureDevOpsConfig, portalConfig);
 
       const steps = [
         { message: t('step4.steps.initializing'), delay: 100, progress: 10 },

@@ -3,9 +3,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ApiConfiguration, EnvironmentConfig, ApiProduct } from '../models/ApiConfiguration';
 import type { ParsedOpenAPI } from '../models/OpenAPISpec';
 import type { GeneratedProject } from '../models/GeneratedProject';
-import type { AzureDevOpsConfig, TemplateRepoConfig } from '../models/AzureDevOpsConfig';
+import type { AzureDevOpsConfig, TemplateRepoConfig, PortalConfig } from '../models/AzureDevOpsConfig';
 import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetectedConfig';
-import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
+import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG, DEFAULT_PORTAL_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
 import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, findSmallestCommonRoot, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
@@ -32,12 +32,15 @@ interface ProjectState {
   // Template Repository Configuration
   templateRepoConfig: TemplateRepoConfig;
 
+  // Portal and OAuth Configuration
+  portalConfig: PortalConfig;
+
   // Generated project
   generatedProject: GeneratedProject | null;
 
   // Settings modal state
   isSettingsModalOpen: boolean;
-  settingsActiveTab: 'azure-devops' | 'template-sync';
+  settingsActiveTab: 'azure-devops' | 'template-sync' | 'portal';
 
   // Template overrides (persisted)
   templateOverrides: Record<string, string>;
@@ -85,9 +88,12 @@ interface ProjectState {
   // Template Repository actions
   updateTemplateRepoConfig: (config: Partial<TemplateRepoConfig>) => void;
 
+  // Portal Configuration actions
+  updatePortalConfig: (config: Partial<PortalConfig>) => void;
+
   // Settings modal actions
   setSettingsModalOpen: (open: boolean) => void;
-  setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync') => void;
+  setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync' | 'portal') => void;
 
   // Template override actions
   setTemplateOverride: (id: string, content: string) => void;
@@ -249,6 +255,7 @@ export const useProjectStore = create<ProjectState>()(
       autoDetectedConfig: null,
       azureDevOpsConfig: DEFAULT_AZURE_DEVOPS_CONFIG,
       templateRepoConfig: DEFAULT_TEMPLATE_REPO_CONFIG,
+      portalConfig: DEFAULT_PORTAL_CONFIG,
       generatedProject: null,
       isSettingsModalOpen: false,
       settingsActiveTab: 'azure-devops' as const,
@@ -851,9 +858,21 @@ export const useProjectStore = create<ProjectState>()(
           }
         })),
 
+      updatePortalConfig: (config: Partial<PortalConfig>) =>
+        set((state) => ({
+          portalConfig: {
+            ...state.portalConfig,
+            ...config,
+            // Handle nested portalUrls update
+            portalUrls: config.portalUrls
+              ? { ...state.portalConfig.portalUrls, ...config.portalUrls }
+              : state.portalConfig.portalUrls
+          }
+        })),
+
       setSettingsModalOpen: (open: boolean) => set({ isSettingsModalOpen: open }),
 
-      setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync') => set({ settingsActiveTab: tab }),
+      setSettingsActiveTab: (tab: 'azure-devops' | 'template-sync' | 'portal') => set({ settingsActiveTab: tab }),
 
       setTemplateOverride: (id: string, content: string) =>
         set((state) => ({
@@ -957,6 +976,12 @@ export const useProjectStore = create<ProjectState>()(
           autoSyncOnStartup: state.templateRepoConfig.autoSyncOnStartup,
           lastSyncCommit: state.templateRepoConfig.lastSyncCommit,
           lastSyncDate: state.templateRepoConfig.lastSyncDate,
+        },
+        // Persist portal configuration
+        portalConfig: {
+          oktaNonProdUrl: state.portalConfig.oktaNonProdUrl,
+          oktaProdUrl: state.portalConfig.oktaProdUrl,
+          portalUrls: state.portalConfig.portalUrls,
         },
         templateOverrides: state.templateOverrides,
         // Persist theme preference

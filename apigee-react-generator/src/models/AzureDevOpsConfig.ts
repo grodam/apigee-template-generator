@@ -54,3 +54,29 @@ export const DEFAULT_TEMPLATE_REPO_CONFIG: TemplateRepoConfig = {
   branch: 'main',
   autoSyncOnStartup: true
 };
+
+// Portal and OAuth Configuration
+export interface PortalConfig {
+  // Okta URLs (one for non-prod, one for prod)
+  oktaNonProdUrl: string;              // Ex: "https://elis-employees.oktapreview.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token"
+  oktaProdUrl: string;                 // Ex: "https://elis-employees.okta.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token"
+
+  // Portal base URLs per environment
+  portalUrls: {
+    dev1: string;                      // Ex: "https://dev-api.elis.com"
+    uat1: string;                      // Ex: "https://uat-api.elis.com"
+    staging: string;                   // Ex: "https://staging-api.elis.com"
+    prod1: string;                     // Ex: "https://api.elis.com"
+  };
+}
+
+export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
+  oktaNonProdUrl: 'https://elis-employees.oktapreview.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token',
+  oktaProdUrl: 'https://elis-employees.okta.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token',
+  portalUrls: {
+    dev1: 'https://dev-api.elis.com',
+    uat1: 'https://uat-api.elis.com',
+    staging: 'https://staging-api.elis.com',
+    prod1: 'https://api.elis.com'
+  }
+};

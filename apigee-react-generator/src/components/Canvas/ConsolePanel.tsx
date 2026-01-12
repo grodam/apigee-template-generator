@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Cloud, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,14 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({
   canPush,
 }) => {
   const { t } = useTranslation();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   return (
     <section className="max-w-6xl mx-auto px-8 pb-10">
@@ -142,6 +151,8 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({
               </div>
             ))
           )}
+          {/* Auto-scroll anchor */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Cursor */}
