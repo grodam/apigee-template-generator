@@ -11,7 +11,8 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+// Increase payload limit for large file pushes
+app.use(express.json({ limit: '50mb' }));
 
 /**
  * Proxy endpoint for Azure DevOps API calls

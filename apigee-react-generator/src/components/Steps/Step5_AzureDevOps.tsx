@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, HelpCircle, GitBranch, Upload, CheckCircle2, AlertCircle, ExternalLink, Settings } from 'lucide-react';
+import { Info, HelpCircle, GitBranch, Upload, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { useProjectStore } from '../../store/useProjectStore';
 import { AzureDevOpsService } from '../../services/azure-devops/AzureDevOpsService';
 
@@ -43,8 +43,10 @@ export const Step5_AzureDevOps: React.FC = () => {
   const [repositoryUrl, setRepositoryUrl] = useState<string>('');
   const [pushProgress, setPushProgress] = useState<{ currentBatch: number; totalBatches: number; totalFiles: number } | null>(null);
 
-  // Check if settings are configured
-  const isSettingsConfigured = azureDevOpsConfig.organization && azureDevOpsConfig.project && azureDevOpsConfig.personalAccessToken;
+  // Check if PAT is configured (other fields are now editable in this step)
+  const isPATConfigured = !!azureDevOpsConfig.personalAccessToken;
+  // Check if all required fields are filled
+  const isReadyToPush = isPATConfigured && azureDevOpsConfig.organization && azureDevOpsConfig.project && azureDevOpsConfig.repositoryName;
 
   const handleTestConnection = async () => {
     if (!azureDevOpsConfig.organization || !azureDevOpsConfig.personalAccessToken) {
@@ -203,51 +205,21 @@ export const Step5_AzureDevOps: React.FC = () => {
 
           {azureDevOpsConfig.enabled && (
             <>
-              {/* Settings Summary */}
+              {/* Target Repository Configuration */}
               <div className="space-y-4">
                 <div className="section-header">
                   <div className="icon">
-                    <Settings className="h-5 w-5" />
+                    <GitBranch className="h-5 w-5" />
                   </div>
-                  <h3>{t('step5.sections.config')}</h3>
+                  <h3>{t('step5.sections.repository')}</h3>
                 </div>
 
-                {isSettingsConfigured ? (
-                  <div className="bg-[var(--bg-secondary)] rounded-lg p-4 relative">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSettingsModalOpen(true)}
-                      className="soft-button secondary absolute top-4 right-4"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      {t('step5.modifySettings')}
-                    </Button>
-                    <div className="grid grid-cols-2 gap-4 text-sm pr-36">
-                      <div>
-                        <span className="text-[var(--text-muted)]">{t('step5.config.organization')}</span>
-                        <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.organization}</span>
-                      </div>
-                      <div>
-                        <span className="text-[var(--text-muted)]">{t('step5.config.project')}</span>
-                        <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.project}</span>
-                      </div>
-                      <div>
-                        <span className="text-[var(--text-muted)]">{t('step5.config.branch')}</span>
-                        <span className="ml-2 text-[var(--text-primary)] font-mono">{azureDevOpsConfig.defaultBranch}</span>
-                      </div>
-                      <div>
-                        <span className="text-[var(--text-muted)]">{t('step5.config.pat')}</span>
-                        <span className="ml-2 text-[var(--text-primary)] font-mono">****{t('step5.config.configured')}****</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+                {/* PAT Warning if not configured */}
+                {!azureDevOpsConfig.personalAccessToken && (
                   <Alert className="soft-alert warning">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      {t('step5.notConfiguredAlert')}
+                      {t('step5.patNotConfigured', 'Personal Access Token not configured.')}
                       <Button
                         type="button"
                         variant="link"
@@ -260,30 +232,71 @@ export const Step5_AzureDevOps: React.FC = () => {
                     </AlertDescription>
                   </Alert>
                 )}
-              </div>
 
-              {/* Repository Name - Project Specific */}
-              <div className="space-y-4">
-                <div className="section-header">
-                  <div className="icon">
-                    <GitBranch className="h-5 w-5" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Organization */}
+                  <div className="space-y-2">
+                    <LabelWithTooltip
+                      htmlFor="ado-organization"
+                      label={t('step5.config.organization')}
+                      tooltip={t('step5.organization.tooltip', 'Azure DevOps organization name (e.g., mycompany for dev.azure.com/mycompany)')}
+                    />
+                    <Input
+                      id="ado-organization"
+                      value={azureDevOpsConfig.organization}
+                      onChange={(e) => updateAzureDevOpsConfig({ organization: e.target.value })}
+                      placeholder="mycompany"
+                      className="soft-input font-mono text-sm"
+                    />
                   </div>
-                  <h3>{t('step5.sections.repository')}</h3>
-                </div>
 
-                <div className="space-y-2">
-                  <LabelWithTooltip
-                    htmlFor="ado-repository"
-                    label={t('step5.repository.required')}
-                    tooltip={t('step5.repository.tooltip')}
-                  />
-                  <Input
-                    id="ado-repository"
-                    value={azureDevOpsConfig.repositoryName}
-                    onChange={(e) => updateAzureDevOpsConfig({ repositoryName: e.target.value })}
-                    placeholder={apiConfig.proxyName || 'my-api-proxy'}
-                    className="soft-input font-mono text-sm"
-                  />
+                  {/* Project */}
+                  <div className="space-y-2">
+                    <LabelWithTooltip
+                      htmlFor="ado-project"
+                      label={t('step5.config.project')}
+                      tooltip={t('step5.project.tooltip', 'Azure DevOps project name')}
+                    />
+                    <Input
+                      id="ado-project"
+                      value={azureDevOpsConfig.project}
+                      onChange={(e) => updateAzureDevOpsConfig({ project: e.target.value })}
+                      placeholder="MyProject"
+                      className="soft-input font-mono text-sm"
+                    />
+                  </div>
+
+                  {/* Repository Name */}
+                  <div className="space-y-2">
+                    <LabelWithTooltip
+                      htmlFor="ado-repository"
+                      label={t('step5.repository.required')}
+                      tooltip={t('step5.repository.tooltip')}
+                    />
+                    <Input
+                      id="ado-repository"
+                      value={azureDevOpsConfig.repositoryName}
+                      onChange={(e) => updateAzureDevOpsConfig({ repositoryName: e.target.value })}
+                      placeholder={apiConfig.proxyName || 'my-api-proxy'}
+                      className="soft-input font-mono text-sm"
+                    />
+                  </div>
+
+                  {/* Default Branch */}
+                  <div className="space-y-2">
+                    <LabelWithTooltip
+                      htmlFor="ado-branch"
+                      label={t('step5.config.branch')}
+                      tooltip={t('step5.branch.tooltip', 'Target branch for the push (e.g., main, master, develop)')}
+                    />
+                    <Input
+                      id="ado-branch"
+                      value={azureDevOpsConfig.defaultBranch}
+                      onChange={(e) => updateAzureDevOpsConfig({ defaultBranch: e.target.value })}
+                      placeholder="main"
+                      className="soft-input font-mono text-sm"
+                    />
+                  </div>
                 </div>
 
                 {/* Test Connection Button */}
@@ -292,7 +305,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                     type="button"
                     variant="outline"
                     onClick={handleTestConnection}
-                    disabled={isTestingConnection || !isSettingsConfigured}
+                    disabled={isTestingConnection || !isPATConfigured || !azureDevOpsConfig.organization}
                     className="soft-button secondary"
                   >
                     {isTestingConnection ? t('common.testing') : t('common.testConnection')}
@@ -332,7 +345,7 @@ export const Step5_AzureDevOps: React.FC = () => {
                     <Button
                       type="button"
                       onClick={handlePushToAzureDevOps}
-                      disabled={isPushing || !isSettingsConfigured || !azureDevOpsConfig.repositoryName}
+                      disabled={isPushing || !isReadyToPush}
                       className="soft-button flex items-center gap-2"
                     >
                       <Upload className={`h-4 w-4 ${isPushing ? 'animate-pulse' : ''}`} />

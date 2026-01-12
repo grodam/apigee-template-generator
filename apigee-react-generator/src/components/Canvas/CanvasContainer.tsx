@@ -6,6 +6,7 @@ import { OpenAPICard } from '../Cards/OpenAPICard';
 import { ProxyConfigCard } from '../Cards/ProxyConfigCard';
 import { TargetServersCard } from '../Cards/TargetServersCard';
 import { ApiProductCard } from '../Cards/ApiProductCard';
+import { AzurePushModal } from './AzurePushModal';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ApigeeProjectGenerator } from '../../services/generators/ApigeeGenerator';
 import { ZipExporter } from '../../services/exporters/ZipExporter';
@@ -33,6 +34,9 @@ export const CanvasContainer: React.FC = () => {
   // Loading states
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
+
+  // Azure push modal
+  const [isAzurePushModalOpen, setIsAzurePushModalOpen] = useState(false);
 
   // Toggle card expansion
   const toggleCard = useCallback((cardId: CardId) => {
@@ -186,14 +190,23 @@ export const CanvasContainer: React.FC = () => {
     }
   };
 
-  // Handle push to Azure DevOps
-  const handlePushToAzure = async () => {
+  // Open Azure push modal
+  const handlePushToAzure = () => {
+    if (!generatedProject) {
+      addConsoleMessage('ERROR: No project generated yet', 'error');
+      return;
+    }
+    setIsAzurePushModalOpen(true);
+  };
+
+  // Actually perform the push to Azure DevOps
+  const performPushToAzure = async () => {
     if (!generatedProject) {
       addConsoleMessage('ERROR: No project generated yet', 'error');
       return;
     }
 
-    if (!azureDevOpsConfig.enabled || !azureDevOpsConfig.organization || !azureDevOpsConfig.project || !azureDevOpsConfig.personalAccessToken) {
+    if (!azureDevOpsConfig.organization || !azureDevOpsConfig.project || !azureDevOpsConfig.personalAccessToken) {
       addConsoleMessage('ERROR: Azure DevOps not configured', 'error');
       return;
     }
@@ -224,6 +237,7 @@ export const CanvasContainer: React.FC = () => {
 
       if (result.success) {
         addConsoleMessage(`SUCCESS: REPOSITORY CREATED AT ${result.repositoryUrl}`, 'success');
+        setIsAzurePushModalOpen(false);
       } else {
         throw new Error(result.message || 'Push failed');
       }
@@ -306,6 +320,14 @@ export const CanvasContainer: React.FC = () => {
         canGenerate={canGenerate}
         canDownload={canDownload}
         canPush={canPush}
+      />
+
+      {/* Azure Push Modal */}
+      <AzurePushModal
+        isOpen={isAzurePushModalOpen}
+        onClose={() => setIsAzurePushModalOpen(false)}
+        onPush={performPushToAzure}
+        isPushing={isPushing}
       />
     </div>
   );
