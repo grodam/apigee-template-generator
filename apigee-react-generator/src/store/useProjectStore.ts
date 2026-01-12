@@ -276,6 +276,48 @@ export const useProjectStore = create<ProjectState>()(
               prod1: updateEnvironmentWithProxyName(newConfig.environments.prod1, { ...envConfigParams, env: 'prod1' }),
             };
           }
+
+          // Apply backend_info KVM entries from URL variabilization if available
+          // Read from both state.generatedBackendInfoEntries AND autoDetectedConfig (for timing safety)
+          const backendInfoEntries = state.generatedBackendInfoEntries.length > 0
+            ? state.generatedBackendInfoEntries
+            : state.autoDetectedConfig?.urlVariabilization?.kvmEntries || [];
+
+          if (backendInfoEntries.length > 0 && newConfig.environments) {
+            const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+            for (const envName of envNames) {
+              const envConfig = newConfig.environments[envName];
+              if (envConfig) {
+                envConfig.kvms = mergeKvmEntries(
+                  envConfig.kvms || [],
+                  backendInfoEntries,
+                  envName,
+                  newConfig.proxyName
+                );
+              }
+            }
+          }
+
+          // Add backend_api_key KVM entry for ApiKey auth
+          if (newConfig.authSouthbound === 'ApiKey' && newConfig.environments) {
+            const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+            for (const envName of envNames) {
+              const envConfig = newConfig.environments[envName];
+              if (envConfig && envConfig.kvms && envConfig.kvms.length > 0) {
+                const firstKvm = envConfig.kvms[0];
+                if (!firstKvm.entries) {
+                  firstKvm.entries = [];
+                }
+                const hasApiKeyEntry = firstKvm.entries.some(e => e.name === 'backend_api_key');
+                if (!hasApiKeyEntry) {
+                  firstKvm.entries.push({
+                    name: 'backend_api_key',
+                    value: ''
+                  });
+                }
+              }
+            }
+          }
         }
 
         // Auto-generate repository name: [backendapp]-[version]
@@ -309,6 +351,33 @@ export const useProjectStore = create<ProjectState>()(
         // Apply auth type
         if (autoConfig.auth.type) {
           newApiConfig.authSouthbound = autoConfig.auth.type;
+        }
+
+        // Apply API Key header name if detected
+        if (autoConfig.auth.type === 'ApiKey' && autoConfig.auth.apiKeyName) {
+          newApiConfig.apiKeyHeaderName = autoConfig.auth.apiKeyName;
+        }
+
+        // Add backend_api_key KVM entry for ApiKey auth
+        if (autoConfig.auth.type === 'ApiKey' && newApiConfig.environments) {
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+          for (const envName of envNames) {
+            const envConfig = newApiConfig.environments[envName];
+            if (envConfig && envConfig.kvms && envConfig.kvms.length > 0) {
+              // Add backend_api_key entry to first KVM if not already present
+              const firstKvm = envConfig.kvms[0];
+              if (!firstKvm.entries) {
+                firstKvm.entries = [];
+              }
+              const hasApiKeyEntry = firstKvm.entries.some(e => e.name === 'backend_api_key');
+              if (!hasApiKeyEntry) {
+                firstKvm.entries.push({
+                  name: 'backend_api_key',
+                  value: ''
+                });
+              }
+            }
+          }
         }
 
         // Apply URL variabilization (new enhanced format)

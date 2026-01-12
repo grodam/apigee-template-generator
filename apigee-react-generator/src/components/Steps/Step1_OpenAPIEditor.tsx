@@ -139,8 +139,8 @@ export const Step1_OpenAPIEditor: React.FC = () => {
         <p className="text-[var(--text-secondary)] text-lg">{t('step1.openapi.subtitle', 'Upload or paste your OpenAPI specification to auto-detect configuration')}</p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3 mb-6 items-center">
+      {/* Upload Button */}
+      <div className="mb-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -151,17 +151,10 @@ export const Step1_OpenAPIEditor: React.FC = () => {
         <Button
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          className="soft-button secondary h-10"
+          className="soft-button secondary h-10 w-full"
         >
           <Upload className="mr-2 h-4 w-4" />
           {t('step2.uploadButton')}
-        </Button>
-        <Button
-          onClick={() => validateSpec(openAPISpec)}
-          disabled={!openAPISpec || isValidating}
-          className="soft-button h-10"
-        >
-          {isValidating ? t('common.validating') : t('common.validate')}
         </Button>
       </div>
 
@@ -206,6 +199,13 @@ export const Step1_OpenAPIEditor: React.FC = () => {
               }}
             />
           </div>
+          <Button
+            onClick={() => validateSpec(openAPISpec)}
+            disabled={!openAPISpec || isValidating}
+            className="soft-button w-full h-10 mt-4"
+          >
+            {isValidating ? t('common.validating') : t('common.validate')}
+          </Button>
         </div>
 
         {/* Validation Panel */}

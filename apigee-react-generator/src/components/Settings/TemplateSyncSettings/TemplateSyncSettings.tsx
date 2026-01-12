@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw, CheckCircle2, XCircle, Cloud, Clock, FileCode2, Loader2 } from 'lucide-react';
+import { RefreshCw, CheckCircle2, XCircle, Cloud, Clock, FileCode2, Loader2, AlertTriangle } from 'lucide-react';
 import { useProjectStore } from '@/store/useProjectStore';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { templatesSyncService, type SyncProgress } from '@/services/templates';
 import { templateRegistry } from '@/services/templates';
+import { cn } from '@/lib/utils';
 
 export function TemplateSyncSettings() {
   const { t } = useTranslation();
@@ -124,105 +121,145 @@ export function TemplateSyncSettings() {
                         azureDevOpsConfig.personalAccessToken;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+        <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+          <RefreshCw className="h-5 w-5" />
           {t('templateSync.title')}
         </h2>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
+        <p className="text-sm text-[var(--swiss-gray-500)] mt-2">
           {t('templateSync.description')}
         </p>
       </div>
 
       {/* Enable Toggle */}
-      <div className="flex items-center justify-between p-4 bg-white/50 rounded-lg border border-[var(--border-default)]">
-        <div className="space-y-0.5">
-          <Label className="text-sm font-medium">{t('templateSync.enable')}</Label>
-          <p className="text-xs text-[var(--text-tertiary)]">
-            {t('templateSync.enableDescription')}
-          </p>
+      <div className="border-2 border-[var(--swiss-gray-200)] p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase mb-1">
+              {t('templateSync.enable')}
+            </p>
+            <p className="text-xs text-[var(--swiss-gray-500)]">
+              {t('templateSync.enableDescription')}
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={templateRepoConfig.enabled}
+              onChange={(e) => updateTemplateRepoConfig({ enabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-[var(--swiss-gray-200)] peer-checked:bg-[var(--swiss-black)] transition-colors">
+              <div className={cn(
+                "absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--swiss-white)] transition-transform",
+                templateRepoConfig.enabled && "translate-x-5"
+              )} />
+            </div>
+          </label>
         </div>
-        <Switch
-          checked={templateRepoConfig.enabled}
-          onCheckedChange={(checked: boolean) => updateTemplateRepoConfig({ enabled: checked })}
-        />
       </div>
 
       {/* Configuration Fields */}
       {templateRepoConfig.enabled && (
-        <div className="space-y-4 p-4 bg-white/50 rounded-lg border border-[var(--border-default)]">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="template-org">{t('templateSync.fields.organization.label')}</Label>
-              <Input
-                id="template-org"
+        <div className="space-y-6 border-2 border-[var(--swiss-gray-200)] p-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Organization */}
+            <div>
+              <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+                {t('templateSync.fields.organization.label')}
+              </label>
+              <input
                 value={templateRepoConfig.organization}
                 onChange={(e) => updateTemplateRepoConfig({ organization: e.target.value })}
                 placeholder={t('templateSync.fields.organization.placeholder')}
+                className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
               />
-              <p className="text-xs text-[var(--text-tertiary)]">
+              <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
                 {t('templateSync.fields.organization.help')}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="template-project">{t('templateSync.fields.project.label')}</Label>
-              <Input
-                id="template-project"
+            {/* Project */}
+            <div>
+              <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+                {t('templateSync.fields.project.label')}
+              </label>
+              <input
                 value={templateRepoConfig.project}
                 onChange={(e) => updateTemplateRepoConfig({ project: e.target.value })}
                 placeholder={t('templateSync.fields.project.placeholder')}
+                className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
               />
-              <p className="text-xs text-[var(--text-tertiary)]">
+              <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
                 {t('templateSync.fields.project.help')}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="template-repo">{t('templateSync.fields.repository.label')}</Label>
-              <Input
-                id="template-repo"
+            {/* Repository */}
+            <div>
+              <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+                {t('templateSync.fields.repository.label')}
+              </label>
+              <input
                 value={templateRepoConfig.repositoryName}
                 onChange={(e) => updateTemplateRepoConfig({ repositoryName: e.target.value })}
                 placeholder={t('templateSync.fields.repository.placeholder')}
+                className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
               />
-              <p className="text-xs text-[var(--text-tertiary)]">
+              <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
                 {t('templateSync.fields.repository.help')}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="template-branch">{t('templateSync.fields.branch.label')}</Label>
-              <Input
-                id="template-branch"
+            {/* Branch */}
+            <div>
+              <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+                {t('templateSync.fields.branch.label')}
+              </label>
+              <input
                 value={templateRepoConfig.branch}
                 onChange={(e) => updateTemplateRepoConfig({ branch: e.target.value })}
                 placeholder={t('templateSync.fields.branch.placeholder')}
+                className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
               />
-              <p className="text-xs text-[var(--text-tertiary)]">
+              <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
                 {t('templateSync.fields.branch.help')}
               </p>
             </div>
           </div>
 
           {/* Auto-sync toggle */}
-          <div className="flex items-center justify-between pt-2 border-t border-[var(--border-light)]">
-            <div className="space-y-0.5">
-              <Label className="text-sm">{t('templateSync.fields.autoSync.label')}</Label>
-              <p className="text-xs text-[var(--text-tertiary)]">
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--swiss-gray-200)]">
+            <div>
+              <p className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase mb-1">
+                {t('templateSync.fields.autoSync.label')}
+              </p>
+              <p className="text-xs text-[var(--swiss-gray-500)]">
                 {t('templateSync.fields.autoSync.help')}
               </p>
             </div>
-            <Switch
-              checked={templateRepoConfig.autoSyncOnStartup}
-              onCheckedChange={(checked: boolean) => updateTemplateRepoConfig({ autoSyncOnStartup: checked })}
-            />
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={templateRepoConfig.autoSyncOnStartup}
+                onChange={(e) => updateTemplateRepoConfig({ autoSyncOnStartup: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-[var(--swiss-gray-200)] peer-checked:bg-[var(--swiss-black)] transition-colors">
+                <div className={cn(
+                  "absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--swiss-white)] transition-transform",
+                  templateRepoConfig.autoSyncOnStartup && "translate-x-5"
+                )} />
+              </div>
+            </label>
           </div>
 
           {/* PAT Notice */}
           {!azureDevOpsConfig.personalAccessToken && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="bg-amber-50 p-4 border-l-4 border-amber-500 flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-700">
                 {t('templateSync.messages.proxyRequired')} - Configure your PAT in the Azure DevOps tab.
               </p>
@@ -233,70 +270,71 @@ export function TemplateSyncSettings() {
 
       {/* Sync Status */}
       {templateRepoConfig.enabled && (
-        <div className="p-4 bg-white/50 rounded-lg border border-[var(--border-default)]">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-[var(--accent-600)]" />
+        <div className="border-2 border-[var(--swiss-gray-200)] p-6">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--swiss-gray-400)] mb-4 flex items-center gap-2">
+            <Cloud className="h-4 w-4" />
             {t('templateSync.status.title')}
           </h3>
 
           {syncInfo ? (
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                <Clock className="h-4 w-4" />
-                <span>{t('templateSync.status.lastSync')}:</span>
-                <span className="font-mono text-[var(--text-primary)]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm">
+                <Clock className="h-4 w-4 text-[var(--swiss-gray-400)]" />
+                <span className="text-[var(--swiss-gray-500)]">{t('templateSync.status.lastSync')}:</span>
+                <span className="font-mono font-bold">
                   {formatDate(syncInfo.lastSyncDate!)}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                <FileCode2 className="h-4 w-4" />
-                <span>{syncInfo.totalFiles} {t('templateSync.status.files')}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <FileCode2 className="h-4 w-4 text-[var(--swiss-gray-400)]" />
+                <span className="font-bold">{syncInfo.totalFiles}</span>
+                <span className="text-[var(--swiss-gray-500)]">{t('templateSync.status.files')}</span>
               </div>
               {syncInfo.lastCommitSha && (
-                <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                  <span>{t('templateSync.status.commit')}:</span>
-                  <code className="text-xs bg-[var(--bg-tertiary)] px-2 py-0.5 rounded">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-[var(--swiss-gray-500)]">{t('templateSync.status.commit')}:</span>
+                  <code className="text-xs font-mono bg-[var(--swiss-gray-100)] px-2 py-1">
                     {syncInfo.lastCommitSha.substring(0, 8)}
                   </code>
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-tertiary)]">
+            <p className="text-sm text-[var(--swiss-gray-400)]">
               {t('templateSync.status.notSynced')}
             </p>
           )}
 
           {/* Sync Progress */}
           {syncProgress && syncProgress.status !== 'idle' && (
-            <div className="mt-3 pt-3 border-t border-[var(--border-light)]">
+            <div className="mt-4 pt-4 border-t border-[var(--swiss-gray-200)]">
               <div className="flex items-center gap-2">
                 {syncProgress.status === 'error' ? (
                   <XCircle className="h-4 w-4 text-red-500" />
                 ) : syncProgress.status === 'complete' ? (
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                 ) : (
-                  <Loader2 className="h-4 w-4 text-[var(--accent-600)] animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 )}
-                <span className={`text-sm ${
-                  syncProgress.status === 'error' ? 'text-red-600' :
-                  syncProgress.status === 'complete' ? 'text-green-600' :
-                  'text-[var(--text-secondary)]'
-                }`}>
+                <span className={cn(
+                  "text-sm font-medium",
+                  syncProgress.status === 'error' && "text-red-600",
+                  syncProgress.status === 'complete' && "text-green-600"
+                )}>
                   {syncProgress.message}
                 </span>
               </div>
               {syncProgress.status === 'downloading' && (
-                <div className="mt-2">
-                  <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                <div className="mt-3">
+                  <div className="h-1 bg-[var(--swiss-gray-200)] overflow-hidden">
                     <div
-                      className="h-full bg-[var(--accent-500)] transition-all duration-300"
+                      className="h-full bg-[var(--swiss-black)] transition-all duration-300"
                       style={{
                         width: `${(syncProgress.filesDownloaded / syncProgress.totalFiles) * 100}%`
                       }}
                     />
                   </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  <p className="text-[10px] text-[var(--swiss-gray-400)] mt-2 font-mono">
                     {syncProgress.filesDownloaded} / {syncProgress.totalFiles} files
                   </p>
                 </div>
@@ -308,53 +346,70 @@ export function TemplateSyncSettings() {
 
       {/* Test Result */}
       {testResult && (
-        <div className={`p-3 rounded-md flex items-center gap-2 ${
+        <div className={cn(
+          "p-4 border-l-4 flex items-start gap-3",
           testResult.success
-            ? 'bg-green-50 border border-green-200 text-green-700'
-            : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
+            ? "bg-green-50 border-green-500"
+            : "bg-red-50 border-red-500"
+        )}>
           {testResult.success ? (
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
           ) : (
-            <XCircle className="h-4 w-4" />
+            <XCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
           )}
-          <span className="text-sm">{testResult.message}</span>
+          <span className={cn(
+            "text-sm",
+            testResult.success ? "text-green-700" : "text-red-700"
+          )}>
+            {testResult.message}
+          </span>
         </div>
       )}
 
       {/* Actions */}
       {templateRepoConfig.enabled && (
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
+        <div className="flex gap-4">
+          <button
             onClick={handleTestConnection}
             disabled={!isConfigValid || isTesting}
+            className={cn(
+              "px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-2 border-[var(--swiss-black)]",
+              !isConfigValid || isTesting
+                ? "bg-[var(--swiss-gray-100)] text-[var(--swiss-gray-400)] border-[var(--swiss-gray-300)] cursor-not-allowed"
+                : "bg-[var(--swiss-white)] text-[var(--swiss-black)] hover:bg-[var(--swiss-gray-100)]"
+            )}
           >
             {isTesting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {t('templateSync.actions.testing')}
-              </>
+              </span>
             ) : (
               t('templateSync.actions.testConnection')
             )}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleSync}
             disabled={!isConfigValid || syncProgress?.status === 'checking' || syncProgress?.status === 'downloading'}
+            className={cn(
+              "px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+              !isConfigValid || syncProgress?.status === 'checking' || syncProgress?.status === 'downloading'
+                ? "bg-[var(--swiss-gray-300)] text-[var(--swiss-white)] cursor-not-allowed"
+                : "bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]"
+            )}
           >
             {syncProgress?.status === 'checking' || syncProgress?.status === 'downloading' ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {t('templateSync.actions.syncing')}
               </>
             ) : (
               <>
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4" />
                 {t('templateSync.actions.sync')}
               </>
             )}
-          </Button>
+          </button>
         </div>
       )}
     </div>

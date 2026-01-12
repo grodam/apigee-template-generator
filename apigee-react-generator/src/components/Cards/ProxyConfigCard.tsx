@@ -63,7 +63,7 @@ const apiConfigSchema = z.object({
   businessObject: z.string().min(1).regex(kebabCaseRegex),
   version: z.string().regex(/^v[0-9]+$/),
   proxyBasepath: z.string().min(1).regex(pathKebabCaseRegex),
-  authSouthbound: z.enum(['Basic', 'OAuth2-ClientCredentials', 'None']),
+  authSouthbound: z.enum(['Basic', 'OAuth2-ClientCredentials', 'ApiKey', 'None']),
 });
 
 type ApiConfigFormData = z.infer<typeof apiConfigSchema>;
@@ -368,6 +368,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
                     <option value="None">{t('step1.fields.authSouthbound.options.none')}</option>
                     <option value="Basic">{t('step1.fields.authSouthbound.options.basic')}</option>
                     <option value="OAuth2-ClientCredentials">{t('step1.fields.authSouthbound.options.oauth2')}</option>
+                    <option value="ApiKey">{t('step1.fields.authSouthbound.options.apikey', 'API Key')}</option>
                   </select>
                 </InputWithTooltip>
               )}

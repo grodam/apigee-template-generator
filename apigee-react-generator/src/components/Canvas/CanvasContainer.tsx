@@ -47,6 +47,11 @@ export const CanvasContainer: React.FC = () => {
     });
   }, []);
 
+  // Collapse all cards except openapi when a new spec is loaded
+  const handleSpecLoaded = useCallback(() => {
+    setExpandedCards(new Set(['openapi']));
+  }, []);
+
   // Add console message
   const addConsoleMessage = useCallback((message: string, type: ConsoleMessage['type']) => {
     const timestamp = new Date().toLocaleTimeString('en-US', {
@@ -265,6 +270,7 @@ export const CanvasContainer: React.FC = () => {
         <OpenAPICard
           isExpanded={expandedCards.has('openapi')}
           onToggle={() => toggleCard('openapi')}
+          onSpecLoaded={handleSpecLoaded}
         />
 
         {/* Proxy Configuration Card */}

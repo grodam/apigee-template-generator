@@ -10,9 +10,10 @@ import { cn } from '@/lib/utils';
 interface OpenAPICardProps {
   isExpanded: boolean;
   onToggle: () => void;
+  onSpecLoaded?: () => void;
 }
 
-export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle }) => {
+export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, onSpecLoaded }) => {
   const { t } = useTranslation();
   const {
     openAPISpec,
@@ -83,6 +84,9 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle }
       });
 
       setValidationError(null);
+
+      // Notify parent that a new spec was loaded (to collapse other cards)
+      onSpecLoaded?.();
     } catch (error: any) {
       setValidationError(error.message);
       setParsedOpenAPI(null);

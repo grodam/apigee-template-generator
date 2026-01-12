@@ -45,10 +45,13 @@ export interface VariabilizedBasePath {
  * Detected authentication configuration
  */
 export interface DetectedAuth {
-  type: 'Basic' | 'OAuth2-ClientCredentials' | 'None';
+  type: 'Basic' | 'OAuth2-ClientCredentials' | 'ApiKey' | 'None';
   securitySchemeName?: string;
   tokenUrl?: string;
   scopes?: string[];
+  // API Key specific fields
+  apiKeyIn?: 'header' | 'query' | 'cookie';
+  apiKeyName?: string; // Header/query param name (e.g., 'X-API-Key')
 }
 
 /**

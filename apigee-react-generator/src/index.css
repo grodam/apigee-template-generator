@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+@import './styles/swiss-theme.css';
 
 @tailwind base;
 @tailwind components;
@@ -117,9 +118,106 @@
   --radius: 6px;
 }
 
+/* ============================================
+   DARK THEME
+   ============================================ */
+.dark {
+  /* === NEUTRAL PALETTE - Inverted === */
+  --slate-50: #0f172a;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+  --slate-950: #ffffff;
+
+  /* === ACCENT - Indigo (Adjusted for dark) === */
+  --accent-50: #1e1b4b;
+  --accent-100: #312e81;
+  --accent-200: #3730a3;
+  --accent-300: #4f46e5;
+  --accent-400: #6366f1;
+  --accent-500: #818cf8;
+  --accent-600: #a5b4fc;
+  --accent-700: #c7d2fe;
+
+  /* === SEMANTIC COLORS (Dark variants) === */
+  --success-light: #064e3b;
+  --success-base: #10b981;
+  --success-text: #6ee7b7;
+
+  --warning-light: #78350f;
+  --warning-base: #f59e0b;
+  --warning-text: #fcd34d;
+
+  --error-light: #7f1d1d;
+  --error-base: #ef4444;
+  --error-text: #fca5a5;
+
+  --info-light: #1e3a5f;
+  --info-base: #3b82f6;
+  --info-text: #93c5fd;
+
+  /* === TEXT HIERARCHY (4 levels) === */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-placeholder: #475569;
+  --text-on-accent: #ffffff;
+
+  /* === BACKGROUNDS === */
+  --bg-primary: #0f172a;
+  --bg-secondary: #020617;
+  --bg-tertiary: #1e293b;
+  --bg-elevated: #1e293b;
+  --bg-overlay: rgba(15, 23, 42, 0.95);
+
+  /* === BORDERS (subtle, functional) === */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* === SHADOWS (minimal, single-layer) === */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  /* === Shadcn compatibility (HSL format) === */
+  --background: 222 47% 5%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 239 84% 67%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --ring: 239 84% 67%;
+}
+
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Smooth theme transition */
+  html {
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   body {

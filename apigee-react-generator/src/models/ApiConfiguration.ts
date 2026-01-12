@@ -21,7 +21,8 @@ export interface ApiConfiguration {
 
   // Sécurité
   globalRateLimit?: string;          // Ex: "500pm", "1000ps"
-  authSouthbound: "Basic" | "OAuth2-ClientCredentials" | "None";
+  authSouthbound: "Basic" | "OAuth2-ClientCredentials" | "ApiKey" | "None";
+  apiKeyHeaderName?: string;         // Ex: "X-API-Key" (pour authSouthbound: "ApiKey")
 
   // Nom du proxy calculé
   proxyName: string;                 // Calculé: {entity}.{domain}.{backendApps}.{businessObject}.{version}

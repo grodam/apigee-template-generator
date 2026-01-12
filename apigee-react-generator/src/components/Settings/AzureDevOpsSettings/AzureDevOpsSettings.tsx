@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AzureDevOpsService } from '@/services/azure-devops/AzureDevOpsService';
 import { Cloud, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function AzureDevOpsSettings() {
   const { t } = useTranslation();
@@ -60,147 +57,157 @@ export function AzureDevOpsSettings() {
   };
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-8">
+      {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Cloud className="h-5 w-5 text-[var(--accent-600)]" />
+        <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+          <Cloud className="h-5 w-5" />
           {t('azureSettings.title')}
         </h3>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
+        <p className="text-sm text-[var(--swiss-gray-500)] mt-2">
           {t('azureSettings.description')}
         </p>
       </div>
 
-      <Alert className="bg-[var(--sky-100)] border-[var(--sky-300)]">
-        <Info className="h-4 w-4 text-[var(--sky-600)]" />
-        <AlertDescription className="text-[var(--sky-700)]">
+      {/* Info Box */}
+      <div className="bg-[var(--swiss-gray-50)] p-4 border-l-4 border-[var(--swiss-black)] flex items-start gap-3">
+        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-[var(--swiss-gray-600)]">
           {t('azureSettings.repoNameNote')}
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="organization" className="text-[var(--text-primary)]">
+      {/* Form Fields */}
+      <div className="space-y-6">
+        {/* Organization */}
+        <div>
+          <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
             {t('azureSettings.fields.organization.label')}
-          </Label>
-          <Input
-            id="organization"
+          </label>
+          <input
             value={azureDevOpsConfig.organization}
             onChange={(e) => updateAzureDevOpsConfig({ organization: e.target.value })}
             placeholder={t('azureSettings.fields.organization.placeholder')}
-            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
+            className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
           />
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
             {t('azureSettings.fields.organization.help')}
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="project" className="text-[var(--text-primary)]">
+        {/* Project */}
+        <div>
+          <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
             {t('azureSettings.fields.project.label')}
-          </Label>
-          <Input
-            id="project"
+          </label>
+          <input
             value={azureDevOpsConfig.project}
             onChange={(e) => updateAzureDevOpsConfig({ project: e.target.value })}
             placeholder={t('azureSettings.fields.project.placeholder')}
-            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
+            className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
           />
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
             {t('azureSettings.fields.project.help')}
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="pat" className="text-[var(--text-primary)]">
+        {/* Personal Access Token */}
+        <div>
+          <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
             {t('azureSettings.fields.pat.label')}
-          </Label>
+          </label>
           <div className="relative">
-            <Input
-              id="pat"
+            <input
               type={showToken ? 'text' : 'password'}
               value={azureDevOpsConfig.personalAccessToken}
               onChange={(e) => updateAzureDevOpsConfig({ personalAccessToken: e.target.value })}
               placeholder={t('azureSettings.fields.pat.placeholder')}
-              className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)] pr-10"
+              className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none pr-10"
             />
             <button
               type="button"
               onClick={() => setShowToken(!showToken)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)] transition-colors"
             >
               {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
             {t('azureSettings.fields.pat.help')}
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="defaultBranch" className="text-[var(--text-primary)]">
+        {/* Default Branch */}
+        <div>
+          <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
             {t('azureSettings.fields.defaultBranch.label')}
-          </Label>
-          <Input
-            id="defaultBranch"
+          </label>
+          <input
             value={azureDevOpsConfig.defaultBranch}
             onChange={(e) => updateAzureDevOpsConfig({ defaultBranch: e.target.value })}
             placeholder={t('azureSettings.fields.defaultBranch.placeholder')}
-            className="rounded-md border-[var(--border-default)] focus:border-[var(--accent-400)] focus:ring-[var(--accent-200)]"
+            className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none"
           />
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
             {t('azureSettings.fields.defaultBranch.help')}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 pt-4 border-t border-[var(--border-default)]">
-        <Button
+      {/* Actions */}
+      <div className="flex items-center gap-4 pt-6 border-t-2 border-[var(--swiss-gray-200)]">
+        <button
           onClick={handleTestConnection}
           disabled={isTesting}
-          className="soft-button bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white rounded-md"
+          className={cn(
+            "px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+            isTesting
+              ? "bg-[var(--swiss-gray-300)] text-[var(--swiss-white)] cursor-not-allowed"
+              : "bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]"
+          )}
         >
           {isTesting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               {t('azureSettings.testing')}
             </>
           ) : (
             <>
-              <Cloud className="h-4 w-4 mr-2" />
+              <Cloud className="h-4 w-4" />
               {t('azureSettings.testConnection')}
             </>
           )}
-        </Button>
+        </button>
 
         {lastSaved && (
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] text-[var(--swiss-gray-400)] uppercase">
             {t('common.savedAutomatically')}
           </span>
         )}
       </div>
 
+      {/* Test Result */}
       {testResult && (
-        <Alert
-          className={
+        <div
+          className={cn(
+            "p-4 border-l-4 flex items-start gap-3",
             testResult.success
-              ? 'bg-[var(--mint-100)] border-[var(--mint-400)]'
-              : 'bg-[var(--warning-light)] border-[var(--warning-base)]'
-          }
+              ? "bg-green-50 border-green-500"
+              : "bg-red-50 border-red-500"
+          )}
         >
           {testResult.success ? (
-            <CheckCircle2 className="h-4 w-4 text-[var(--mint-600)]" />
+            <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
           ) : (
-            <XCircle className="h-4 w-4 text-[var(--warning-dark)]" />
+            <XCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
           )}
-          <AlertDescription
-            className={
-              testResult.success ? 'text-[var(--success-dark)]' : 'text-[var(--warning-dark)]'
-            }
-          >
+          <p className={cn(
+            "text-sm",
+            testResult.success ? "text-green-700" : "text-red-700"
+          )}>
             {testResult.message}
-          </AlertDescription>
-        </Alert>
+          </p>
+        </div>
       )}
     </div>
   );

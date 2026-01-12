@@ -30,6 +30,7 @@ export class PolicyGenerator {
     await this.generateKVMPolicy(policies);
     await this.generateSpikeArrestPolicy(policies);
     await this.generateOAuth2Policies(policies);
+    await this.generateApiKeyPolicies(policies);
 
     return policies;
   }
@@ -57,6 +58,8 @@ export class PolicyGenerator {
         'policies/PC-PopulateToken.xml'
       );
     }
+
+    // Note: ApiKey policies are generated in generateApiKeyPolicies with template replacement
 
     for (const policyPath of staticPolicies) {
       try {
@@ -141,6 +144,12 @@ export class PolicyGenerator {
           log.warn(`Template not found for ${policyName}, using fallback`, error);
           policies.set(policyName, this.generateKVMPolicyOAuth2(kvmName, policyNameSuffix, customEntries));
         }
+      } else if (this.config.authSouthbound === 'ApiKey') {
+        // KVM pour API Key authentication
+        const policyName = `KVM-GetBackendInfosAPIKey${policyNameSuffix}.xml`;
+        const apiKeyDefaultEntries = ['backend_api_key'];
+
+        policies.set(policyName, this.generateKVMPolicyApiKey(kvmName, policyNameSuffix, customEntries, apiKeyDefaultEntries));
       }
     }
   }
@@ -325,5 +334,54 @@ export class PolicyGenerator {
         <URL>{private.backend.host_auth}{private.backend.path_auth}</URL>
     </HTTPTargetConnection>
 </ServiceCallout>`;
+  }
+
+  private async generateApiKeyPolicies(policies: Map<string, string>): Promise<void> {
+    if (this.config.authSouthbound !== 'ApiKey') return;
+
+    // Get API Key header name from config or use default
+    const apiKeyHeaderName = this.config.apiKeyHeaderName || 'X-API-Key';
+
+    try {
+      const template = await this.templateLoader.load('policies/AM-SetAPIKey.xml');
+      const policy = template
+        .replace(/{{API_KEY_HEADER_NAME}}/g, escapeXml(apiKeyHeaderName))
+        .replace(/{{API_KEY_VALUE}}/g, '{private.backend_api_key}');
+      policies.set('AM-SetAPIKey.xml', policy);
+    } catch (error) {
+      log.warn('Template not found for AM-SetAPIKey, using fallback', error);
+      policies.set('AM-SetAPIKey.xml', this.generateAssignMessageApiKey(apiKeyHeaderName));
+    }
+  }
+
+  private generateKVMPolicyApiKey(kvmName: string, policyNameSuffix: string = '', customEntries: Array<{ name: string; value: string }> = [], excludeNames: string[] = []): string {
+    const policyName = `KVM-GetBackendInfosAPIKey${policyNameSuffix}`;
+    const customGetElements = this.generateKVMGetElements(customEntries, excludeNames);
+    const customGetElementsStr = customGetElements ? '\n' + customGetElements : '';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="${policyName}" mapIdentifier="${kvmName}">
+    <DisplayName>${policyName}</DisplayName>
+    <Properties/>
+    <ExclusiveCache>false</ExclusiveCache>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="private.backend_api_key">
+        <Key><Parameter>backend_api_key</Parameter></Key>
+    </Get>${customGetElementsStr}
+    <Scope>environment</Scope>
+</KeyValueMapOperations>`;
+  }
+
+  private generateAssignMessageApiKey(headerName: string): string {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-SetAPIKey">
+    <DisplayName>AM-SetAPIKey</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="${escapeXml(headerName)}">{private.backend_api_key}</Header>
+        </Headers>
+    </Set>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+    <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>`;
   }
 }

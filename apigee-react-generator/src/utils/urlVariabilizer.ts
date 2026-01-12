@@ -84,27 +84,37 @@ const ALL_ENVIRONMENTS = ['dev1', 'uat1', 'staging', 'prod1'] as const;
 
 /**
  * Detect all template variables {var} in a URL string
+ * Uses manual parsing to preserve template variables that would be URL-encoded
  */
 export function detectTemplateVariables(url: string): TemplateVariable[] {
   const variables: TemplateVariable[] = [];
 
-  // Parse URL to determine host vs path context
+  // Manual parsing to determine host vs path context (preserves template vars)
   let host = '';
   let path = '';
 
-  try {
-    // Handle URLs without protocol
-    let urlToParse = url;
-    if (!url.includes('://')) {
-      urlToParse = `https://${url}`;
+  // Handle relative URLs
+  if (url.startsWith('/')) {
+    path = url;
+  } else {
+    // Extract host and path manually
+    const protocolMatch = url.match(/^(https?):\/\//);
+    const rest = protocolMatch ? url.slice(protocolMatch[0].length) : url;
+    const pathStart = rest.indexOf('/');
+
+    if (pathStart >= 0) {
+      host = rest.slice(0, pathStart);
+      path = rest.slice(pathStart);
+    } else {
+      host = rest;
+      path = '';
     }
 
-    const parsed = new URL(urlToParse);
-    host = parsed.host;
-    path = parsed.pathname;
-  } catch {
-    // If URL parsing fails, treat entire string as path
-    path = url;
+    // Remove port from host for variable detection
+    const portMatch = host.match(/:(\d+)$/);
+    if (portMatch) {
+      host = host.slice(0, -portMatch[0].length);
+    }
   }
 
   // Find variables in host
@@ -135,6 +145,8 @@ export function detectTemplateVariables(url: string): TemplateVariable[] {
 
 /**
  * Parse a URL into its components including template variables
+ * Note: We manually parse to preserve template variables like {env} that would
+ * otherwise be URL-encoded by the URL API
  */
 export function parseUrl(url: string): ParsedUrl {
   let protocol = 'https';
@@ -142,41 +154,66 @@ export function parseUrl(url: string): ParsedUrl {
   let port: number | undefined;
   let path = '/';
 
-  try {
-    // Handle relative URLs
-    if (url.startsWith('/')) {
-      return {
-        protocol,
-        host: '',
-        path: url,
-        hostVariables: [],
-        pathVariables: detectTemplateVariables(url).filter(v => v.context === 'path'),
-      };
-    }
+  // Handle relative URLs
+  if (url.startsWith('/')) {
+    return {
+      protocol,
+      host: '',
+      path: url,
+      hostVariables: [],
+      pathVariables: detectTemplateVariables(url).filter(v => v.context === 'path'),
+    };
+  }
 
-    // Handle URLs without protocol
-    let urlToParse = url;
-    if (!url.includes('://')) {
-      urlToParse = `https://${url}`;
-    }
+  // Manual parsing to preserve template variables (URL API would encode them)
+  const protocolMatch = url.match(/^(https?):\/\//);
+  if (protocolMatch) {
+    protocol = protocolMatch[1];
+    const rest = url.slice(protocolMatch[0].length);
+    const pathStart = rest.indexOf('/');
+    if (pathStart >= 0) {
+      const hostPart = rest.slice(0, pathStart);
+      path = rest.slice(pathStart);
 
-    const parsed = new URL(urlToParse);
-    protocol = parsed.protocol.replace(':', '');
-    host = parsed.hostname;
-    port = parsed.port ? parseInt(parsed.port, 10) : undefined;
-    path = parsed.pathname || '/';
-  } catch {
-    // If parsing fails, try to extract manually
-    const protocolMatch = url.match(/^(https?):\/\//);
-    if (protocolMatch) {
-      protocol = protocolMatch[1];
-      const rest = url.slice(protocolMatch[0].length);
-      const pathStart = rest.indexOf('/');
-      if (pathStart >= 0) {
-        host = rest.slice(0, pathStart);
-        path = rest.slice(pathStart);
+      // Extract port if present
+      const portMatch = hostPart.match(/:(\d+)$/);
+      if (portMatch) {
+        host = hostPart.slice(0, -portMatch[0].length);
+        port = parseInt(portMatch[1], 10);
+      } else {
+        host = hostPart;
+      }
+    } else {
+      // No path, check for port
+      const portMatch = rest.match(/:(\d+)$/);
+      if (portMatch) {
+        host = rest.slice(0, -portMatch[0].length);
+        port = parseInt(portMatch[1], 10);
       } else {
         host = rest;
+      }
+    }
+  } else if (!url.includes('://')) {
+    // URL without protocol - parse directly
+    const pathStart = url.indexOf('/');
+    if (pathStart >= 0) {
+      const hostPart = url.slice(0, pathStart);
+      path = url.slice(pathStart);
+
+      const portMatch = hostPart.match(/:(\d+)$/);
+      if (portMatch) {
+        host = hostPart.slice(0, -portMatch[0].length);
+        port = parseInt(portMatch[1], 10);
+      } else {
+        host = hostPart;
+      }
+    } else {
+      const portMatch = url.match(/:(\d+)$/);
+      if (portMatch) {
+        host = url.slice(0, -portMatch[0].length);
+        port = parseInt(portMatch[1], 10);
+      } else {
+        host = url;
       }
     }
   }
@@ -388,6 +425,10 @@ export function variabilizeUrls(
     }
     if (allHostVariables.size > 0) {
       result.variabilizedHost = variabilizedHost;
+      // Set the variabilized host for all environments
+      for (const env of ALL_ENVIRONMENTS) {
+        result.hostsPerEnvironment[env] = variabilizedHost;
+      }
     }
 
     // Process path variables
@@ -429,6 +470,11 @@ export function variabilizeUrls(
 
       // Fill in missing environments using smart defaults
       fillMissingEnvironmentHosts(result.hostsPerEnvironment, servers);
+
+      // If paths are the same across all servers, use the common path
+      if (!comparison.hasPathDifferences && !hasTemplateVariables) {
+        result.variabilizedPath = firstParsed.path || '/';
+      }
     }
 
     // Handle path differences (only if no template variables already handled paths)

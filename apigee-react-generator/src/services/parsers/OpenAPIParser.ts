@@ -59,9 +59,13 @@ export class OpenAPIParserService {
       ? this.convertToVariabilizedBasePath(urlVariabilization)
       : variabilizedBasePath;
 
+    // Update environmentHosts with variabilized hosts from urlVariabilization
+    // This ensures template variables like {env} are properly replaced with {private.backend_info_N}
+    const effectiveEnvironmentHosts = this.applyVariabilizedHosts(environmentHosts, urlVariabilization);
+
     return {
       servers,
-      environmentHosts,
+      environmentHosts: effectiveEnvironmentHosts,
       auth,
       targetPath: effectiveTargetPath,
       variabilizedBasePath: effectiveVariabilizedBasePath,
@@ -254,6 +258,55 @@ export class OpenAPIParserService {
   }
 
   /**
+   * Apply variabilized hosts from URL variabilization to environment hosts
+   * This replaces template variables like {env} with {private.backend_info_N}
+   */
+  private applyVariabilizedHosts(
+    envHosts: Partial<Record<'dev1' | 'uat1' | 'staging' | 'prod1', EnvironmentHostConfig>>,
+    urlVariabilization: ReturnType<typeof variabilizeUrls>
+  ): Partial<Record<'dev1' | 'uat1' | 'staging' | 'prod1', EnvironmentHostConfig>> {
+    // If we have variabilized hosts from URL variabilization, use them
+    if (urlVariabilization.hasVariabilization && urlVariabilization.variabilizedHost) {
+      const updatedHosts: Partial<Record<'dev1' | 'uat1' | 'staging' | 'prod1', EnvironmentHostConfig>> = {};
+
+      for (const env of ['dev1', 'uat1', 'staging', 'prod1'] as const) {
+        const existingConfig = envHosts[env];
+        const variabilizedHost = urlVariabilization.hostsPerEnvironment[env] || urlVariabilization.variabilizedHost;
+
+        updatedHosts[env] = {
+          host: variabilizedHost,
+          port: existingConfig?.port || 443,
+          scheme: existingConfig?.scheme || 'https',
+          basePath: existingConfig?.basePath || '',
+        };
+      }
+
+      return updatedHosts;
+    }
+
+    // If hostsPerEnvironment has entries but no variabilizedHost, still apply them
+    if (Object.keys(urlVariabilization.hostsPerEnvironment).length > 0) {
+      const updatedHosts: Partial<Record<'dev1' | 'uat1' | 'staging' | 'prod1', EnvironmentHostConfig>> = {};
+
+      for (const env of ['dev1', 'uat1', 'staging', 'prod1'] as const) {
+        const existingConfig = envHosts[env];
+        const hostFromVariabilization = urlVariabilization.hostsPerEnvironment[env];
+
+        updatedHosts[env] = {
+          host: hostFromVariabilization || existingConfig?.host || '',
+          port: existingConfig?.port || 443,
+          scheme: existingConfig?.scheme || 'https',
+          basePath: existingConfig?.basePath || '',
+        };
+      }
+
+      return updatedHosts;
+    }
+
+    return envHosts;
+  }
+
+  /**
    * Extract authentication type from security schemes
    */
   private extractAuth(securitySchemes: Record<string, OpenAPISecurityScheme>, _globalSecurity?: { [key: string]: string[] }[]): DetectedAuth {
@@ -288,6 +341,17 @@ export class OpenAPIParserService {
           securitySchemeName: schemeName,
           tokenUrl: (scheme as any).tokenUrl,
           scopes: Object.keys((scheme as any).scopes || {}),
+        };
+        break;
+      }
+
+      // Check for API Key authentication
+      if (scheme.type === 'apiKey') {
+        auth = {
+          type: 'ApiKey',
+          securitySchemeName: schemeName,
+          apiKeyIn: scheme.in as 'header' | 'query' | 'cookie',
+          apiKeyName: scheme.name,
         };
         break;
       }

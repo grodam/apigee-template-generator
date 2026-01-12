@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, HelpCircle, Sparkles } from 'lucide-react';
+import { Plus, Trash2, HelpCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SwissCard } from './SwissCard';
 import { useProjectStore } from '../../store/useProjectStore';
@@ -58,7 +58,28 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
   const { apiConfig, updateEnvironmentConfig, autoDetectedConfig } = useProjectStore();
   const [selectedEnv, setSelectedEnv] = useState<Environment>('dev1');
   const [autoFilledHosts, setAutoFilledHosts] = useState<Set<string>>(new Set());
+  const [visibleValues, setVisibleValues] = useState<Set<string>>(new Set());
+  const [newKvmName, setNewKvmName] = useState('');
+  const [isAddingKvm, setIsAddingKvm] = useState(false);
   const hasAppliedAutoFill = useRef(false);
+
+  // Toggle visibility for KVM entry values
+  const toggleValueVisibility = (kvmIndex: number, entryIndex: number) => {
+    const key = `${selectedEnv}-${kvmIndex}-${entryIndex}`;
+    setVisibleValues(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const isValueVisible = (kvmIndex: number, entryIndex: number) => {
+    return visibleValues.has(`${selectedEnv}-${kvmIndex}-${entryIndex}`);
+  };
 
   const currentEnvConfig = apiConfig.environments?.[selectedEnv];
 
@@ -191,6 +212,34 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
       ...updatedKVMs[kvmIndex],
       entries: updatedEntries
     };
+
+    updateEnvironmentConfig(selectedEnv, {
+      ...currentEnvConfig,
+      kvms: updatedKVMs
+    });
+  };
+
+  const handleAddKVM = (kvmName: string) => {
+    if (!currentEnvConfig || !kvmName.trim()) return;
+
+    const newKVM = {
+      name: kvmName.trim(),
+      encrypted: true,
+      entries: []
+    };
+
+    const updatedKVMs = [...(currentEnvConfig.kvms || []), newKVM];
+
+    updateEnvironmentConfig(selectedEnv, {
+      ...currentEnvConfig,
+      kvms: updatedKVMs
+    });
+  };
+
+  const handleRemoveKVM = (kvmIndex: number) => {
+    if (!currentEnvConfig || !currentEnvConfig.kvms) return;
+
+    const updatedKVMs = currentEnvConfig.kvms.filter((_, i) => i !== kvmIndex);
 
     updateEnvironmentConfig(selectedEnv, {
       ...currentEnvConfig,
@@ -372,18 +421,29 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
         </div>
 
         {/* KVMs */}
-        {currentEnvConfig?.kvms && currentEnvConfig.kvms.length > 0 && (
-          <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--swiss-gray-400)] mb-3">
-              KVM Entries
-            </h4>
-            {currentEnvConfig.kvms.map((kvm, kvmIndex) => (
+        <div>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--swiss-gray-400)] mb-3">
+            KVM Entries
+          </h4>
+
+          {/* Existing KVMs */}
+          <div className="space-y-3">
+            {currentEnvConfig?.kvms?.map((kvm, kvmIndex) => (
               <div key={kvmIndex} className="border border-[var(--swiss-gray-200)] divide-y divide-[var(--swiss-gray-100)]">
                 <div className="flex items-center justify-between px-4 py-3 bg-[var(--swiss-gray-50)]">
                   <span className="font-mono text-xs font-bold">{kvm.name}</span>
-                  <span className="font-mono text-xs text-[var(--swiss-gray-400)]">
-                    {kvm.entries?.length || 0} entries
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs text-[var(--swiss-gray-400)]">
+                      {kvm.entries?.length || 0} entries
+                    </span>
+                    <button
+                      onClick={() => handleRemoveKVM(kvmIndex)}
+                      className="text-[var(--swiss-gray-400)] hover:text-red-500"
+                      title="Delete KVM"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 {kvm.entries?.map((entry, entryIndex) => (
                   <div key={entryIndex} className="flex items-center gap-2 px-4 py-2">
@@ -393,13 +453,29 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
                       placeholder="Key"
                       className="flex-1 bg-transparent border-b border-[var(--swiss-gray-200)] py-1 text-xs font-mono focus:outline-none focus:border-[var(--swiss-black)]"
                     />
-                    <input
-                      value={entry.value}
-                      onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'value', e.target.value)}
-                      placeholder="Value"
-                      type={kvm.encrypted ? 'password' : 'text'}
-                      className="flex-1 bg-transparent border-b border-[var(--swiss-gray-200)] py-1 text-xs font-mono focus:outline-none focus:border-[var(--swiss-black)]"
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        value={entry.value}
+                        onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'value', e.target.value)}
+                        placeholder="Value"
+                        type={kvm.encrypted && !isValueVisible(kvmIndex, entryIndex) ? 'password' : 'text'}
+                        className="w-full bg-transparent border-b border-[var(--swiss-gray-200)] py-1 text-xs font-mono focus:outline-none focus:border-[var(--swiss-black)] pr-7"
+                      />
+                      {kvm.encrypted && (
+                        <button
+                          type="button"
+                          onClick={() => toggleValueVisibility(kvmIndex, entryIndex)}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)]"
+                          title={isValueVisible(kvmIndex, entryIndex) ? 'Hide value' : 'Show value'}
+                        >
+                          {isValueVisible(kvmIndex, entryIndex) ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleRemoveKVMEntry(kvmIndex, entryIndex)}
                       className="text-[var(--swiss-gray-400)] hover:text-red-500"
@@ -417,7 +493,69 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
               </div>
             ))}
           </div>
-        )}
+
+          {/* Add New KVM */}
+          {isAddingKvm ? (
+            <div className="mt-3 border border-dashed border-[var(--swiss-gray-300)] p-4">
+              <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+                Map Identifier (KVM Name)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={newKvmName}
+                  onChange={(e) => setNewKvmName(e.target.value)}
+                  placeholder="e.g., my-app.v1.config"
+                  className="flex-1 bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-mono focus:outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newKvmName.trim()) {
+                      handleAddKVM(newKvmName);
+                      setNewKvmName('');
+                      setIsAddingKvm(false);
+                    } else if (e.key === 'Escape') {
+                      setNewKvmName('');
+                      setIsAddingKvm(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    if (newKvmName.trim()) {
+                      handleAddKVM(newKvmName);
+                      setNewKvmName('');
+                      setIsAddingKvm(false);
+                    }
+                  }}
+                  disabled={!newKvmName.trim()}
+                  className={cn(
+                    "px-4 py-2 text-[10px] font-black uppercase",
+                    newKvmName.trim()
+                      ? "bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]"
+                      : "bg-[var(--swiss-gray-200)] text-[var(--swiss-gray-400)] cursor-not-allowed"
+                  )}
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => {
+                    setNewKvmName('');
+                    setIsAddingKvm(false);
+                  }}
+                  className="px-4 py-2 text-[10px] font-black uppercase text-[var(--swiss-gray-500)] hover:text-[var(--swiss-black)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingKvm(true)}
+              className="mt-3 w-full px-4 py-3 border-2 border-dashed border-[var(--swiss-gray-300)] text-[10px] font-bold uppercase text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)] hover:border-[var(--swiss-black)] flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add KVM
+            </button>
+          )}
+        </div>
       </div>
     </SwissCard>
   );

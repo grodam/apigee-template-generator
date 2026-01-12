@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelpCircle, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -65,6 +65,32 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
   const currentEnvConfig = apiConfig.environments?.[selectedEnv];
   const apiProduct = currentEnvConfig?.apiProducts?.[0];
 
+  // Ref for auto-resizing description textarea
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea based on content (max 5 lines)
+  const autoResizeTextarea = useCallback(() => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Calculate line height (approx 20px per line for text-sm)
+    const lineHeight = 20;
+    const maxLines = 5;
+    const maxHeight = lineHeight * maxLines;
+
+    // Set height based on content, capped at max
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, []);
+
+  // Auto-resize on content change
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [apiProduct?.description, autoResizeTextarea]);
+
   // Calculate completion - count environments with configured API products
   const configuredEnvs = ENVIRONMENTS.filter(env => {
     const envConfig = apiConfig.environments?.[env];
@@ -104,6 +130,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
         <tr className="border-b border-[var(--swiss-gray-200)]">
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-20">Env</th>
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)]">Product Name</th>
+          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)]">Display Name</th>
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-24">Approval</th>
           <th className="text-right py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-20">Status</th>
         </tr>
@@ -119,6 +146,9 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
               <td className="py-2 font-mono font-bold">{env}</td>
               <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
                 {product?.name || <span className="text-[var(--swiss-gray-300)]">Not configured</span>}
+              </td>
+              <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
+                {product?.displayName || <span className="text-[var(--swiss-gray-300)]">-</span>}
               </td>
               <td className="py-2 font-mono">
                 {product?.name ? (product.approvalType || 'manual') : <span className="text-[var(--swiss-gray-300)]">-</span>}
@@ -218,11 +248,16 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
             showSparkle={!!apiProduct?.description}
           >
             <textarea
+              ref={descriptionRef}
               value={apiProduct?.description || ''}
-              onChange={(e) => handleProductChange('description', e.target.value)}
+              onChange={(e) => {
+                handleProductChange('description', e.target.value);
+                // Trigger resize after state update
+                setTimeout(autoResizeTextarea, 0);
+              }}
               placeholder={`API Product for ${apiConfig.businessObject || 'business-object'} ${apiConfig.version || 'v1'} - ${selectedEnv} environment`}
-              rows={2}
-              className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none resize-none pr-14"
+              className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none resize-none pr-14 overflow-y-auto"
+              style={{ minHeight: '20px', maxHeight: '100px' }}
             />
           </InputWithTooltip>
         </div>
