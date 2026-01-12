@@ -8,7 +8,7 @@ import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetecte
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
-import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
+import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, findSmallestCommonRoot, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -562,6 +562,11 @@ export const useProjectStore = create<ProjectState>()(
           const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
           const newEnvironments = { ...envs };
 
+          // Extract OpenAPI paths for computing default authorized paths
+          const openAPIPaths = state.parsedOpenAPI?.rawSpec?.paths
+            ? Object.keys(state.parsedOpenAPI.rawSpec.paths)
+            : undefined;
+
           // Extract resource suffix from the product name to create env-specific versions
           const resourceSuffix = extractResourceSuffix(product.name, proxyName) || `product-${(envs.dev1.apiProducts?.length || 0) + 1}`;
 
@@ -571,7 +576,8 @@ export const useProjectStore = create<ProjectState>()(
               proxyName,
               resourceSuffix,
               targetEnv,
-              product.authorizedPaths || getDefaultAuthorizedPaths()
+              product.authorizedPaths,
+              openAPIPaths
             );
 
             // Preserve description and other custom fields from original
@@ -715,6 +721,11 @@ export const useProjectStore = create<ProjectState>()(
           const sourceProducts = envs.dev1.apiProducts;
           const proxyName = state.apiConfig.proxyName || '';
 
+          // Extract OpenAPI paths for computing default authorized paths
+          const openAPIPaths = state.parsedOpenAPI?.rawSpec?.paths
+            ? Object.keys(state.parsedOpenAPI.rawSpec.paths)
+            : undefined;
+
           const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
           const newEnvironments = { ...envs };
 
@@ -726,7 +737,8 @@ export const useProjectStore = create<ProjectState>()(
                 proxyName,
                 resourceSuffix,
                 env,
-                product.authorizedPaths || getDefaultAuthorizedPaths()
+                product.authorizedPaths,
+                openAPIPaths
               );
             });
 

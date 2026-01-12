@@ -1,0 +1,616 @@
+/* ============================================
+   SWISS DESIGN SYSTEM
+   Minimal | Monochrome | Grid-based | No shadows
+   ============================================ */
+
+/* === SWISS PALETTE === */
+:root {
+  /* Core Swiss Colors */
+  --swiss-black: #000000;
+  --swiss-white: #FFFFFF;
+  --swiss-gray-50: #FAFAFA;
+  --swiss-gray-100: #F3F4F6;
+  --swiss-gray-200: #E5E7EB;
+  --swiss-gray-300: #D1D5DB;
+  --swiss-gray-400: #9CA3AF;
+  --swiss-gray-500: #6B7280;
+  --swiss-gray-600: #4B5563;
+  --swiss-gray-700: #374151;
+  --swiss-gray-800: #1F2937;
+  --swiss-gray-900: #111827;
+
+  /* Cool Solid + Shadow Theme */
+  --swiss-bg-canvas: #F1F5F9;
+  --swiss-shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  --swiss-shadow-card-hover: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+
+  /* Console colors */
+  --console-bg: #000000;
+  --console-text: #E5E7EB;
+  --console-success: #4ADE80;
+  --console-warning: #FBBF24;
+  --console-error: #F87171;
+  --console-muted: #6B7280;
+}
+
+/* Dark mode Swiss palette */
+.dark {
+  --swiss-black: #FFFFFF;
+  --swiss-white: #0F0F0F;
+  --swiss-gray-50: #0F0F0F;
+  --swiss-gray-100: #1A1A1A;
+  --swiss-gray-200: #2A2A2A;
+  --swiss-gray-300: #3A3A3A;
+  --swiss-gray-400: #6B7280;
+  --swiss-gray-500: #9CA3AF;
+  --swiss-gray-600: #D1D5DB;
+  --swiss-gray-700: #E5E7EB;
+  --swiss-gray-800: #F3F4F6;
+  --swiss-gray-900: #FAFAFA;
+
+  /* Cool Solid + Shadow Theme - Dark */
+  --swiss-bg-canvas: #0F172A;
+  --swiss-shadow-card: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.2);
+  --swiss-shadow-card-hover: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.3);
+
+  --console-bg: #0F0F0F;
+  --console-text: #E5E7EB;
+}
+
+/* === COOL SOLID + SHADOW THEME CLASSES === */
+.swiss-canvas {
+  background-color: var(--swiss-bg-canvas);
+}
+
+.swiss-card-shadow {
+  box-shadow: var(--swiss-shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.swiss-card-shadow:hover {
+  box-shadow: var(--swiss-shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+/* === SWISS TYPOGRAPHY === */
+.swiss-title {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: var(--swiss-black);
+}
+
+.swiss-label {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--swiss-gray-400);
+}
+
+.swiss-mono {
+  font-family: 'SF Mono', 'Monaco', 'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* === SWISS CARD === */
+.swiss-card {
+  background: var(--swiss-white);
+  border-top: 2px solid var(--swiss-black);
+  transition: all 200ms ease;
+}
+
+.swiss-card:hover {
+  background: var(--swiss-gray-50);
+}
+
+.swiss-card.expanded {
+  background: var(--swiss-white);
+}
+
+.swiss-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  cursor: pointer;
+}
+
+.swiss-card-number {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--swiss-gray-200);
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+}
+
+.swiss-card-title {
+  font-size: 0.875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--swiss-black);
+}
+
+.swiss-card-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 300ms ease, padding 300ms ease;
+}
+
+.swiss-card-content.expanded {
+  max-height: 2000px;
+}
+
+.swiss-card-inner {
+  padding: 0 24px 24px;
+  border-top: 1px solid var(--swiss-gray-100);
+}
+
+/* === SWISS INPUTS === */
+.swiss-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--swiss-black);
+  padding: 8px 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--swiss-black);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+/* Override browser autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--swiss-white) inset !important;
+  -webkit-text-fill-color: var(--swiss-black) !important;
+  background-color: var(--swiss-white) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.swiss-input:focus {
+  border-color: var(--swiss-gray-400);
+}
+
+.swiss-input::placeholder {
+  color: var(--swiss-gray-400);
+}
+
+.swiss-select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--swiss-black);
+  padding: 8px 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--swiss-black);
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.swiss-textarea {
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--swiss-gray-200);
+  padding: 12px;
+  font-size: 0.875rem;
+  color: var(--swiss-black);
+  outline: none;
+  resize: none;
+  transition: border-color 150ms ease;
+}
+
+.swiss-textarea:focus {
+  border-color: var(--swiss-black);
+}
+
+/* === SWISS BUTTONS === */
+.swiss-button {
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+  padding: 12px 32px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.swiss-button:hover {
+  background: var(--swiss-gray-800);
+}
+
+.swiss-button:disabled {
+  background: var(--swiss-gray-300);
+  cursor: not-allowed;
+}
+
+.swiss-button-outline {
+  background: var(--swiss-white);
+  color: var(--swiss-black);
+  border: 2px solid var(--swiss-black);
+}
+
+.swiss-button-outline:hover {
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+}
+
+.swiss-button-ghost {
+  background: var(--swiss-white);
+  color: var(--swiss-black);
+  border: 1px solid var(--swiss-gray-200);
+}
+
+.swiss-button-ghost:hover {
+  border-color: var(--swiss-black);
+}
+
+/* === SWISS BADGES === */
+.swiss-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.swiss-badge-outline {
+  background: transparent;
+  color: var(--swiss-black);
+  border: 1px solid var(--swiss-gray-300);
+}
+
+.swiss-badge-auto {
+  font-size: 8px;
+  padding: 2px 4px;
+  background: var(--swiss-gray-200);
+  color: var(--swiss-gray-600);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.swiss-badge-success {
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+}
+
+/* === SWISS PROGRESS === */
+.swiss-progress-container {
+  background: var(--swiss-white);
+  border-bottom: 1px solid var(--swiss-gray-200);
+  padding: 24px 32px;
+}
+
+.swiss-progress-bar {
+  width: 100%;
+  height: 2px;
+  background: var(--swiss-gray-100);
+  margin-bottom: 16px;
+}
+
+.swiss-progress-fill {
+  height: 100%;
+  background: var(--swiss-black);
+  transition: width 500ms ease;
+}
+
+.swiss-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swiss-progress-check {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.swiss-progress-check.complete {
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+}
+
+.swiss-progress-check.partial {
+  background: var(--swiss-white);
+  border: 2px solid var(--swiss-black);
+}
+
+.swiss-progress-check.empty {
+  background: var(--swiss-white);
+  border: 1px solid var(--swiss-gray-300);
+  color: var(--swiss-gray-300);
+}
+
+/* === SWISS CONSOLE === */
+.swiss-console {
+  background: var(--console-bg);
+  color: var(--console-text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  padding: 24px;
+}
+
+.swiss-console-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--swiss-gray-800);
+}
+
+.swiss-console-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--console-success);
+}
+
+.swiss-console-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--console-muted);
+}
+
+.swiss-console-line {
+  display: flex;
+  gap: 16px;
+}
+
+.swiss-console-time {
+  color: var(--console-muted);
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.swiss-console-message {
+  color: var(--console-text);
+}
+
+.swiss-console-message.success {
+  color: var(--console-success);
+}
+
+.swiss-console-message.warning {
+  color: var(--console-warning);
+}
+
+.swiss-console-message.error {
+  color: var(--console-error);
+}
+
+.swiss-console-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* === SWISS TABS === */
+.swiss-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--swiss-gray-200);
+  margin-bottom: 24px;
+}
+
+.swiss-tab {
+  padding: 12px 24px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--swiss-gray-500);
+  cursor: pointer;
+  transition: all 150ms ease;
+  background: transparent;
+  border: none;
+}
+
+.swiss-tab:hover {
+  background: var(--swiss-gray-50);
+  color: var(--swiss-black);
+}
+
+.swiss-tab.active {
+  background: var(--swiss-black);
+  color: var(--swiss-white);
+}
+
+/* === SWISS GRID BACKGROUND === */
+.swiss-grid-bg {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, var(--swiss-gray-100) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--swiss-gray-100) 1px, transparent 1px);
+}
+
+/* === SWISS DATA DISPLAY === */
+.swiss-data-block {
+  border-left: 4px solid var(--swiss-black);
+  padding-left: 16px;
+}
+
+.swiss-data-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--swiss-gray-400);
+  margin-bottom: 4px;
+}
+
+.swiss-data-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--swiss-black);
+}
+
+/* === SWISS DROPZONE === */
+.swiss-dropzone {
+  border: 2px dashed var(--swiss-gray-200);
+  padding: 32px;
+  text-align: center;
+  transition: border-color 150ms ease;
+  cursor: pointer;
+}
+
+.swiss-dropzone:hover {
+  border-color: var(--swiss-black);
+}
+
+.swiss-dropzone.active {
+  border-color: var(--swiss-black);
+  background: var(--swiss-gray-50);
+}
+
+/* === SWISS TABLE === */
+.swiss-table {
+  width: 100%;
+  font-size: 0.75rem;
+}
+
+.swiss-table th {
+  text-align: left;
+  padding: 8px 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--swiss-gray-400);
+  border-bottom: 1px solid var(--swiss-gray-200);
+}
+
+.swiss-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--swiss-gray-100);
+}
+
+.swiss-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* === SWISS CHECKBOX === */
+.swiss-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.swiss-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--swiss-black);
+}
+
+.swiss-checkbox-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* === SWISS HEADER === */
+.swiss-header {
+  background: var(--swiss-white);
+  border-bottom: 2px solid var(--swiss-black);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.swiss-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swiss-header-logo {
+  width: 40px;
+  height: 40px;
+  background: var(--swiss-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--swiss-white);
+}
+
+/* === SWISS FOOTER === */
+.swiss-footer {
+  border-top: 1px solid var(--swiss-gray-200);
+  background: var(--swiss-white);
+  padding: 16px 32px;
+}
+
+.swiss-footer-text {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--swiss-gray-400);
+  text-align: center;
+}
+
+/* === SWISS ANIMATIONS === */
+.swiss-chevron {
+  transition: transform 200ms ease;
+}
+
+.swiss-chevron.rotated {
+  transform: rotate(90deg);
+}
+
+/* === SWISS SCROLLBAR === */
+.swiss-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.swiss-scroll::-webkit-scrollbar-track {
+  background: var(--swiss-gray-100);
+}
+
+.swiss-scroll::-webkit-scrollbar-thumb {
+  background: var(--swiss-black);
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
+@media (max-width: 768px) {
+  .swiss-card-header {
+    padding: 16px;
+  }
+
+  .swiss-card-number {
+    font-size: 1.5rem;
+  }
+
+  .swiss-console {
+    padding: 16px;
+    font-size: 10px;
+  }
+}

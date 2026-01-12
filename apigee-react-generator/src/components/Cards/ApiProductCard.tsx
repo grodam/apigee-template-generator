@@ -133,11 +133,16 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
   // Handle add new product
   const handleAddProduct = () => {
     const proxyName = apiConfig.proxyName || '';
+    // Extract OpenAPI paths for computing default authorized paths
+    const openAPIPaths = parsedOpenAPI?.rawSpec?.paths
+      ? Object.keys(parsedOpenAPI.rawSpec.paths)
+      : undefined;
     const newProduct = createProductForEnv(
       proxyName,
       `product-${products.length + 1}`,
       selectedEnv,
-      getDefaultAuthorizedPaths()
+      undefined, // Let it use default from OpenAPI paths
+      openAPIPaths
     );
     addProduct(selectedEnv, newProduct);
     setExpandedProductIndex(products.length);
@@ -362,7 +367,9 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                     {t('canvas.cards.apiProduct.authorizedPaths', 'Authorized Paths')}
                   </label>
                   <AuthorizedPathsEditor
-                    paths={product.authorizedPaths || getDefaultAuthorizedPaths()}
+                    paths={product.authorizedPaths || getDefaultAuthorizedPaths(
+                      parsedOpenAPI?.rawSpec?.paths ? Object.keys(parsedOpenAPI.rawSpec.paths) : undefined
+                    )}
                     onChange={(paths) => handleAuthorizedPathsChange(index, paths)}
                     suggestedPaths={suggestedPaths}
                   />

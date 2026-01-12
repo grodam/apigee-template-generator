@@ -196,10 +196,69 @@ function formatDisplayName(resourceName: string): string {
 }
 
 /**
- * Create default authorized paths for single product mode.
+ * Find the smallest common root path from a list of paths.
+ * This extracts the longest common prefix shared by all paths.
+ *
+ * Examples:
+ * - ["/api/v1/users", "/api/v1/orders"] -> "/api/v1"
+ * - ["/DebtCollection/cases", "/DebtCollection/payments"] -> "/DebtCollection"
+ * - ["/users", "/orders"] -> "/"
  */
-export function getDefaultAuthorizedPaths(): string[] {
-  return ['/', '/**'];
+export function findSmallestCommonRoot(paths: string[]): string {
+  if (!paths || paths.length === 0) return '/';
+
+  // Normalize paths: ensure they start with /
+  const normalizedPaths = paths.map(p => p.startsWith('/') ? p : '/' + p);
+
+  if (normalizedPaths.length === 1) {
+    // For single path, extract the first segment as the root
+    const parts = normalizedPaths[0].split('/').filter(p => p && !p.startsWith('{'));
+    if (parts.length === 0) return '/';
+    return '/' + parts[0];
+  }
+
+  // Split all paths into segments
+  const splitPaths = normalizedPaths.map(p => p.split('/').filter(segment => segment !== ''));
+
+  // Find common prefix segments
+  const commonSegments: string[] = [];
+  const minLength = Math.min(...splitPaths.map(p => p.length));
+
+  for (let i = 0; i < minLength; i++) {
+    const segment = splitPaths[0][i];
+
+    // Skip path parameters like {id}
+    if (segment.startsWith('{')) break;
+
+    // Check if all paths have the same segment at this position
+    const allMatch = splitPaths.every(p => p[i] === segment);
+    if (allMatch) {
+      commonSegments.push(segment);
+    } else {
+      break;
+    }
+  }
+
+  if (commonSegments.length === 0) return '/';
+  return '/' + commonSegments.join('/');
+}
+
+/**
+ * Create default authorized paths for single product mode.
+ * If paths are provided, uses the smallest common root.
+ * Otherwise, falls back to "/" and "/**".
+ */
+export function getDefaultAuthorizedPaths(paths?: string[]): string[] {
+  if (!paths || paths.length === 0) {
+    return ['/', '/**'];
+  }
+
+  const commonRoot = findSmallestCommonRoot(paths);
+  if (commonRoot === '/') {
+    return ['/', '/**'];
+  }
+
+  return [commonRoot, `${commonRoot}/**`];
 }
 
 /**
@@ -209,13 +268,17 @@ export function getDefaultAuthorizedPaths(): string[] {
  * @param resourceSuffix - Resource suffix for multi-product naming (e.g., "cases")
  * @param env - Environment name
  * @param authorizedPaths - Authorized paths for the product
+ * @param openAPIPaths - Optional OpenAPI paths to derive default authorized paths
  */
 export function createProductForEnv(
   proxyName: string,
   resourceSuffix: string | null,
   env: string,
-  authorizedPaths: string[] = getDefaultAuthorizedPaths()
+  authorizedPaths?: string[],
+  openAPIPaths?: string[]
 ): ApiProduct {
+  // Use provided authorizedPaths, or compute from OpenAPI paths, or use default
+  const resolvedPaths = authorizedPaths || getDefaultAuthorizedPaths(openAPIPaths);
   const envSuffix = getEnvSuffix(env);
 
   // Product name: proxyName.resourceSuffix.env (or proxyName.env for single mode)
@@ -235,7 +298,7 @@ export function createProductForEnv(
       : `API Product for ${proxyName} - ${env}`,
     approvalType: 'manual',
     environments: [env],
-    authorizedPaths,
+    authorizedPaths: resolvedPaths,
     attributes: [{ name: 'access', value: 'private' }]
   };
 }

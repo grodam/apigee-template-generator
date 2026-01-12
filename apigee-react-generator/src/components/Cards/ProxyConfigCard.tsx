@@ -64,6 +64,10 @@ const apiConfigSchema = z.object({
   version: z.string().regex(/^v[0-9]+$/),
   proxyBasepath: z.string().min(1).regex(pathKebabCaseRegex),
   authSouthbound: z.enum(['Basic', 'OAuth2-ClientCredentials', 'ApiKey', 'None']),
+  globalRateLimit: z.string()
+    .regex(/^[0-9]+(pm|ps)$/, 'Format: {number}pm or {number}ps')
+    .optional()
+    .or(z.literal('')),
 });
 
 type ApiConfigFormData = z.infer<typeof apiConfigSchema>;
@@ -92,6 +96,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
       version: apiConfig.version || '',
       proxyBasepath: apiConfig.proxyBasepath || '',
       authSouthbound: apiConfig.authSouthbound || 'Basic',
+      globalRateLimit: apiConfig.globalRateLimit || '',
     }
   });
 
@@ -116,6 +121,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
         version: '',
         proxyBasepath: '',
         authSouthbound: 'Basic',
+        globalRateLimit: '',
       });
       setAutoFilledFields(new Set());
     }
@@ -148,6 +154,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
         version: formData.version || '',
         proxyBasepath: formData.proxyBasepath || '',
         authSouthbound: formData.authSouthbound || 'Basic',
+        globalRateLimit: formData.globalRateLimit || '',
         oasFormat: apiConfig.oasFormat || 'json',
         oasVersion: apiConfig.oasVersion || '3.0.0',
       });
@@ -318,7 +325,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
         </div>
 
         {/* Base Path & Auth */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           <div>
             <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
               {t('step1.fields.proxyBasepath.label')} <span className="swiss-badge-auto">AUTO</span>
@@ -370,6 +377,27 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
                     <option value="OAuth2-ClientCredentials">{t('step1.fields.authSouthbound.options.oauth2')}</option>
                     <option value="ApiKey">{t('step1.fields.authSouthbound.options.apikey', 'API Key')}</option>
                   </select>
+                </InputWithTooltip>
+              )}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
+              {t('step1.fields.globalRateLimit.label')}
+            </label>
+            <Controller
+              name="globalRateLimit"
+              control={control}
+              render={({ field }) => (
+                <InputWithTooltip tooltip={t('step1.fields.globalRateLimit.tooltip')}>
+                  <input
+                    {...field}
+                    placeholder={t('step1.fields.globalRateLimit.placeholder')}
+                    className={cn(
+                      "w-full bg-transparent border-b-2 py-2 text-sm font-medium font-mono focus:outline-none pr-8",
+                      errors.globalRateLimit ? "border-red-500" : "border-[var(--swiss-black)]"
+                    )}
+                  />
                 </InputWithTooltip>
               )}
             />
