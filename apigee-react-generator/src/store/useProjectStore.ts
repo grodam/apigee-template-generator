@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { ApiConfiguration, EnvironmentConfig } from '../models/ApiConfiguration';
+import type { ApiConfiguration, EnvironmentConfig, ApiProduct } from '../models/ApiConfiguration';
 import type { ParsedOpenAPI } from '../models/OpenAPISpec';
 import type { GeneratedProject } from '../models/GeneratedProject';
 import type { AzureDevOpsConfig, TemplateRepoConfig } from '../models/AzureDevOpsConfig';
@@ -8,6 +8,7 @@ import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetecte
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
+import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -47,6 +48,9 @@ interface ProjectState {
   // Generated backend_info KVM entries from URL variabilization
   generatedBackendInfoEntries: BackendInfoEntry[];
 
+  // Suggested products from OpenAPI path analysis
+  suggestedProducts: SuggestedProduct[];
+
   // Actions
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
@@ -60,6 +64,16 @@ interface ProjectState {
   setGeneratedProject: (project: GeneratedProject | null) => void;
 
   updateEnvironmentConfig: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', config: EnvironmentConfig) => void;
+
+  // Product management actions
+  setProductsMode: (mode: 'single' | 'multi') => void;
+  addProduct: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', product: ApiProduct) => void;
+  removeProduct: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', productIndex: number) => void;
+  updateProduct: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', productIndex: number, updates: Partial<ApiProduct>) => void;
+  generateProductsFromPaths: () => void;
+  syncProductsToAllEnvironments: () => void;
+  setSuggestedProducts: (products: SuggestedProduct[]) => void;
+  applySelectedSuggestions: (suggestions: SuggestedProduct[]) => void;
 
   // Backend info actions
   setGeneratedBackendInfoEntries: (entries: BackendInfoEntry[]) => void;
@@ -102,6 +116,27 @@ const getEnvSuffix = (env: string, separator: string = '-'): string => {
   return `${separator}${normalized}`;
 };
 
+// Helper to extract resource suffix from product name
+// e.g., "elis.finance.sap.invoice.v1.cases.dev" -> "cases"
+const extractResourceSuffix = (productName: string, proxyName: string): string | null => {
+  // Remove environment suffix (.dev, .uat, .stg, etc.)
+  const envSuffixes = ['.dev', '.uat', '.staging', '.stg', '.prod'];
+  let nameWithoutEnv = productName;
+  for (const suffix of envSuffixes) {
+    if (nameWithoutEnv.endsWith(suffix)) {
+      nameWithoutEnv = nameWithoutEnv.slice(0, -suffix.length);
+      break;
+    }
+  }
+
+  // If the product name starts with the proxy name, extract the suffix
+  if (nameWithoutEnv.startsWith(proxyName + '.')) {
+    return nameWithoutEnv.slice(proxyName.length + 1) || null;
+  }
+
+  return null;
+};
+
 interface EnvConfigParams {
   env: string;
   proxyName: string;
@@ -113,11 +148,9 @@ interface EnvConfigParams {
 
 // Generate API Product description from naming components
 const generateProductDescription = (params: EnvConfigParams): string => {
-  const { env, entity, backendApps, businessObject, version } = params;
+  const { env, businessObject, version } = params;
   const envLabel = normalizeEnvName(env).toUpperCase();
-  const entityLabel = entity === 'elis' ? 'internal' : 'external';
-  const backendList = backendApps.join(', ').toUpperCase();
-  return `API Product for ${businessObject} (${version}) - Environment: ${envLabel}.\nBackend: ${backendList}.\nType: ${entityLabel}.`;
+  return `API Product for ${businessObject} (${version}) - ${envLabel} environment.`;
 };
 
 const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentConfig => {
@@ -222,6 +255,7 @@ export const useProjectStore = create<ProjectState>()(
       templateOverrides: {},
       theme: 'light' as Theme,
       generatedBackendInfoEntries: [],
+      suggestedProducts: [],
 
       setCurrentStep: (step: number) => set({ currentStep: step }),
 
@@ -510,6 +544,247 @@ export const useProjectStore = create<ProjectState>()(
           };
         }),
 
+      // Product management actions
+      setProductsMode: (mode: 'single' | 'multi') =>
+        set((state) => ({
+          apiConfig: {
+            ...state.apiConfig,
+            productsMode: mode
+          }
+        })),
+
+      addProduct: (_env: 'dev1' | 'uat1' | 'staging' | 'prod1', product: ApiProduct) =>
+        set((state) => {
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+
+          const proxyName = state.apiConfig.proxyName || '';
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+          const newEnvironments = { ...envs };
+
+          // Extract resource suffix from the product name to create env-specific versions
+          const resourceSuffix = extractResourceSuffix(product.name, proxyName) || `product-${(envs.dev1.apiProducts?.length || 0) + 1}`;
+
+          for (const targetEnv of envNames) {
+            // Create a product with env-specific naming
+            const envProduct = createProductForEnv(
+              proxyName,
+              resourceSuffix,
+              targetEnv,
+              product.authorizedPaths || getDefaultAuthorizedPaths()
+            );
+
+            // Preserve description and other custom fields from original
+            envProduct.description = product.description || envProduct.description;
+            envProduct.approvalType = product.approvalType;
+            envProduct.attributes = product.attributes;
+
+            newEnvironments[targetEnv] = {
+              ...newEnvironments[targetEnv],
+              apiProducts: [...(newEnvironments[targetEnv].apiProducts || []), envProduct]
+            };
+          }
+
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              environments: newEnvironments
+            }
+          };
+        }),
+
+      removeProduct: (_env: 'dev1' | 'uat1' | 'staging' | 'prod1', productIndex: number) =>
+        set((state) => {
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+
+          // Remove product at the same index from all environments
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+          const newEnvironments = { ...envs };
+
+          for (const targetEnv of envNames) {
+            const envConfig = newEnvironments[targetEnv];
+            newEnvironments[targetEnv] = {
+              ...envConfig,
+              apiProducts: envConfig.apiProducts.filter((_, i) => i !== productIndex)
+            };
+          }
+
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              environments: newEnvironments
+            }
+          };
+        }),
+
+      updateProduct: (env: 'dev1' | 'uat1' | 'staging' | 'prod1', productIndex: number, updates: Partial<ApiProduct>) =>
+        set((state) => {
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+
+          // Fields that should be synced across all environments
+          const syncedFields: (keyof ApiProduct)[] = ['authorizedPaths', 'approvalType', 'attributes', 'resourceGroups'];
+          const hasSyncedFieldUpdate = syncedFields.some(field => field in updates);
+
+          // If updating a synced field, apply to all environments
+          if (hasSyncedFieldUpdate) {
+            const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+            const newEnvironments = { ...envs };
+
+            // Extract only the synced field updates
+            const syncedUpdates: Partial<ApiProduct> = {};
+            for (const field of syncedFields) {
+              if (field in updates) {
+                (syncedUpdates as any)[field] = (updates as any)[field];
+              }
+            }
+
+            for (const targetEnv of envNames) {
+              const envConfig = newEnvironments[targetEnv];
+              const updatedProducts = envConfig.apiProducts.map((product, i) => {
+                if (i === productIndex) {
+                  // For the original env, apply all updates
+                  // For other envs, only apply synced fields
+                  return targetEnv === env
+                    ? { ...product, ...updates }
+                    : { ...product, ...syncedUpdates };
+                }
+                return product;
+              });
+
+              newEnvironments[targetEnv] = {
+                ...envConfig,
+                apiProducts: updatedProducts
+              };
+            }
+
+            return {
+              apiConfig: {
+                ...state.apiConfig,
+                environments: newEnvironments
+              }
+            };
+          }
+
+          // For non-synced fields (name, displayName, description), only update the specific env
+          const envConfig = envs[env];
+          const updatedProducts = envConfig.apiProducts.map((product, i) =>
+            i === productIndex ? { ...product, ...updates } : product
+          );
+
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              environments: {
+                ...envs,
+                [env]: {
+                  ...envConfig,
+                  apiProducts: updatedProducts
+                }
+              }
+            }
+          };
+        }),
+
+      generateProductsFromPaths: () =>
+        set((state) => {
+          const { parsedOpenAPI, apiConfig } = state;
+          if (!parsedOpenAPI || !apiConfig.proxyName) return state;
+
+          // Extract path info from OpenAPI
+          const paths: PathInfo[] = Object.entries(parsedOpenAPI.rawSpec.paths || {}).map(([path, methods]) => ({
+            path,
+            methods: Object.keys(methods as object).filter(m =>
+              ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(m.toLowerCase())
+            )
+          }));
+
+          // Generate suggestions
+          const suggestions = suggestProductsFromPaths(paths, apiConfig.proxyName);
+
+          return { suggestedProducts: suggestions };
+        }),
+
+      syncProductsToAllEnvironments: () =>
+        set((state) => {
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+
+          // Use dev1 as the source
+          const sourceProducts = envs.dev1.apiProducts;
+          const proxyName = state.apiConfig.proxyName || '';
+
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+          const newEnvironments = { ...envs };
+
+          for (const env of envNames) {
+            // Create products with environment-specific names
+            const envProducts = sourceProducts.map(product => {
+              const resourceSuffix = extractResourceSuffix(product.name, proxyName);
+              return createProductForEnv(
+                proxyName,
+                resourceSuffix,
+                env,
+                product.authorizedPaths || getDefaultAuthorizedPaths()
+              );
+            });
+
+            newEnvironments[env] = {
+              ...newEnvironments[env],
+              apiProducts: envProducts
+            };
+          }
+
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              environments: newEnvironments
+            }
+          };
+        }),
+
+      setSuggestedProducts: (products: SuggestedProduct[]) =>
+        set({ suggestedProducts: products }),
+
+      applySelectedSuggestions: (suggestions: SuggestedProduct[]) =>
+        set((state) => {
+          const selected = suggestions.filter(s => s.selected);
+          if (selected.length === 0) return state;
+
+          const envs = state.apiConfig.environments;
+          if (!envs) return state;
+
+          const proxyName = state.apiConfig.proxyName || '';
+          const envNames = ['dev1', 'uat1', 'staging', 'prod1'] as const;
+          const newEnvironments = { ...envs };
+
+          for (const env of envNames) {
+            const newProducts: ApiProduct[] = selected.map(suggestion =>
+              createProductForEnv(
+                proxyName,
+                suggestion.name,
+                env,
+                suggestion.authorizedPaths
+              )
+            );
+
+            newEnvironments[env] = {
+              ...newEnvironments[env],
+              apiProducts: newProducts
+            };
+          }
+
+          return {
+            apiConfig: {
+              ...state.apiConfig,
+              productsMode: 'multi',
+              environments: newEnvironments
+            },
+            suggestedProducts: []
+          };
+        }),
+
       setGeneratedBackendInfoEntries: (entries: BackendInfoEntry[]) =>
         set({ generatedBackendInfoEntries: entries }),
 
@@ -640,6 +915,8 @@ export const useProjectStore = create<ProjectState>()(
         generatedProject: null,
         // Clear generated backend info entries
         generatedBackendInfoEntries: [],
+        // Clear suggested products
+        suggestedProducts: [],
       })
     }),
     {

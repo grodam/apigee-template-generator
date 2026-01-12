@@ -173,13 +173,10 @@ export const Step2_ApiConfiguration: React.FC = () => {
   const generateDescription = React.useCallback(() => {
     if (!domain || !backendApps || !businessObject) return '';
 
-    const entityLabel = entity === 'elis' ? 'internal' : 'external';
-    const backendAppsList = backendApps.split('-').join(', ').toUpperCase();
     const businessObjectCapitalized = businessObject.charAt(0).toUpperCase() + businessObject.slice(1);
-    const domainCapitalized = domain.charAt(0).toUpperCase() + domain.slice(1);
 
-    return `API proxy for ${businessObjectCapitalized} management in the ${domainCapitalized} domain.\nBackend: ${backendAppsList}.\nType: ${entityLabel}.`;
-  }, [entity, domain, backendApps, businessObject]);
+    return `API Proxy for ${businessObjectCapitalized} (${version}).`;
+  }, [businessObject, version]);
 
   // Apply auto-detected values on mount
   useEffect(() => {

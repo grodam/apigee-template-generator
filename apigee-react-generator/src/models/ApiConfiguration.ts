@@ -27,6 +27,9 @@ export interface ApiConfiguration {
   // Nom du proxy calculé
   proxyName: string;                 // Calculé: {entity}.{domain}.{backendApps}.{businessObject}.{version}
 
+  // Multi-product mode: 'single' = one product per env, 'multi' = multiple products per env
+  productsMode: 'single' | 'multi';
+
   // Configuration des environnements
   environments: {
     dev1: EnvironmentConfig;
@@ -60,6 +63,13 @@ export interface TargetServer {
   };
 }
 
+// Resource group for multi-product mode
+export interface ResourceGroup {
+  id: string;                        // UUID for React key
+  pathPrefix: string;                // Ex: "/api/Cases"
+  authorizedPaths: string[];         // Ex: ["/api/Cases", "/api/Cases/**"]
+}
+
 export interface ApiProduct {
   name: string;                      // Ex: "customer-v1-product-dev1"
   displayName: string;
@@ -67,6 +77,10 @@ export interface ApiProduct {
   approvalType: "auto" | "manual";
   attributes?: Array<{ name: string; value: string }>;
   environments: string[];            // ["dev1"]
+  // Authorized paths for this product (defaults to ["/", "/**"] if not specified)
+  authorizedPaths?: string[];
+  // Resource groups for multi-product mode (optional, for grouping related paths)
+  resourceGroups?: ResourceGroup[];
   operationGroup?: {
     operationConfigs: Array<{
       apiSource: string;             // Nom du proxy

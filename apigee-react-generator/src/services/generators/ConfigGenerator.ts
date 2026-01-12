@@ -1,4 +1,4 @@
-import type { ApiConfiguration, EnvironmentConfig } from '../../models/ApiConfiguration';
+import type { ApiConfiguration, EnvironmentConfig, ApiProduct } from '../../models/ApiConfiguration';
 import type { OpenAPIDocument } from '../../types/openapi';
 import { extractPathPrefixes } from '../../utils/stringUtils';
 
@@ -60,7 +60,7 @@ export class ConfigGenerator {
             { name: "access", value: "private" }
           ],
           environments: product.environments,
-          operationGroup: product.operationGroup || this.generateOperationGroup(),
+          operationGroup: product.operationGroup || this.generateOperationGroupForProduct(product),
         })),
         userroles: [],
         reports: [],
@@ -82,6 +82,44 @@ export class ConfigGenerator {
       })),
       operationConfigType: "proxy"
     };
+  }
+
+  /**
+   * Generate operation group for a specific product using its authorized paths.
+   * If the product has explicit authorizedPaths, use those.
+   * Otherwise, fall back to extracting from OpenAPI paths.
+   */
+  private generateOperationGroupForProduct(product: ApiProduct): any {
+    // Use explicit authorized paths if defined
+    if (product.authorizedPaths && product.authorizedPaths.length > 0) {
+      return {
+        operationConfigs: product.authorizedPaths.map(path => ({
+          apiSource: this.config.proxyName,
+          operations: [{ resource: path }]
+        })),
+        operationConfigType: "proxy"
+      };
+    }
+
+    // Fall back to extracting from resource groups
+    if (product.resourceGroups && product.resourceGroups.length > 0) {
+      const operations: Array<{ resource: string }> = [];
+      for (const group of product.resourceGroups) {
+        for (const path of group.authorizedPaths) {
+          operations.push({ resource: path });
+        }
+      }
+      return {
+        operationConfigs: operations.map(op => ({
+          apiSource: this.config.proxyName,
+          operations: [op]
+        })),
+        operationConfigType: "proxy"
+      };
+    }
+
+    // Ultimate fallback: use default OpenAPI extraction
+    return this.generateOperationGroup();
   }
 
   private extractOperationsFromOpenAPI(): Array<{ resource: string }> {

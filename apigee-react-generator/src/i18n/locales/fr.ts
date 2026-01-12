@@ -426,4 +426,30 @@ export default {
     en: 'Anglais',
     fr: 'Français',
   },
+
+  // Canvas Cards
+  canvas: {
+    cards: {
+      apiProduct: {
+        title: 'Produits API',
+        subtitle: 'Configuration des produits par environnement',
+        mode: 'Mode',
+        singleProduct: 'Produit unique',
+        multipleProducts: 'Produits multiples',
+        addProduct: 'Ajouter un produit',
+        autoGenerate: 'Auto-générer depuis OpenAPI',
+        authorizedPaths: 'Chemins autorisés',
+        addPath: 'Ajouter un chemin',
+        pathPlaceholder: 'ex. /api/resource/**',
+        suggestionsModal: {
+          title: 'Produits suggérés',
+          description: 'Basé sur votre spécification OpenAPI, nous suggérons les produits suivants :',
+          applySelected: 'Appliquer la sélection',
+          selectAll: 'Tout sélectionner',
+          deselectAll: 'Tout désélectionner',
+          paths: 'Chemins',
+        },
+      },
+    },
+  },
 };
