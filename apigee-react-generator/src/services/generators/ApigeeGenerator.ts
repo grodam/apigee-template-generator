@@ -558,11 +558,16 @@ extends:
         portalSpec.info.contact = { name: this.config.entity, url: '', email: '' };
       }
 
-      // Set OAuth2 security scheme with environment-specific Okta URL
-      if (!portalSpec.components) {
-        portalSpec.components = {};
+      // Build components with OAuth2 security scheme (preserve schemas, replace securitySchemes)
+      const portalComponents: Record<string, any> = {};
+
+      // Keep existing schemas if present
+      if (portalSpec.components?.schemas) {
+        portalComponents.schemas = portalSpec.components.schemas;
       }
-      portalSpec.components.securitySchemes = {
+
+      // Add OAuth2 security scheme for portal
+      portalComponents.securitySchemes = {
         oauth2: {
           type: 'oauth2',
           description: `For direct access token use the following URL = ${envConfig.oktaUrl}`,
@@ -583,7 +588,7 @@ extends:
       if (portalSpec.openapi) orderedSpec.openapi = portalSpec.openapi;
       if (portalSpec.info) orderedSpec.info = portalSpec.info;
       if (portalSpec.servers) orderedSpec.servers = portalSpec.servers;
-      if (portalSpec.components) orderedSpec.components = portalSpec.components;
+      orderedSpec.components = portalComponents;
       if (portalSpec.security) orderedSpec.security = portalSpec.security;
       if (portalSpec.paths) orderedSpec.paths = portalSpec.paths;
 
