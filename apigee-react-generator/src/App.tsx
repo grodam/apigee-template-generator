@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { CanvasContainer } from './components/Canvas/CanvasContainer'
 import { FileCode2, Settings, RefreshCw } from 'lucide-react'
 import { SettingsModal } from './components/Settings/SettingsModal'
-import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useProjectStore } from './store/useProjectStore'
 import { useTemplateSync } from './hooks/useTemplateSync'
@@ -29,7 +28,7 @@ function App() {
                 Apigee Generator
               </h1>
               <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[var(--swiss-gray-400)]">
-                {t('app.subtitle', 'Template Configuration Canvas')}
+                {t('app.subtitle', 'Automate API Proxy Building')}
               </p>
             </div>
           </div>
@@ -47,7 +46,6 @@ function App() {
               </div>
             )}
             <span className="text-[10px] font-mono uppercase text-[var(--swiss-gray-400)]">v2.0.0</span>
-            <LanguageSwitcher />
             <ThemeToggle />
             <button
               onClick={() => setSettingsModalOpen(true)}

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, HelpCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SwissCard } from './SwissCard';
+import { HelpPanel } from '../Help/HelpPanel';
+import { targetServersHelpContent } from '../Help/helpContent';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
@@ -61,6 +63,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
   const [visibleValues, setVisibleValues] = useState<Set<string>>(new Set());
   const [newKvmName, setNewKvmName] = useState('');
   const [isAddingKvm, setIsAddingKvm] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const hasAppliedAutoFill = useRef(false);
 
   // Toggle visibility for KVM entry values
@@ -294,6 +297,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
   const targetServer = currentEnvConfig?.targetServers?.[0];
 
   return (
+    <>
     <SwissCard
       number="04"
       title={t('canvas.cards.targets.title', 'Target Servers')}
@@ -303,6 +307,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
       onToggle={onToggle}
       collapsedPreview={collapsedPreview}
       disabled={disabled}
+      onHelpClick={() => setIsHelpOpen(true)}
     >
       {/* Environment Tabs */}
       <div className="flex border-b border-[var(--swiss-gray-200)] mb-6">
@@ -558,5 +563,13 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
         </div>
       </div>
     </SwissCard>
+
+    {/* Help Panel */}
+    <HelpPanel
+      isOpen={isHelpOpen}
+      onClose={() => setIsHelpOpen(false)}
+      {...targetServersHelpContent}
+    />
+    </>
   );
 };

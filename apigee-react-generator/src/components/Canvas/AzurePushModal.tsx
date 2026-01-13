@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Upload, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Upload, AlertTriangle, Cloud } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import { useProjectStore } from '../../store/useProjectStore';
 
 interface AzurePushModalProps {
@@ -21,7 +25,7 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   isPushing,
 }) => {
   const { t } = useTranslation();
-  const { azureDevOpsConfig, updateAzureDevOpsConfig, setSettingsModalOpen } = useProjectStore();
+  const { azureDevOpsConfig, updateAzureDevOpsConfig, setSettingsModalOpen, setSettingsActiveTab } = useProjectStore();
 
   // Local state for repository name
   const [repositoryName, setRepositoryName] = useState(azureDevOpsConfig.repositoryName);
@@ -45,93 +49,125 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
 
   const handleOpenSettings = () => {
     onClose();
+    setSettingsActiveTab('azure-devops');
     setSettingsModalOpen(true);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative bg-[var(--bg-primary)] rounded-xl shadow-2xl w-full max-w-md mx-4 border border-[var(--border-default)]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--border-default)]">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-            {t('azurePushModal.title', 'Push to Azure DevOps')}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-[var(--text-muted)]" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md p-0 gap-0 bg-[var(--swiss-white)] border-2 border-[var(--swiss-black)] rounded-none overflow-hidden shadow-none">
+        {/* Swiss Header */}
+        <DialogHeader className="px-6 py-5 border-b-2 border-[var(--swiss-black)]">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[var(--swiss-black)] text-[var(--swiss-white)] flex items-center justify-center">
+              <Cloud className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-sm font-black uppercase tracking-wide text-[var(--swiss-black)]">
+                {t('azurePushModal.title', 'Push to Azure DevOps')}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-[var(--swiss-gray-500)] font-mono mt-1">
+                {t('azurePushModal.description', 'Create or update repository')}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
           {/* Configuration Warning */}
           {!isConfigured && (
-            <Alert className="soft-alert warning">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                {t('step5.notConfiguredAlert', 'Azure DevOps not configured.')}
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  onClick={handleOpenSettings}
-                  className="ml-2 text-[var(--accent-500)] hover:text-[var(--accent-600)] p-0 h-auto"
-                >
-                  {t('step5.openSettings', 'Configure in Settings')}
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <div className="border-l-4 border-amber-500 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">
+                    Configuration Required
+                  </p>
+                  <p className="text-xs text-amber-700">
+                    {t('step5.notConfiguredAlert', 'Azure DevOps settings are not configured. Please configure your organization, project, and PAT in the settings.')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleOpenSettings}
+                    className="mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-800 hover:text-amber-900 underline transition-colors"
+                  >
+                    {t('step5.openSettings', 'Open Settings')}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Repository Name */}
-          <div className="space-y-2">
-            <Label htmlFor="modal-ado-repository" className="soft-label">
+          <div>
+            <label
+              htmlFor="modal-ado-repository"
+              className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase tracking-widest block mb-2"
+            >
               {t('step5.repository.required', 'Repository Name')} *
-            </Label>
-            <Input
+            </label>
+            <input
               id="modal-ado-repository"
+              type="text"
               value={repositoryName}
               onChange={(e) => setRepositoryName(e.target.value)}
               placeholder="my-api-proxy"
-              className="soft-input font-mono text-sm"
               autoFocus
+              className={cn(
+                "w-full bg-transparent border-b-2 py-2 text-sm font-medium font-mono focus:outline-none transition-colors",
+                repositoryName
+                  ? "border-[var(--swiss-black)]"
+                  : "border-[var(--swiss-gray-300)] focus:border-[var(--swiss-black)]"
+              )}
             />
+            <p className="text-[10px] text-[var(--swiss-gray-400)] mt-2">
+              {t('azurePushModal.repoHint', 'A new repository will be created if it does not exist.')}
+            </p>
           </div>
+
+          {/* Configuration Summary */}
+          {isConfigured && (
+            <div className="border-l-4 border-[var(--swiss-black)] pl-4 py-2 bg-[var(--swiss-gray-50)]">
+              <p className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase tracking-widest mb-2">
+                Target
+              </p>
+              <p className="text-xs font-mono text-[var(--swiss-gray-700)]">
+                {azureDevOpsConfig.organization}/{azureDevOpsConfig.project}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-[var(--border-default)]">
-          <Button
+        {/* Swiss Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t-2 border-[var(--swiss-black)] bg-[var(--swiss-gray-50)]">
+          <button
             type="button"
-            variant="outline"
             onClick={onClose}
             disabled={isPushing}
-            className="soft-button secondary"
+            className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--swiss-gray-600)] hover:text-[var(--swiss-black)] transition-colors disabled:opacity-50"
           >
             {t('common.cancel', 'Cancel')}
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
             onClick={handlePush}
             disabled={isPushing || !isReadyToPush}
-            className="soft-button flex items-center gap-2"
+            className={cn(
+              "px-6 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
+              isReadyToPush && !isPushing
+                ? "bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]"
+                : "bg-[var(--swiss-gray-300)] text-[var(--swiss-gray-500)] cursor-not-allowed"
+            )}
           >
-            <Upload className={`h-4 w-4 ${isPushing ? 'animate-pulse' : ''}`} />
-            {isPushing ? t('step5.push.pushing', 'Pushing...') : t('step5.push.button', 'Push')}
-          </Button>
+            <Upload className={cn("h-4 w-4", isPushing && "animate-pulse")} />
+            {isPushing
+              ? t('step5.push.pushing', 'Pushing...')
+              : t('step5.push.button', 'Push to Azure DevOps')
+            }
+          </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

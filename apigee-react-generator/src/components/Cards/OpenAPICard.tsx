@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Upload, CheckCircle2, AlertCircle, Server, Shield, GitBranch } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { SwissCard } from './SwissCard';
+import { HelpPanel } from '../Help/HelpPanel';
+import { openAPIHelpContent } from '../Help/helpContent';
 import { useProjectStore } from '../../store/useProjectStore';
 import { OpenAPIParserService } from '../../services/parsers/OpenAPIParser';
 import { cn } from '@/lib/utils';
@@ -28,6 +30,7 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parser = useMemo(() => new OpenAPIParserService(), []);
@@ -136,6 +139,7 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
   ) : null;
 
   return (
+    <>
     <SwissCard
       number="01"
       title={t('canvas.cards.openapi.title', 'OpenAPI Specification')}
@@ -144,6 +148,7 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
       completion={completion}
       isExpanded={isExpanded}
       onToggle={onToggle}
+      onHelpClick={() => setIsHelpOpen(true)}
     >
       {/* Dropzone */}
       <div
@@ -221,7 +226,7 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
                 <p className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase flex items-center gap-1">
                   <Shield className="w-3 h-3" /> Auth Detected
                 </p>
-                <p className="text-sm font-bold">{autoDetected.auth.type}</p>
+                <p className="text-sm font-bold font-mono">{autoDetected.auth.type}</p>
               </div>
             )}
             {autoDetected.targetPath && (
@@ -289,5 +294,13 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
         {isValidating ? 'Validating...' : t('canvas.cards.openapi.parseButton', 'Parse & Auto-fill')}
       </button>
     </SwissCard>
+
+    {/* Help Panel */}
+    <HelpPanel
+      isOpen={isHelpOpen}
+      onClose={() => setIsHelpOpen(false)}
+      {...openAPIHelpContent}
+    />
+    </>
   );
 };

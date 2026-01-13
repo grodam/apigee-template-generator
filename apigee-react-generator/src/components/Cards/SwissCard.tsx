@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, HelpCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ interface SwissCardProps {
   children: ReactNode;
   collapsedPreview?: ReactNode;
   disabled?: boolean;
+  onHelpClick?: () => void;
 }
 
 export const SwissCard: React.FC<SwissCardProps> = ({
@@ -26,6 +27,7 @@ export const SwissCard: React.FC<SwissCardProps> = ({
   children,
   collapsedPreview,
   disabled = false,
+  onHelpClick,
 }) => {
   return (
     <article
@@ -71,6 +73,21 @@ export const SwissCard: React.FC<SwissCardProps> = ({
                 {completion}%
               </p>
             </div>
+          )}
+          {onHelpClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onHelpClick();
+              }}
+              className={cn(
+                "p-2 hover:bg-[var(--swiss-gray-100)] transition-colors rounded",
+                disabled && "pointer-events-none opacity-50"
+              )}
+              title="Aide"
+            >
+              <HelpCircle className="w-5 h-5 text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)]" />
+            </button>
           )}
           <ChevronRight
             className={cn(

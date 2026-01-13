@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
 import { AzureDevOpsService } from '@/services/azure-devops/AzureDevOpsService';
@@ -13,11 +13,19 @@ export function AzureDevOpsSettings() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const testResultRef = useRef<HTMLDivElement>(null);
 
   // Update lastSaved when config changes
   useEffect(() => {
     setLastSaved(new Date());
   }, [azureDevOpsConfig.organization, azureDevOpsConfig.project, azureDevOpsConfig.personalAccessToken, azureDevOpsConfig.defaultBranch]);
+
+  // Scroll to test result when it appears
+  useEffect(() => {
+    if (testResult && testResultRef.current) {
+      testResultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [testResult]);
 
   const handleTestConnection = async () => {
     if (!azureDevOpsConfig.organization || !azureDevOpsConfig.personalAccessToken) {
@@ -189,6 +197,7 @@ export function AzureDevOpsSettings() {
       {/* Test Result */}
       {testResult && (
         <div
+          ref={testResultRef}
           className={cn(
             "p-4 border-l-4 flex items-start gap-3",
             testResult.success

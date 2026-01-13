@@ -242,28 +242,6 @@ export class ApigeeProjectGenerator {
     }
   }
 
-  // Eclipse files are not needed for Apigee deployment via Maven
-  // Keeping this method commented in case it's needed in the future
-  /*
-  private async generateEclipseFiles(project: GeneratedProject): Promise<void> {
-    try {
-      const classpath = await this.templateLoader.load('eclipse/.classpath');
-      project.files.set('.classpath', classpath);
-
-      const projectFile = await this.templateLoader.load('eclipse/.project');
-      project.files.set('.project', projectFile.replace(/{{projectName}}/g, this.config.proxyName));
-
-      const jdtPrefs = await this.templateLoader.load('eclipse/.settings/org.eclipse.jdt.core.prefs');
-      project.files.set('.settings/org.eclipse.jdt.core.prefs', jdtPrefs);
-
-      const m2ePrefs = await this.templateLoader.load('eclipse/.settings/org.eclipse.m2e.core.prefs');
-      project.files.set('.settings/org.eclipse.m2e.core.prefs', m2ePrefs);
-    } catch (error) {
-      console.error('Error generating Eclipse files:', error);
-    }
-  }
-  */
-
   private async copyLintingFiles(project: GeneratedProject): Promise<void> {
     try {
       // EX-ODM002-NamingConventions.js - Full linting plugin for Apigee policy naming conventions
@@ -427,10 +405,16 @@ extends:
       ? this.config.proxyBasepath
       : '/' + this.config.proxyBasepath;
 
+    // Use portal config URLs if available, otherwise use defaults
+    const devUrl = this.portalConfig?.portalUrls.dev1 || 'https://dev-api.elis.com';
+    const uatUrl = this.portalConfig?.portalUrls.uat1 || 'https://uat-api.elis.com';
+    const prodUrl = this.portalConfig?.portalUrls.prod1 || 'https://api.elis.com';
+    const oktaNonProdUrl = this.portalConfig?.oktaNonProdUrl || 'https://elis-employees.oktapreview.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token';
+
     publicSpec.servers = [
-      { url: 'https://dev-api.elis.com' + basePath, description: 'DEV Env' },
-      { url: 'https://uat-api.elis.com' + basePath, description: 'UAT Env' },
-      { url: 'https://api.elis.com' + basePath, description: 'PROD Env' }
+      { url: devUrl + basePath, description: 'DEV Env' },
+      { url: uatUrl + basePath, description: 'UAT Env' },
+      { url: prodUrl + basePath, description: 'PROD Env' }
     ];
 
     // Mettre à jour le info avec le titre et description Apigee
@@ -448,10 +432,10 @@ extends:
     publicSpec.components.securitySchemes = {
       oauth2: {
         type: 'oauth2',
-        description: 'For direct access token use the following URL = https://elis-employees.oktapreview.com/oauth2/aus4i6p4rkZwGMAJC0x7/v1/token',
+        description: `For direct access token use the following URL = ${oktaNonProdUrl}`,
         flows: {
           clientCredentials: {
-            tokenUrl: 'https://dev-api.elis.com/oauth2',
+            tokenUrl: devUrl + '/oauth2',
             scopes: {}
           }
         }
@@ -464,7 +448,7 @@ extends:
     // Les paths restent inchangés car le basepath est maintenant dans les URLs servers
 
     // Réordonner les clés: openapi, info, servers, components, security, paths, puis le reste
-    const orderedSpec: Record<string, any> = {};
+    const orderedSpec: Record<string, unknown> = {};
 
     // Clés prioritaires dans l'ordre souhaité
     if (publicSpec.openapi) orderedSpec.openapi = publicSpec.openapi;
@@ -535,27 +519,27 @@ extends:
     for (const envConfig of envConfigs) {
       const portalSpec = JSON.parse(JSON.stringify(this.openAPI)); // Deep copy
 
-      // Clean up empty servers and security arrays
-      if (portalSpec.servers && Array.isArray(portalSpec.servers) && portalSpec.servers.length === 0) {
-        delete portalSpec.servers;
-      }
-      if (portalSpec.security && Array.isArray(portalSpec.security) && portalSpec.security.length === 0) {
-        delete portalSpec.security;
+      // Remove backend-related servers and security completely
+      // These will be replaced with portal-specific values
+      delete portalSpec.servers;
+      delete portalSpec.security;
+
+      // Remove backend securitySchemes from components (will be replaced with OAuth2)
+      if (portalSpec.components?.securitySchemes) {
+        delete portalSpec.components.securitySchemes;
       }
 
-      // Clean security at operation level
+      // Clean servers and security at operation level (backend-specific, not relevant for portal)
       if (portalSpec.paths) {
         for (const pathKey of Object.keys(portalSpec.paths)) {
           const pathItem = portalSpec.paths[pathKey];
           for (const method of Object.keys(pathItem)) {
             const operation = pathItem[method];
             if (operation && typeof operation === 'object') {
-              if (operation.security && Array.isArray(operation.security) && operation.security.length === 0) {
-                delete operation.security;
-              }
-              if (operation.servers && Array.isArray(operation.servers) && operation.servers.length === 0) {
-                delete operation.servers;
-              }
+              // Remove operation-level security (backend auth requirements)
+              delete operation.security;
+              // Remove operation-level servers (backend URLs)
+              delete operation.servers;
             }
           }
         }
@@ -866,10 +850,15 @@ This project was generated using the Apigee React Generator tool.
 
   private generateMavenWrapper(project: GeneratedProject): void {
     // Maven settings.xml for Azure DevOps authentication
+    // SECURITY: Uses environment variable placeholders instead of hardcoded PAT
     const organization = this.azureDevOpsConfig?.organization || 'elisdevops';
-    const pat = this.azureDevOpsConfig?.personalAccessToken || '';
 
     const settingsXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SECURITY NOTE: This file uses environment variable placeholders.
+  Set AZURE_DEVOPS_PAT environment variable before running Maven commands.
+  NEVER commit this file with actual credentials.
+-->
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
@@ -877,7 +866,7 @@ This project was generated using the Apigee React Generator tool.
     <server>
       <id>${organization}</id>
       <username>${organization}</username>
-      <password>${pat}</password>
+      <password>\${env.AZURE_DEVOPS_PAT}</password>
     </server>
   </servers>
 </settings>

@@ -38,7 +38,7 @@ export default {
   // App Header
   app: {
     title: 'Apigee Proxy Builder',
-    subtitle: 'Build and Push Apigee API proxies from specifications',
+    subtitle: 'Automate API Proxy Building',
     footer: 'Apigee Proxy Builder - Generate Apigee proxies from OpenAPI specifications',
   },
 
@@ -55,9 +55,9 @@ export default {
     progress: 'Step {{current}} of {{total}}',
   },
 
-  // Step 1: Proxy Configuration
+  // Step 1: API Proxy
   step1: {
-    title: 'Proxy Configuration',
+    title: 'API Proxy',
     subtitle: 'Configure your API proxy settings',
     sections: {
       proxyNaming: 'Proxy Naming Convention',

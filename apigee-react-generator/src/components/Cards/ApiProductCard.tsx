@@ -5,6 +5,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SwissCard } from './SwissCard';
 import { AuthorizedPathsEditor } from './AuthorizedPathsEditor';
 import { ProductSuggestionsModal } from '../Modals/ProductSuggestionsModal';
+import { HelpPanel } from '../Help/HelpPanel';
+import { apiProductsHelpContent } from '../Help/helpContent';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
@@ -76,6 +78,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
   const [selectedEnv, setSelectedEnv] = useState<Environment>('dev1');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedProductIndex, setExpandedProductIndex] = useState<number | null>(0);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const currentEnvConfig = apiConfig.environments?.[selectedEnv];
   const products = currentEnvConfig?.apiProducts || [];
@@ -211,6 +214,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
   );
 
   return (
+    <>
     <SwissCard
       number="03"
       title={t('canvas.cards.apiProduct.title', 'API Products')}
@@ -220,6 +224,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
       onToggle={onToggle}
       collapsedPreview={collapsedPreview}
       disabled={disabled}
+      onHelpClick={() => setIsHelpOpen(true)}
     >
       {/* Environment Tabs */}
       <div className="flex border-b border-[var(--swiss-gray-200)] mb-6">
@@ -457,5 +462,13 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
         onApply={applySelectedSuggestions}
       />
     </SwissCard>
+
+    {/* Help Panel */}
+    <HelpPanel
+      isOpen={isHelpOpen}
+      onClose={() => setIsHelpOpen(false)}
+      {...apiProductsHelpContent}
+    />
+    </>
   );
 };
