@@ -92,7 +92,7 @@ export const proxyConfigHelpContent = {
     },
     {
       name: 'Global Rate Limit',
-      description: 'Optional. Limits the number of requests per minute (pm) or per second (ps).',
+      description: 'Limits the number of requests per minute (pm) or per second (ps). Default: 100pm.',
       format: '{number}pm or {number}ps',
       example: '100pm',
     },
@@ -100,7 +100,7 @@ export const proxyConfigHelpContent = {
   tips: [
     'Use explicit kebab-case names to facilitate maintenance.',
     'The basepath is auto-generated as /{businessObject}/{version}. Override it only if needed.',
-    'The global rate limit applies to all requests, regardless of the product.',
+    'The global rate limit (default 100pm) applies to all requests, regardless of the product.',
   ],
 };
 

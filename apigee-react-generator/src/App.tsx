@@ -39,13 +39,15 @@ function App() {
                 {templateSyncState.isSyncing ? (
                   <RefreshCw className="h-3.5 w-3.5 text-[var(--swiss-gray-500)] animate-spin" />
                 ) : templateSyncState.source === 'remote' ? (
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700">
+                  <span
+                    className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700 cursor-help"
+                    title="Templates synchronized with Azure DevOps repository"
+                  >
                     Synced
                   </span>
                 ) : null}
               </div>
             )}
-            <span className="text-[10px] font-mono uppercase text-[var(--swiss-gray-400)]">v2.0.0</span>
             <ThemeToggle />
             <button
               onClick={() => setSettingsModalOpen(true)}
@@ -67,7 +69,7 @@ function App() {
       {/* Footer - Swiss Style */}
       <footer className="swiss-footer">
         <p className="swiss-footer-text">
-          Apigee Template Generator &mdash; Swiss Design Edition &mdash; 2024
+          Apigee Template Generator &mdash; v1.0.0
         </p>
       </footer>
     </div>

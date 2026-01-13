@@ -558,15 +558,10 @@ extends:
         portalSpec.info.contact = { name: this.config.entity, url: '', email: '' };
       }
 
-      // Build components with OAuth2 security scheme (preserve schemas, replace securitySchemes)
+      // Build components with OAuth2 security scheme FIRST, then schemas
       const portalComponents: Record<string, any> = {};
 
-      // Keep existing schemas if present
-      if (portalSpec.components?.schemas) {
-        portalComponents.schemas = portalSpec.components.schemas;
-      }
-
-      // Add OAuth2 security scheme for portal
+      // Add OAuth2 security scheme for portal FIRST (before schemas)
       portalComponents.securitySchemes = {
         oauth2: {
           type: 'oauth2',
@@ -580,16 +575,17 @@ extends:
         }
       };
 
-      // Set security
-      portalSpec.security = [{ oauth2: [] }];
+      // Keep existing schemas if present (after securitySchemes)
+      if (portalSpec.components?.schemas) {
+        portalComponents.schemas = portalSpec.components.schemas;
+      }
 
-      // Reorder keys for consistent output
+      // Reorder keys for consistent output (no top-level security array)
       const orderedSpec: Record<string, any> = {};
       if (portalSpec.openapi) orderedSpec.openapi = portalSpec.openapi;
       if (portalSpec.info) orderedSpec.info = portalSpec.info;
       if (portalSpec.servers) orderedSpec.servers = portalSpec.servers;
       orderedSpec.components = portalComponents;
-      if (portalSpec.security) orderedSpec.security = portalSpec.security;
       if (portalSpec.paths) orderedSpec.paths = portalSpec.paths;
 
       // Add remaining keys
@@ -855,15 +851,10 @@ This project was generated using the Apigee React Generator tool.
 
   private generateMavenWrapper(project: GeneratedProject): void {
     // Maven settings.xml for Azure DevOps authentication
-    // SECURITY: Uses environment variable placeholders instead of hardcoded PAT
     const organization = this.azureDevOpsConfig?.organization || 'elisdevops';
+    const pat = this.azureDevOpsConfig?.personalAccessToken || '';
 
     const settingsXml = `<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  SECURITY NOTE: This file uses environment variable placeholders.
-  Set AZURE_DEVOPS_PAT environment variable before running Maven commands.
-  NEVER commit this file with actual credentials.
--->
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
@@ -871,7 +862,7 @@ This project was generated using the Apigee React Generator tool.
     <server>
       <id>${organization}</id>
       <username>${organization}</username>
-      <password>\${env.AZURE_DEVOPS_PAT}</password>
+      <password>${pat}</password>
     </server>
   </servers>
 </settings>

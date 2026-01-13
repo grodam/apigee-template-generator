@@ -8,7 +8,7 @@ import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetecte
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG, DEFAULT_PORTAL_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
-import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, findSmallestCommonRoot, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
+import { suggestProductsFromPaths, createProductForEnv, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -954,7 +954,7 @@ export const useProjectStore = create<ProjectState>()(
       name: 'apigee-generator-settings',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        // Only persist Azure DevOps config (without repositoryName) and template overrides
+        // Persist Azure DevOps config (including PAT for convenience)
         azureDevOpsConfig: {
           organization: state.azureDevOpsConfig.organization,
           project: state.azureDevOpsConfig.project,

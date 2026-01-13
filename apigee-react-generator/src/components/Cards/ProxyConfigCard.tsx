@@ -101,7 +101,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
       version: apiConfig.version || '',
       proxyBasepath: apiConfig.proxyBasepath || '',
       authSouthbound: apiConfig.authSouthbound || 'Basic',
-      globalRateLimit: apiConfig.globalRateLimit || '',
+      globalRateLimit: apiConfig.globalRateLimit || '100pm',
     }
   });
 
@@ -142,7 +142,7 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
         version: '',
         proxyBasepath: '',
         authSouthbound: 'Basic',
-        globalRateLimit: '',
+        globalRateLimit: '100pm',
       });
       setAutoFilledFields(new Set());
     }
