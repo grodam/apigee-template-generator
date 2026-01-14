@@ -137,7 +137,7 @@ export function analyzePathsForProducts(paths: PathInfo[]): PathGroup[] {
  */
 export function suggestProductsFromPaths(
   paths: PathInfo[],
-  baseProductName: string
+  _baseProductName: string
 ): SuggestedProduct[] {
   const groups = analyzePathsForProducts(paths);
 

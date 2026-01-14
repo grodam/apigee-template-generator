@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useProjectStore } from '@/store/useProjectStore';
 import { templatesSyncService, templateRegistry, templatesCacheService } from '@/services/templates';
+import { logger } from '@/utils/logger';
+
+const log = logger.scope('useTemplateSync');
 
 export interface TemplateSyncState {
   isInitialized: boolean;
@@ -90,14 +93,14 @@ export function useTemplateSync() {
                   source: hasCachedTemplates ? 'remote' : 'local',
                 });
               }
-            } catch (error: any) {
-              console.warn('Auto-sync failed:', error);
-              // Continue with cached or local templates
+            } catch (error) {
+              log.warn('Auto-sync failed, continuing with cached or local templates', error);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
               setState({
                 isInitialized: true,
                 isSyncing: false,
                 lastSyncDate: syncInfo?.lastSyncDate || null,
-                error: error.message,
+                error: errorMessage,
                 source: hasCachedTemplates ? 'remote' : 'local',
               });
             }
@@ -122,13 +125,14 @@ export function useTemplateSync() {
             source: 'local',
           });
         }
-      } catch (error: any) {
-        console.error('Template initialization failed:', error);
+      } catch (error) {
+        log.error('Template initialization failed', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setState({
           isInitialized: true,
           isSyncing: false,
           lastSyncDate: null,
-          error: error.message,
+          error: errorMessage,
           source: 'local',
         });
       }

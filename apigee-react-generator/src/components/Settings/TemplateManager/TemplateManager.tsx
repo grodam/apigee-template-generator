@@ -159,7 +159,7 @@ export function TemplateManager() {
   return (
     <div className="flex h-full">
       {/* Left Panel - Tree */}
-      <div className="w-72 border-r border-[var(--border-default)] bg-white/30 flex flex-col">
+      <div className="w-72 border-r border-[var(--border-default)] bg-[var(--swiss-white)]/30 flex flex-col">
         <div className="p-4 border-b border-[var(--border-default)]">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">{t('templates.title')}</h3>
           <div className="grid grid-cols-2 gap-2">
@@ -203,7 +203,7 @@ export function TemplateManager() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {selectedTemplate ? (
           <>
-            <div className="px-4 py-3 border-b border-[var(--border-default)] bg-white/50 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[var(--border-default)] bg-[var(--swiss-white)]/50 flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-[var(--text-primary)]">{selectedTemplate.name}</h3>
                 <p className="text-xs text-[var(--text-secondary)]">

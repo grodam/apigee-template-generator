@@ -1,0 +1,2164 @@
+{
+    "openapi": "3.0.3",
+    "x-stoplight": {
+        "id": "bgkvl0g20a7hy"
+    },
+    "info": {
+        "title": "B2B GIS Invoice Services V3",
+        "description": "![](https://img.shields.io/badge/Version:%201.1.0-AVAILABLE-brightgreen)\n\n**Invoice API**\n\nDescription of Generix Invoice Services API, externalized from AIO.\nApplies to application versions starting from v5.95.\n\nThis API allows the following operations:\n- Upload a new invoice into the system\n- Set a new lifecycle status to an existing invoice\n- Set a webhook to be informed on any new invoice/status\n- Set security schemes\n\nThe authentication relies on OAuth2.  Each endpoint must be called with an access token (Bearer). This token is retrieved by a call to the authorization endpoint described in [Generix Auth Service API](https://app.swaggerhub.com/apis/Generixgroup8/GNX-Auth_Service).    \n\n---\n\n## Invoices\n\nInvoice management, upload, download, search\n\n- `POST /v1/invoices` => Upload a new invoice provided the original file\n  - Authorizations: the service account using the API should be granted for invoice creation\n  - Body :\n    - invoiceCategory : related to tax reform use cases.\n    - country : country for which the tax regulation applies.\n    - format : format of the invoice.\n    - processingWay : says if the invoice is to be sent or is received.\n    - processKey : optional, allows custom processes\n    - params : custom parameters\n    - callback : mandatory if the consumer wished to be called back once the invoice is integrated\n  - Invoice & attachments : files to be joined with the request\n    - invoice : mandatory file standing for the original invoice\n    - attachments : optional attachments\n  - Response : \n    - invoiceDepositId : a unique ticket number related to the request\n  - Callback :\n    - invoiceUid : the unique id of the invoice once integrated\n    - invoiceDepositId : the one provided at request time\n    - status : the initial status of the invoice\n\n---\n\n## Invoice Status AKA Lifecycles\n\nInvoice lifecycle management\n\n- `POST /v1/invoices/{invoieUid}/customerStatus`=> \n  - Authorizations: the service account using the API should be granted for invoice update\n  - Body\n    - status : a status related to the customer (received invoice)\n    - callback : mandatory if the consumer wished to be called back once the invoice is integrated\n  - Callback :\n    - invoiceUid : the unique id of the invoice once integrated\n    - status : the initial status of the invoice\n\n\n- `POST /v1/invoices/{invoieUid}/supplierStatus`=> \n  - Authorizations: the service account using the API should be granted for invoice update\n  - Body\n    - status : a status related to the supplier (sent invoice)\n    - callback : mandatory if the consumer wished to be called back once the invoice is integrated\n  - Callback :\n    - invoiceUid : the unique id of the invoice once integrated\n    - status : the initial status of the invoice    \n\n---\n\n## Webhooks\n\nThe consumer of the API can subscribe to webhooks allowing him to receive a continuous stream of events occuring on invoices : invoice creations, invoice receptions from its partners, status changes\n\n- `POST /v1/webhooks` => Subscribe to a new stream of events\n  - Authorizations : the service account using the API should be granted for invoice reading\n  - Body :\n    - metadata : criteria allowing to select invoices (partner, way)\n    - callback : url, security scheme\n\n\n# Cinematics\n\n## Use case 1 : Upload a supplier invoice with polling\n- Description: \n  - As a supplier, I want to send an invoice to my customer. \n  - No callback has been provided \n  - I need to check periodically that my invoice has been integrated\n- API Call Sequence:\n  1. `POST /v1/invoices`\n  2. `GET (v2) /v2/environments/<XYZ>/invoices?bql=‘invoiceDepositId={myDepositId}‘`\n\n## Use case 2 : Upload a supplier invoice with callbacks\n- Description:\n  - As a supplier, I want to send an invoice to my customer.\n  - I set a security scheme if I do not have one yet (Only once)\n  - I set a callback url while uploading the invoice\n  - I listen to the response callback, the invoice has been integrated, its id is known\n- API Call Sequence:\n  1. `POST /v1/securitySchemes` (if new schemeId required)\n  2. `POST /v1/invoices` + schemeId + callback URL\n  3. `handle the response callback`\n\n\n## Use case 3 : Be informed of a supplier invoice status change\n- Description:\n  - As a supplier, I want to be informed each time an invoice, that I sent, changes its status (whether by the platform or by the customer).\n  - I set a security scheme if I do not have one yet (Only once)\n  - I set a callback url and I configure a webhook with some relevant metadata\n  - I listen to the webhook callbacks, receiving a new status of an invoice\n- API Call Sequence:\n  1. `POST /v1/securitySchemes` (if new schemeId required)\n  2. `POST /v1/webhooks` + schemeId + callback URL + metadata:\n    - processingWay=SENDING\n    - notificationLevel=AllEvents\n    - partner=customer\n  3. `handle the webhook callbacks`\n\n## Use case 4 : Set a supplier status to an invoice\n- Description:\n  - As a supplier, I want to change the status of an invoice that I sent.\n  - I set a security scheme if I do not have one yet (Only once)\n  - I set a callback url while setting the new status (Optional)\n  - I listen to the response callback, receiving a confirmation of the new status or an error\n- API Call Sequence:\n  1. `POST /v1/securitySchemes` (if new schemeId required)\n  2. `POST /v1/invoices/{invoieUid}/supplierStatus` + schemeId + callback URL + status\n  3. `handle the response callback`\n\n## Use case 5 : Receive invoices by polling\n- Description:\n  - As a customer, I want to be informed about invoices I received from my partner\n- API Call Sequence:\n  1. `GET (v2) /v2/environments/<XYZ>/invoices?bql=‘from=<my-partner> and consultStatus=NONE`\n  2. `GET (v2) /v2/environments/<XYZ>/invoices/<invoiceUid>?format=PDF`\n  \n## Use case 6 : Receive invoices through Webhooks\n- Description:\n  - As a customer, I want to be informed about invoices I received from my partner\n  - I set a security scheme if I do not have one yet (Only once)\n  - I set a callback url and I configure a webhook with some relevant metadata\n  - I listen to the webhook callbacks, receiving a new invoice\n- API Call Sequence:\n  1. `POST /v1/securitySchemes` (if new schemeId required)\n  2. `POST /v1/webhooks` + schemeId + callback URL + metadata:\n    - processingWay=RECEIVING\n    - notificationLevel=IntegrationEvent\n    - partner=supplier\n  3. `handle the webhook callbacks`\n  \n## Use case 7 : Set a new customer status to a received invoice\n- Description:\n  - As a customer, I want to change the status of an invoice that I received.\n  - I set a security scheme if I do not have one yet (Only once)\n  - I set a callback url while setting the new status (Optional)\n  - I listen to the response callback, receiving a confirmation of the new status or an error\n- API Call Sequence:\n  1. `POST /v1/securitySchemes` (if new schemeId required)\n  2. `POST /v1/invoices/{invoieUid}/customerStatus` + schemeId + callback URL + status\n  3. `handle the response callback`\n\n**History:**\n  - `1.0.0` : First release\n  - `1.1.0` : \n    - Adding webhook and callback support",
+        "contact": {
+            "name": "Cyril Buffeteau",
+            "email": "cyril.buffeteau3-ext@elis.com",
+            "url": ""
+        },
+        "version": "1.1.0",
+        "termsOfService": ""
+    },
+    "servers": [
+        {
+            "url": "https://gis-platform-{env}.generix.biz/{customer}/invoice-processing",
+            "description": "URL",
+            "variables": {
+                "env": {
+                    "default": "ppd",
+                    "description": "environnement",
+                    "enum": [
+                        "ppd",
+                        "prd",
+                        "uat"
+                    ]
+                },
+                "customer": {
+                    "default": "elis",
+                    "description": "customer name",
+                    "enum": [
+                        "elis",
+                        "elis-group"
+                    ]
+                }
+            }
+        },
+        {
+            "url": "",
+            "description": ""
+        }
+    ],
+    "security": [
+        {
+            "BearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Invoice Management",
+            "description": "Post invoices"
+        },
+        {
+            "name": "Status Management",
+            "description": "Post invoice statuses"
+        },
+        {
+            "name": "Webhook Subscription Management",
+            "description": "Webhook subscription management"
+        },
+        {
+            "name": "Security Scheme Management",
+            "description": "Manage reusable request patterns (static headers, resilience, security)"
+        }
+    ],
+    "paths": {
+        "/v1/invoices": {
+            "post": {
+                "tags": [
+                    "Invoice Management"
+                ],
+                "summary": "Create a new online invoice",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/v1_invoices_body"
+                            },
+                            "encoding": {
+                                "invoice": {
+                                    "contentType": "application/pdf, application/xml, text/xml"
+                                },
+                                "attachment": {
+                                    "contentType": "application/pdf, image/png, image/jpeg, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet, application/xml"
+                                },
+                                "body": {
+                                    "contentType": "application/json"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "$ref": "#/components/responses/InvoicePostResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "callbacks": {
+                    "invoiceStatusCallback": {
+                        "$ref": "#/components/callbacks/InvoiceStatusCallback"
+                    }
+                },
+                "x-request-rate-limit-per-second": 5,
+                "x-envelope-size-limit-in-KB": 6000,
+                "x-stoplight": {
+                    "id": "pal2u958s07no"
+                }
+            },
+            "parameters": [
+                {
+                    "schema": {
+                        "type": "string",
+                        "example": "ELV_pre-elis"
+                    },
+                    "in": "header",
+                    "name": "Environment-Id (preprod)",
+                    "description": "ELV_pre-elis"
+                },
+                {
+                    "schema": {
+                        "type": "string",
+                        "example": "ELV_prd-elis_Production"
+                    },
+                    "in": "header",
+                    "name": "Environment-Id (prod)",
+                    "description": "ELV_prd-elis_Production"
+                }
+            ]
+        },
+        "/v1/invoices/{invoiceUid}/customerStatus": {
+            "post": {
+                "tags": [
+                    "Status Management"
+                ],
+                "summary": "Update customer invoice status",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "invoiceUid",
+                        "in": "path",
+                        "description": "The invoice unique ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/CustomerStatusPostRequest"
+                },
+                "responses": {
+                    "202": {
+                        "$ref": "#/components/responses/Ok202EmptyResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "callbacks": {
+                    "lifeCycleStatusCallback": {
+                        "$ref": "#/components/callbacks/LifeCycleStatusCallback"
+                    }
+                },
+                "x-rate-limiting": 5,
+                "x-stoplight": {
+                    "id": "fw9op8ao8eugp"
+                }
+            },
+            "parameters": [
+                {
+                    "schema": {
+                        "type": "string"
+                    },
+                    "name": "invoiceUid",
+                    "in": "path",
+                    "required": true,
+                    "description": "GIS invoiceUid"
+                }
+            ]
+        },
+        "/v1/invoices/{invoiceUid}/supplierStatus": {
+            "post": {
+                "tags": [
+                    "Status Management"
+                ],
+                "summary": "Update supplier invoice status",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "invoiceUid",
+                        "in": "path",
+                        "description": "The invoice unique ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/SupplierStatusPostRequest"
+                },
+                "responses": {
+                    "202": {
+                        "$ref": "#/components/responses/Ok202EmptyResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "callbacks": {
+                    "lifeCycleStatusCallback": {
+                        "$ref": "#/components/callbacks/LifeCycleStatusCallback"
+                    }
+                },
+                "x-rate-limiting": 5,
+                "x-stoplight": {
+                    "id": "rpy3203jlehs7"
+                },
+                "operationId": ""
+            },
+            "parameters": [
+                {
+                    "schema": {
+                        "type": "string"
+                    },
+                    "name": "invoiceUid",
+                    "in": "path",
+                    "required": true,
+                    "description": "GIS invoiceUid "
+                }
+            ]
+        },
+        "/v1/securitySchemes": {
+            "post": {
+                "tags": [
+                    "Security Scheme Management"
+                ],
+                "summary": "Create security scheme",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/SecuritySchemePostRequest"
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/SecuritySchemeResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "b45qcealho1lv"
+                }
+            }
+        },
+        "/v1/securitySchemes/{schemeUid}": {
+            "delete": {
+                "tags": [
+                    "Security Scheme Management"
+                ],
+                "summary": "Delete security scheme",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "schemeUid",
+                        "in": "path",
+                        "description": "The invoice security scheme unique ID",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SchemeId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "$ref": "#/components/responses/Ok204EmptyResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Error404Response"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Error422Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "2fyc7zycy4yc1"
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Security Scheme Management"
+                ],
+                "summary": "Update security scheme",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "schemeUid",
+                        "in": "path",
+                        "description": "The invoice security scheme unique ID",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/SchemeId"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/SecuritySchemePatchRequest"
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/SecuritySchemeResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Error404Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "5anmeh46p3hmc"
+                }
+            },
+            "parameters": [
+                {
+                    "schema": {
+                        "type": "string"
+                    },
+                    "name": "schemeUid",
+                    "in": "path",
+                    "required": true,
+                    "description": "Security SchemeId"
+                }
+            ]
+        },
+        "/v1/webhooks": {
+            "post": {
+                "tags": [
+                    "Webhook Subscription Management"
+                ],
+                "summary": "Subscribe to a webhook",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/WebhookPostRequest"
+                },
+                "responses": {
+                    "201": {
+                        "$ref": "#/components/responses/WebhookResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Error404Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "callbacks": {
+                    "WebhookCallback": {
+                        "$ref": "#/components/callbacks/WebhookCallback"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "dde5fu2cg1xes"
+                }
+            }
+        },
+        "/v1/webhooks/{webhookUid}": {
+            "delete": {
+                "tags": [
+                    "Webhook Subscription Management"
+                ],
+                "summary": "Unsubscribe to a webhook",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "webhookUid",
+                        "in": "path",
+                        "description": "The webhook unique ID",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WebhookId"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "$ref": "#/components/responses/Ok204EmptyResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Error404Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "3rdgsw9l2e4a1"
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Webhook Subscription Management"
+                ],
+                "summary": "Update a subscription",
+                "parameters": [
+                    {
+                        "name": "Request-Id",
+                        "in": "header",
+                        "description": "Header parameter used to correlate logs from several components",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "webhookUid",
+                        "in": "path",
+                        "description": "The webhook unique ID",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/WebhookId"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "$ref": "#/components/requestBodies/WebhookPatchRequest"
+                },
+                "responses": {
+                    "204": {
+                        "$ref": "#/components/responses/Ok204EmptyResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Error401Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Error404Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "qdfp8tet7igwt"
+                }
+            }
+        },
+        "/v1/versions": {
+            "get": {
+                "tags": [
+                    "Version"
+                ],
+                "summary": "Get API & Build versions",
+                "description": "Get API & Build versions",
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/VersionGetResponse"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/Error400Response"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Error403Response"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/Error500Response"
+                    },
+                    "503": {
+                        "$ref": "#/components/responses/Error503Response"
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/DefaultErrorResponse"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "uiukzpdp0gkw6"
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "InvoicePostPayload": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/InvoiceCore"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "callback": {
+                                "$ref": "#/components/schemas/CallbackParameters"
+                            }
+                        }
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "2aiwp2qc6o3ty"
+                }
+            },
+            "SupplierStatusPostPayload": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/SupplierStatus"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "callback": {
+                                "$ref": "#/components/schemas/CallbackParameters"
+                            }
+                        }
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "llw4ptr492d1v"
+                }
+            },
+            "CustomerStatusPostPayload": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/CustomerStatus"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "callback": {
+                                "$ref": "#/components/schemas/CallbackParameters"
+                            }
+                        }
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "zfp4276mancgc"
+                }
+            },
+            "WebhookPostPayload": {
+                "type": "object",
+                "properties": {
+                    "callback": {
+                        "$ref": "#/components/schemas/CallbackParameters"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/WebhookMetadata"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "wqyeic9fcgam0"
+                }
+            },
+            "Error": {
+                "required": [
+                    "errorCode"
+                ],
+                "type": "object",
+                "properties": {
+                    "errorCode": {
+                        "type": "string",
+                        "description": "Short numerical or alphanumerical code that identifies precisely a unique error. For security reasons, this code shall not be too explicit, that's why numerical values are preferred",
+                        "example": "MISSING_REQUIRED_FIELD"
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "description": "Contains information on the error. Not intended to be displayed to an end user. For security reasons, a tradeof between clarity & security shall be found.",
+                        "example": "Invalid request format"
+                    }
+                },
+                "description": "Standardized HTTP error content",
+                "x-stoplight": {
+                    "id": "n6xfwlx644h8x"
+                }
+            },
+            "SchemeId": {
+                "type": "string",
+                "format": "uuid",
+                "x-stoplight": {
+                    "id": "1vdn4kpvhxhbh"
+                }
+            },
+            "WebhookId": {
+                "type": "string",
+                "format": "uuid",
+                "x-stoplight": {
+                    "id": "43e7hjfqbhie9"
+                }
+            },
+            "Version": {
+                "required": [
+                    "apiVersion",
+                    "buildVersion"
+                ],
+                "type": "object",
+                "properties": {
+                    "apiVersion": {
+                        "pattern": "^[0-9]*\\\\.[0-9]*(\\\\.[0-9]*)?",
+                        "type": "string",
+                        "description": "Version of the interface (/API) that was the reference for the realization/evolution of the component",
+                        "example": "1.2"
+                    },
+                    "buildVersion": {
+                        "pattern": "^[0-9]*\\\\.[0-9]*[0-9]*\\\\.[0-9]*\\\\.[0-9]*(-(SNAPSHOT|RELEASE))?",
+                        "type": "string",
+                        "description": "Version number of the component",
+                        "example": "3.7.5-SNAPSHOT"
+                    },
+                    "buildDate": {
+                        "type": "string",
+                        "description": "Build date of the component",
+                        "format": "date-time"
+                    },
+                    "buildNumber": {
+                        "pattern": "^[a-zA-Z0-9]*$",
+                        "type": "string",
+                        "description": "Number assigned by the automation",
+                        "example": "546739"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "g6ifx0tmrfldx"
+                }
+            },
+            "InvoiceDepositId": {
+                "type": "string",
+                "description": "Immediate unique id of the invoice before it has been integrated. This id should be part of the invoice metadata to allow end to end tracing.",
+                "format": "uuid",
+                "x-stoplight": {
+                    "id": "btzf85mwxov4m"
+                }
+            },
+            "CallbackScheme": {
+                "required": [
+                    "authentication"
+                ],
+                "type": "object",
+                "properties": {
+                    "headers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CallbackHeader"
+                        }
+                    },
+                    "callbackPolicies": {
+                        "$ref": "#/components/schemas/CallbackPolicies"
+                    },
+                    "authentication": {
+                        "$ref": "#/components/schemas/CallbackAuthentication"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "tqjxbkysg8bm5"
+                }
+            },
+            "CallbackHeader": {
+                "required": [
+                    "headerName",
+                    "headerValue"
+                ],
+                "type": "object",
+                "properties": {
+                    "headerName": {
+                        "type": "string"
+                    },
+                    "headerValue": {
+                        "type": "string"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "upupla61gsxua"
+                }
+            },
+            "CallbackPolicies": {
+                "type": "object",
+                "properties": {
+                    "retryPolicies": {
+                        "$ref": "#/components/schemas/RetryPolicies"
+                    },
+                    "callbackTTL": {
+                        "type": "integer",
+                        "description": "Retention duration of the callback stream, in days"
+                    },
+                    "eventTTL": {
+                        "type": "integer",
+                        "description": "Retention duration for acknowledged events, in days",
+                        "default": 7
+                    }
+                },
+                "description": "Resilience & Retention parameters",
+                "x-stoplight": {
+                    "id": "rgtgb0rkvgx19"
+                }
+            },
+            "RetryPolicies": {
+                "type": "object",
+                "properties": {
+                    "retryStrategy": {
+                        "type": "string",
+                        "description": "* Fixed : Wait a fixed duration between 2 consecutive retries Ex: duration = retryPeriod\n* Exponential : The duration between 2 retries is doubled at each retry Ex: duration = retryPeriod * 2**(retryNumber-1)\n* Fibonacci : The duration between 2 retries follow the Fibonacci suite Ex: duration = Fib(retryNumber) * retryPeriod Fib(i) = Fib(i-1) + Fib(i-2) With Fib(1) = 1 & Fib(2) = 2\n",
+                        "enum": [
+                            "Fixed",
+                            "Exponential",
+                            "Fibonacci"
+                        ]
+                    },
+                    "retryPeriod": {
+                        "type": "integer",
+                        "description": "Duration managed according to strategy, in seconds",
+                        "default": 10
+                    },
+                    "retryMaxNb": {
+                        "type": "integer",
+                        "description": "Maximum of retry attempts",
+                        "default": 5
+                    }
+                },
+                "description": "Retry parameters to configure retries of http calls\n",
+                "x-stoplight": {
+                    "id": "6cg5e5laupk22"
+                }
+            },
+            "CallbackAuthentication": {
+                "required": [
+                    "authType"
+                ],
+                "type": "object",
+                "properties": {
+                    "authType": {
+                        "type": "string",
+                        "enum": [
+                            "BASIC",
+                            "OAUTH2"
+                        ]
+                    }
+                },
+                "description": "The authentication mode required for the callback call",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/BasicAuthentication"
+                    },
+                    {
+                        "$ref": "#/components/schemas/OAuth2Authentication"
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "lz9wbk3x1ohie"
+                }
+            },
+            "BasicAuthentication": {
+                "required": [
+                    "userId",
+                    "userPassword"
+                ],
+                "type": "object",
+                "properties": {
+                    "userId": {
+                        "type": "string"
+                    },
+                    "userPassword": {
+                        "type": "string",
+                        "format": "password"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "k46kvbub8rj6c"
+                }
+            },
+            "OAuth2Authentication": {
+                "required": [
+                    "clientCredentials",
+                    "clientId",
+                    "tokenUrl"
+                ],
+                "type": "object",
+                "properties": {
+                    "tokenUrl": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "clientId": {
+                        "type": "string"
+                    },
+                    "clientCredentials": {
+                        "type": "string",
+                        "format": "password"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "s5p7ay6qj1jhl"
+                }
+            },
+            "WebhookPatchPayload": {
+                "type": "object",
+                "properties": {
+                    "headers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CallbackHeader"
+                        }
+                    },
+                    "schemeUid": {
+                        "$ref": "#/components/schemas/SchemeId"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "3i2usexn5vbbj"
+                }
+            },
+            "CallbackContent": {
+                "type": "object",
+                "properties": {
+                    "invoiceUid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "invoiceDepositId": {
+                        "$ref": "#/components/schemas/InvoiceDepositId"
+                    },
+                    "statusCode": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CustomerStatusEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SupplierStatusEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/PlatformStatusEnum"
+                            }
+                        ]
+                    },
+                    "reasonCode": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CallbackContent_errors"
+                        }
+                    }
+                },
+                "x-stoplight": {
+                    "id": "ah58stx9lv7mh"
+                }
+            },
+            "CustomerStatusEnum": {
+                "type": "string",
+                "enum": [
+                    "InHand",
+                    "Approved",
+                    "PartiallyApproved",
+                    "Disputed",
+                    "Suspended",
+                    "Refused",
+                    "PaymentSent",
+                    "Validated"
+                ],
+                "x-stoplight": {
+                    "id": "go9kzdzrstm9q"
+                }
+            },
+            "SupplierStatusEnum": {
+                "type": "string",
+                "enum": [
+                    "Completed",
+                    "Cashed"
+                ],
+                "x-stoplight": {
+                    "id": "tr36p5klxodb0"
+                }
+            },
+            "PlatformStatusEnum": {
+                "type": "string",
+                "enum": [
+                    "Submitted",
+                    "Issued",
+                    "Received",
+                    "Available",
+                    "Rejected"
+                ],
+                "x-stoplight": {
+                    "id": "tln8lp05x5jcw"
+                }
+            },
+            "InvoiceCore": {
+                "required": [
+                    "format",
+                    "invoiceType",
+                    "processingWay"
+                ],
+                "type": "object",
+                "properties": {
+                    "invoiceCategory": {
+                        "$ref": "#/components/schemas/InvoiceCategory"
+                    },
+                    "country": {
+                        "$ref": "#/components/schemas/CountryIso3166-2Code"
+                    },
+                    "format": {
+                        "$ref": "#/components/schemas/InvoiceFormat"
+                    },
+                    "processingWay": {
+                        "$ref": "#/components/schemas/ProcessingWay"
+                    },
+                    "processKey": {
+                        "type": "string"
+                    },
+                    "params": {
+                        "$ref": "#/components/schemas/ProcessParameters"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "66ukug8ywv6f2"
+                }
+            },
+            "InvoiceCategory": {
+                "type": "string",
+                "enum": [
+                    "B2B_DOM",
+                    "B2B_INTER",
+                    "B2C",
+                    "B2G",
+                    "OTHER"
+                ],
+                "x-stoplight": {
+                    "id": "hf4qu7g7qdib1"
+                },
+                "description": "",
+                "x-examples": {
+                    "Example 2": "B2B_DOM"
+                }
+            },
+            "CountryIso3166-2Code": {
+                "type": "string",
+                "description": "ISO 3166-2 code for countries",
+                "example": "FR",
+                "enum": [
+                    "AD",
+                    "AE",
+                    "AF",
+                    "AG",
+                    "AI",
+                    "AL",
+                    "AM",
+                    "AN",
+                    "AO",
+                    "AQ",
+                    "AR",
+                    "AS",
+                    "AT",
+                    "AU",
+                    "AW",
+                    "AX",
+                    "AZ",
+                    "BA",
+                    "BB",
+                    "BD",
+                    "BE",
+                    "BF",
+                    "BG",
+                    "BH",
+                    "BI",
+                    "BJ",
+                    "BL",
+                    "BM",
+                    "BN",
+                    "BO",
+                    "BR",
+                    "BS",
+                    "BT",
+                    "BV",
+                    "BW",
+                    "BY",
+                    "BZ",
+                    "CA",
+                    "CC",
+                    "CD",
+                    "CF",
+                    "CG",
+                    "CH",
+                    "CI",
+                    "CK",
+                    "CL",
+                    "CM",
+                    "CN",
+                    "CO",
+                    "CR",
+                    "CU",
+                    "CV",
+                    "CX",
+                    "CY",
+                    "CZ",
+                    "DE",
+                    "DJ",
+                    "DK",
+                    "DM",
+                    "DO",
+                    "DZ",
+                    "EC",
+                    "EE",
+                    "EG",
+                    "EH",
+                    "ER",
+                    "ES",
+                    "ET",
+                    "FI",
+                    "FJ",
+                    "FK",
+                    "FM",
+                    "FO",
+                    "FR",
+                    "GA",
+                    "GB",
+                    "GD",
+                    "GE",
+                    "GF",
+                    "GG",
+                    "GH",
+                    "GI",
+                    "GL",
+                    "GM",
+                    "GN",
+                    "GP",
+                    "GQ",
+                    "GR",
+                    "GS",
+                    "GT",
+                    "GU",
+                    "GW",
+                    "GY",
+                    "HK",
+                    "HM",
+                    "HN",
+                    "HR",
+                    "HT",
+                    "HU",
+                    "ID",
+                    "IE",
+                    "IL",
+                    "IM",
+                    "IN",
+                    "IO",
+                    "IQ",
+                    "IR",
+                    "IS",
+                    "IT",
+                    "JE",
+                    "JM",
+                    "JO",
+                    "JP",
+                    "KE",
+                    "KG",
+                    "KH",
+                    "KI",
+                    "KM",
+                    "KN",
+                    "KP",
+                    "KR",
+                    "KW",
+                    "KY",
+                    "KZ",
+                    "LA",
+                    "LB",
+                    "LC",
+                    "LI",
+                    "LK",
+                    "LR",
+                    "LS",
+                    "LT",
+                    "LU",
+                    "LV",
+                    "LY",
+                    "MA",
+                    "MC",
+                    "MD",
+                    "ME",
+                    "MF",
+                    "MG",
+                    "MH",
+                    "MK",
+                    "ML",
+                    "MM",
+                    "MN",
+                    "MO",
+                    "MP",
+                    "MQ",
+                    "MR",
+                    "MS",
+                    "MT",
+                    "MU",
+                    "MV",
+                    "MW",
+                    "MX",
+                    "MY",
+                    "MZ",
+                    "NA",
+                    "NC",
+                    "NE",
+                    "NF",
+                    "NG",
+                    "NI",
+                    "NL",
+                    "NO",
+                    "NP",
+                    "NR",
+                    "NU",
+                    "NZ",
+                    "OM",
+                    "PA",
+                    "PE",
+                    "PF",
+                    "PG",
+                    "PH",
+                    "PK",
+                    "PL",
+                    "PM",
+                    "PN",
+                    "PR",
+                    "PS",
+                    "PT",
+                    "PW",
+                    "PY",
+                    "QA",
+                    "RE",
+                    "RO",
+                    "RS",
+                    "RU",
+                    "RW",
+                    "SA",
+                    "SB",
+                    "SC",
+                    "SD",
+                    "SE",
+                    "SG",
+                    "SH",
+                    "SI",
+                    "SJ",
+                    "SK",
+                    "SL",
+                    "SM",
+                    "SN",
+                    "SO",
+                    "SR",
+                    "SS",
+                    "ST",
+                    "SV",
+                    "SX",
+                    "SY",
+                    "SZ",
+                    "TC",
+                    "TD",
+                    "TF",
+                    "TG",
+                    "TH",
+                    "TJ",
+                    "TK",
+                    "TL",
+                    "TM",
+                    "TN",
+                    "TO",
+                    "TR",
+                    "TT",
+                    "TV",
+                    "TW",
+                    "TZ",
+                    "UA",
+                    "UG",
+                    "UM",
+                    "US",
+                    "UY",
+                    "UZ",
+                    "VA",
+                    "VC",
+                    "VE",
+                    "VG",
+                    "VI",
+                    "VN",
+                    "VU",
+                    "WF",
+                    "WS",
+                    "YE",
+                    "YT",
+                    "YU",
+                    "ZA",
+                    "ZM",
+                    "ZW"
+                ],
+                "x-stoplight": {
+                    "id": "ivfkp8vamjnyj"
+                }
+            },
+            "InvoiceFormat": {
+                "type": "string",
+                "enum": [
+                    "CII",
+                    "UBL",
+                    "XCBL",
+                    "Factur-X",
+                    "PeppolBis",
+                    "X-Rechnung",
+                    "D96A",
+                    "D07B"
+                ],
+                "x-stoplight": {
+                    "id": "fzzrt9pmxdyz9"
+                }
+            },
+            "ProcessingWay": {
+                "type": "string",
+                "default": "SENDING",
+                "enum": [
+                    "SENDING",
+                    "RECEIVING"
+                ],
+                "x-stoplight": {
+                    "id": "nunr8ufwup4g6"
+                }
+            },
+            "ProcessParameters": {
+                "minItems": 1,
+                "type": "array",
+                "description": "Custom parameters related to a process",
+                "items": {
+                    "$ref": "#/components/schemas/ProcessParameter"
+                },
+                "x-stoplight": {
+                    "id": "dj59qqztsx9pu"
+                }
+            },
+            "ProcessParameter": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "description": "Generic key/value parameters of a process parameter",
+                "x-stoplight": {
+                    "id": "9i093ajz8mymc"
+                }
+            },
+            "CallbackParameters": {
+                "required": [
+                    "schemeId",
+                    "url"
+                ],
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "headers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CallbackHeader"
+                        }
+                    },
+                    "schemeId": {
+                        "$ref": "#/components/schemas/SchemeId"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "bh2ysmcw9tl3q"
+                }
+            },
+            "SupplierStatus": {
+                "allOf": [
+                    {
+                        "required": [
+                            "status"
+                        ],
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "$ref": "#/components/schemas/SupplierStatusEnum"
+                            },
+                            "extension": {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/InvoicePaymentExtension"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "qd1vw0b79t648"
+                }
+            },
+            "InvoicePaymentExtension": {
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/CurrencyIso4217Code"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "rjykfleos9fjh"
+                }
+            },
+            "CurrencyIso4217Code": {
+                "type": "string",
+                "format": "enum",
+                "example": "EUR",
+                "enum": [
+                    "AED",
+                    "AFN",
+                    "ALL",
+                    "AMD",
+                    "ANG",
+                    "AOA",
+                    "ARS",
+                    "AUD",
+                    "AWG",
+                    "AZN",
+                    "BAM",
+                    "BBD",
+                    "BDT",
+                    "BGN",
+                    "BHD",
+                    "BIF",
+                    "BMD",
+                    "BND",
+                    "BOB",
+                    "BOV",
+                    "BRL",
+                    "BSD",
+                    "BTN",
+                    "BWP",
+                    "BYR",
+                    "BZD",
+                    "CAD",
+                    "CDF",
+                    "CHE",
+                    "CHF",
+                    "CHW",
+                    "CLF",
+                    "CLP",
+                    "CNY",
+                    "COP",
+                    "COU",
+                    "CRC",
+                    "CUC",
+                    "CUP",
+                    "CVE",
+                    "CZK",
+                    "DJF",
+                    "DKK",
+                    "DOP",
+                    "DZD",
+                    "EGP",
+                    "ERN",
+                    "ETB",
+                    "EUR",
+                    "FJD",
+                    "FKP",
+                    "GBP",
+                    "GEL",
+                    "GHS",
+                    "GIP",
+                    "GMD",
+                    "GNF",
+                    "GTQ",
+                    "GYD",
+                    "HKD",
+                    "HNL",
+                    "HRK",
+                    "HTG",
+                    "HUF",
+                    "IDR",
+                    "ILS",
+                    "INR",
+                    "IQD",
+                    "IRR",
+                    "ISK",
+                    "JMD",
+                    "JOD",
+                    "JPY",
+                    "KES",
+                    "KGS",
+                    "KHR",
+                    "KMF",
+                    "KPW",
+                    "KRW",
+                    "KWD",
+                    "KYD",
+                    "KZT",
+                    "LAK",
+                    "LBP",
+                    "LKR",
+                    "LRD",
+                    "LSL",
+                    "LTL",
+                    "LVL",
+                    "LYD",
+                    "MAD",
+                    "MDL",
+                    "MGA",
+                    "MKD",
+                    "MMK",
+                    "MNT",
+                    "MOP",
+                    "MRO",
+                    "MUR",
+                    "MVR",
+                    "MWK",
+                    "MXN",
+                    "MXV",
+                    "MYR",
+                    "MZN",
+                    "NAD",
+                    "NGN",
+                    "NIO",
+                    "NOK",
+                    "NPR",
+                    "NZD",
+                    "OMR",
+                    "PAB",
+                    "PEN",
+                    "PGK",
+                    "PHP",
+                    "PKR",
+                    "PLN",
+                    "PYG",
+                    "QAR",
+                    "RON",
+                    "RSD",
+                    "RUB",
+                    "RWF",
+                    "SAR",
+                    "SBD",
+                    "SCR",
+                    "SDG",
+                    "SEK",
+                    "SGD",
+                    "SHP",
+                    "SLL",
+                    "SOS",
+                    "SRD",
+                    "SSP",
+                    "STD",
+                    "SYP",
+                    "SZL",
+                    "THB",
+                    "TJS",
+                    "TMT",
+                    "TND",
+                    "TOP",
+                    "TRY",
+                    "TTD",
+                    "TWD",
+                    "TZS",
+                    "UAH",
+                    "UGX",
+                    "USD",
+                    "USN",
+                    "USS",
+                    "UYI",
+                    "UYU",
+                    "UZS",
+                    "VEF",
+                    "VND",
+                    "VUV",
+                    "WST",
+                    "XAF",
+                    "XAG",
+                    "XAU",
+                    "XBA",
+                    "XBB",
+                    "XBC",
+                    "XBD",
+                    "XCD",
+                    "XDR",
+                    "XFU",
+                    "XOF",
+                    "XPD",
+                    "XPF",
+                    "XPT",
+                    "XTS",
+                    "XXX",
+                    "YER",
+                    "ZAR",
+                    "ZMW"
+                ],
+                "x-stoplight": {
+                    "id": "74lp556vtrm6o"
+                }
+            },
+            "CustomerStatus": {
+                "allOf": [
+                    {
+                        "required": [
+                            "status"
+                        ],
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "$ref": "#/components/schemas/CustomerStatusEnum"
+                            },
+                            "extension": {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/InvoicePaymentExtension"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/InvoiceRefusedExtension"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "x-stoplight": {
+                    "id": "6fd4begac4een"
+                }
+            },
+            "InvoiceRefusedExtension": {
+                "type": "object",
+                "properties": {
+                    "errorCode": {
+                        "type": "string",
+                        "enum": [
+                            "OtherValidationError",
+                            "BuyerContactError",
+                            "BankDetailsError",
+                            "CreditorError",
+                            "RecipientError",
+                            "Duplicate",
+                            "EJ_ERR",
+                            "ValidationError",
+                            "NonCompliant",
+                            "MissingProof",
+                            "IncompleteDelivery",
+                            "ClosedMarket",
+                            "AmountError",
+                            "SE_ERR",
+                            "ST_CT_NON_DECLAR",
+                            "SUPPR_COMP_AVOIR",
+                            "TRANSF_PMNT_REGIE",
+                            "VatError",
+                            "CancelledCashing",
+                            "RoutingError",
+                            "Other"
+                        ]
+                    },
+                    "reason": {
+                        "type": "string"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "w8b7u1wd8v1c4"
+                }
+            },
+            "WebhookMetadata": {
+                "type": "object",
+                "properties": {
+                    "partner": {
+                        "$ref": "#/components/schemas/PartnerId"
+                    },
+                    "processingWay": {
+                        "$ref": "#/components/schemas/ProcessingWay"
+                    },
+                    "notificationLevel": {
+                        "type": "string",
+                        "enum": [
+                            "IntegrationEvent",
+                            "AllEvents"
+                        ]
+                    }
+                },
+                "description": "GIS metadata",
+                "x-stoplight": {
+                    "id": "689pntezitixg"
+                }
+            },
+            "PartnerId": {
+                "pattern": "^[a-zA-Z0-9_]{1,128}$",
+                "type": "string",
+                "description": "Partner identifier of a GIS Customer",
+                "x-stoplight": {
+                    "id": "nj8iyqndlna5j"
+                }
+            },
+            "v1_invoices_body": {
+                "type": "object",
+                "x-stoplight": {
+                    "id": "20yny6na2779u"
+                },
+                "required": [
+                    "invoice",
+                    "body"
+                ],
+                "properties": {
+                    "invoice": {
+                        "type": "string",
+                        "description": "Invoice file",
+                        "format": "binary"
+                    },
+                    "attachment": {
+                        "maxItems": 5,
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "Attached file",
+                            "format": "binary"
+                        }
+                    },
+                    "body": {
+                        "$ref": "#/components/schemas/InvoicePostPayload"
+                    }
+                }
+            },
+            "CallbackContent_errors": {
+                "required": [
+                    "contentCode",
+                    "contentRule"
+                ],
+                "type": "object",
+                "properties": {
+                    "contentCode": {
+                        "type": "string"
+                    },
+                    "contentRule": {
+                        "type": "string"
+                    }
+                },
+                "x-stoplight": {
+                    "id": "qswi5rcv4u2up"
+                }
+            }
+        },
+        "responses": {
+            "InvoicePostResponse": {
+                "description": "Immediate response to an invoice posting",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "invoiceDepositId": {
+                                    "$ref": "#/components/schemas/InvoiceDepositId"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "SecuritySchemeResponse": {
+                "description": "Callback Scheme Created",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "schemeId": {
+                                    "$ref": "#/components/schemas/SchemeId"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "WebhookResponse": {
+                "description": "Webhook Created",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "webhookId": {
+                                    "$ref": "#/components/schemas/WebhookId"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Error400Response": {
+                "description": "Error 400 : Bad request.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "MISSING_REQUIRED_FIELD",
+                            "errorMessage": "Invalid request format"
+                        }
+                    }
+                }
+            },
+            "Error401Response": {
+                "description": "Error 401 : Authentication error.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "MISSING_TOKEN",
+                            "errorMessage": null
+                        }
+                    }
+                }
+            },
+            "Error403Response": {
+                "description": "Error 403 : Forbidden.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "FORBIDDEN_ACCESS",
+                            "errorMessage": null
+                        }
+                    }
+                }
+            },
+            "Error500Response": {
+                "description": "Error 500 : Server Internal Error.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "INTERNAL_ERROR",
+                            "errorMessage": null
+                        }
+                    }
+                }
+            },
+            "Ok202EmptyResponse": {
+                "description": "Accepted - Operation in progress"
+            },
+            "Ok204EmptyResponse": {
+                "description": "No Content - No content expected"
+            },
+            "Error404Response": {
+                "description": "Error 404 : Resource Not Found.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "MISSING_RESOURCE",
+                            "errorMessage": "Requested resource is Not Found"
+                        }
+                    }
+                }
+            },
+            "Error422Response": {
+                "description": "Error 422 : Unprocessable entity.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "UNPROCESSABLE_ENTITY",
+                            "errorMessage": "Entity consistency error"
+                        }
+                    }
+                }
+            },
+            "VersionGetResponse": {
+                "description": "Version information of the API service",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Version"
+                        }
+                    }
+                }
+            },
+            "Error503Response": {
+                "description": "Error 503 : Unavailable Resource.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "RESOURCE_ERROR",
+                            "errorMessage": null
+                        }
+                    }
+                }
+            },
+            "DefaultErrorResponse": {
+                "description": "Default error : Undefined Error Case.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        },
+                        "example": {
+                            "errorCode": "UNEXPECTED_ERROR",
+                            "errorMessage": null
+                        }
+                    }
+                }
+            },
+            "Ok200EmptyResponse": {
+                "description": "OK - Operation succeeded"
+            }
+        },
+        "parameters": {
+            "InvoiceUidPathParam": {
+                "name": "invoiceUid",
+                "in": "path",
+                "description": "The invoice unique ID",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            },
+            "webhookUidPathParam": {
+                "name": "webhookUid",
+                "in": "path",
+                "description": "The webhook unique ID",
+                "required": true,
+                "schema": {
+                    "$ref": "#/components/schemas/WebhookId"
+                }
+            },
+            "schemeUidPathParam": {
+                "name": "schemeUid",
+                "in": "path",
+                "description": "The invoice security scheme unique ID",
+                "required": true,
+                "schema": {
+                    "$ref": "#/components/schemas/SchemeId"
+                }
+            },
+            "RequestIdHeader": {
+                "name": "Request-Id",
+                "in": "header",
+                "description": "Header parameter used to correlate logs from several components",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            }
+        },
+        "requestBodies": {
+            "CustomerStatusPostRequest": {
+                "description": "-",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/CustomerStatusPostPayload"
+                        }
+                    }
+                }
+            },
+            "SupplierStatusPostRequest": {
+                "description": "-",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/SupplierStatusPostPayload"
+                        }
+                    }
+                }
+            },
+            "SecuritySchemePostRequest": {
+                "description": "Create a new security scheme",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/CallbackScheme"
+                        }
+                    }
+                }
+            },
+            "SecuritySchemePatchRequest": {
+                "description": "Update an security scheme",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/CallbackScheme"
+                        }
+                    }
+                }
+            },
+            "WebhookPostRequest": {
+                "description": "Create a webhook",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/WebhookPostPayload"
+                        }
+                    }
+                }
+            },
+            "WebhookPatchRequest": {
+                "description": "Update a webhook's technical parameters",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/WebhookPatchPayload"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "callbacks": {
+            "InvoiceStatusCallback": {
+                "{$request.body#/body.callback.url}": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/CallbackContent"
+                                    }
+                                }
+                            },
+                            "required": true
+                        },
+                        "responses": {
+                            "200": {
+                                "$ref": "#/components/responses/Ok200EmptyResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "LifeCycleStatusCallback": {
+                "{$request.body#/body.callback.url}": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/CallbackContent"
+                                    }
+                                }
+                            },
+                            "required": true
+                        },
+                        "responses": {
+                            "200": {
+                                "$ref": "#/components/responses/Ok200EmptyResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "WebhookCallback": {
+                "{$request.body#/body.callback.url}": {
+                    "post": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/CallbackContent"
+                                    }
+                                }
+                            },
+                            "required": true
+                        },
+                        "responses": {
+                            "200": {
+                                "$ref": "#/components/responses/Ok200EmptyResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

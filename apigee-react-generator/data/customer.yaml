@@ -1,0 +1,700 @@
+swagger: '2.0'
+info:
+  description: |-
+    APIs for Elis cutomer search. May return a unique or multiple result items based on the used URI
+    20/05/2021 : version 1.0 exposed with three methods
+    25/05/2021 : version 1.1 single naming pattern for the GET customer method (without s)
+  version: '1.0'
+  title: customer
+host: 'REPLACEME:5560'
+basePath: /v1
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  '/customer/{nationalId}':
+    get:
+      description: "Single method that will return a unique Customer based on the countryCode and the customerId\r\nCustomer object will be empty if no data is selected\r\nError message will be returned if the input parameters does not fit the requirements"
+      operationId: customer_retrieve
+      parameters:
+        - name: nationalId
+          in: path
+          description: Unique identifier of the cutomer (Equivalent of the SIRET for France and National ID for other Countries)
+          required: true
+          type: string
+        - name: countryCode
+          in: query
+          description: Country Code ISO2 for the customers requested
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties: {}
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/customernationalId_GET_response'
+          examples:
+            example-1:
+              size: 0
+              customer:
+                nationalId: string
+                nationalIdType: string
+                companyCommercialName: string
+                companyTradeName: string
+                companyLegalName: string
+                legalStatus: string
+                economicActivityCode: string
+                customerClassification: string
+                customerCountry: string
+                address:
+                  - type: string
+                    streetNumber: string
+                    street: string
+                    building: string
+                    postalCode: string
+                    city: string
+                    countryCodeISO2: string
+                    countryCodeISO3: string
+                    state: string
+                    district: string
+                    countryName: string
+                    latitude: 0
+                    longitude: 0
+                    region: string
+                    complement: string
+                contactChannel:
+                  - email: string
+                    phoneNumber: string
+                    faxNumber: string
+                    mobile: string
+                language: string
+                companyActivationStatus: string
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+          examples: {}
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Customer By NationalId
+    parameters:
+      - type: string
+        name: nationalId
+        in: path
+        required: true
+  '/customer/{customerId}/billinginfos':
+    get:
+      description: Method that will return billing information that belongs to a given customer and linked to a specific plant
+      operationId: customer_billingInfos
+      parameters:
+        - name: customerId
+          in: path
+          description: Unique identifier of the cutomer (Equivalent of the SIRET for France and National ID for other Countries)
+          required: true
+          type: string
+        - name: countryCode
+          in: query
+          description: Country Code ISO2 for the customers requested
+          type: string
+          required: true
+        - type: string
+          in: query
+          name: ERPCode
+          description: 'Unique identifier of the LMS '
+          required: true
+        - type: string
+          in: query
+          name: exploitationCode
+          description: Exploitation code of the LMS
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              billinginfos:
+                $ref: '#/definitions/billingInfos'
+          examples:
+            example-1:
+              billinginfos:
+                CMC: string
+                billingConditions: string
+                termsOfPayment: string
+                methodOfPayment: string
+                electronicInvoiceEmail: string
+                mailInvoice: string
+                payer:
+                  id: string
+                sendinginvoiceadress:
+                  name: string
+                  service: string
+                  address:
+                    type: string
+                    streetNumber: string
+                    street: string
+                    building: string
+                    postalCode: string
+                    city: string
+                    countryCodeISO2: string
+                    countryCodeISO3: string
+                    state: string
+                    district: string
+                    countryName: string
+                    latitude: 0
+                    longitude: 0
+                    region: string
+                    complement: string
+                  contactChannel:
+                    email: string
+                    phoneNumber: string
+                    faxNumber: string
+                    mobile: true
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Customer's BillingInfos
+    parameters:
+      - type: string
+        name: customerId
+        in: path
+        required: true
+  '/customer/{customerId}/deliverypoint':
+    get:
+      description: Method that will return deliveryPoint that belongs to a given customer
+      operationId: customer_deliverypoint
+      parameters:
+        - name: customerId
+          in: path
+          description: Unique identifier of the cutomer (Equivalent of the SIRET for France and National ID for other Countries)
+          required: true
+          type: string
+        - name: countryCode
+          in: query
+          description: Country Code ISO2 for the customers requested
+          type: string
+        - type: string
+          in: query
+          name: ERPCode
+          description: 'Unique identifier of the LMS '
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              deliverypoint:
+                type: array
+                items:
+                  $ref: ./_model_deliveryPoint.yaml
+          examples: {}
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Customer's deliveryPoints
+    parameters:
+      - type: string
+        name: customerId
+        in: path
+        required: true
+  '/customer/{customerId}/employee':
+    get:
+      description: Method that will retrieve employees linked to a specific customer
+      operationId: customer_employees
+      parameters:
+        - name: customerId
+          in: path
+          description: Unique identifier of the cutomer (Equivalent of the SIRET for France and National ID for other Countries)
+          required: true
+          type: string
+        - name: countryCode
+          in: query
+          description: Country Code ISO2 for the customers requested
+          type: string
+          required: true
+        - type: string
+          in: query
+          name: ERPCode
+          description: 'Unique identifier of the LMS '
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              employees:
+                $ref: ./employee.yaml#/definitions/employee
+          examples:
+            example-1:
+              billinginfos:
+                CMC: string
+                billingConditions: string
+                termsOfPayment: string
+                methodOfPayment: string
+                electronicInvoiceEmail: string
+                mailInvoice: string
+                payer:
+                  id: string
+                sendinginvoiceadress:
+                  name: string
+                  service: string
+                  address:
+                    type: string
+                    streetNumber: string
+                    street: string
+                    building: string
+                    postalCode: string
+                    city: string
+                    countryCodeISO2: string
+                    countryCodeISO3: string
+                    state: string
+                    district: string
+                    countryName: string
+                    latitude: 0
+                    longitude: 0
+                    region: string
+                    complement: string
+                  contactChannel:
+                    email: string
+                    phoneNumber: string
+                    faxNumber: string
+                    mobile: true
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Customer's Employee
+    parameters:
+      - type: string
+        name: customerId
+        in: path
+        required: true
+  /customer/search:
+    post:
+      description: |-
+        Search method that will return a list if Customer based on the countryCode and the search Payload options
+        Customer object will be empty if no data is selected
+        Error message will be returned if the input parameters does not fit the requirements
+      operationId: customer_search
+      parameters:
+        - in: body
+          name: customerSearchParam
+          required: false
+          schema:
+            $ref: '#/definitions/search'
+          description: ''
+          x-examples:
+            example-1:
+              nationalId:
+                - '1234'
+                - '4569'
+              startDate: '2019-08-24T14:15:22Z'
+              endDate: '2019-08-24T14:15:22Z'
+            example-2:
+              nationalId:
+                - '9869'
+              startDate: '2019-08-24T14:15:22Z'
+              endDate: '2019-08-24T14:15:22Z'
+        - name: countryCode
+          in: query
+          description: Country Code ISO2 for the customers requested
+          type: string
+          required: true
+        - name: limit
+          in: query
+          description: Maximum number of result allowed. A default value will be applied if not filled
+          required: false
+          type: integer
+          minimum: 0
+          exclusiveMinimum: false
+        - name: offset
+          in: query
+          description: "Specifies the number of rows to skip before starting to return rows from the query\r\nIf your previous search returns 50 item, you have to specify 50 as offset to get the next page"
+          required: false
+          type: integer
+          minimum: 0
+          exclusiveMinimum: false
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/customersearch_POST_response'
+          examples:
+            example-1:
+              size: 0
+              customers:
+                - nationalId: string
+                  nationalIdType: string
+                  companyCommercialName: string
+                  companyTradeName: string
+                  companyLegalName: string
+                  legalStatus: string
+                  economicActivityCode: string
+                  customerClassification: string
+                  customerCountry: string
+                  address:
+                    - type: string
+                      streetNumber: string
+                      street: string
+                      building: string
+                      postalCode: string
+                      city: string
+                      countryCodeISO2: string
+                      countryCodeISO3: string
+                      state: string
+                      district: string
+                      countryName: string
+                      latitude: 0
+                      longitude: 0
+                      region: string
+                      complement: string
+                  contactChannel:
+                    - email: string
+                      phoneNumber: string
+                      faxNumber: string
+                      mobile: string
+                  language: string
+                  companyActivationStatus: string
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Customer Search
+  /customer/countries/available:
+    get:
+      description: "Single method that will return the list of allowed countryCode to use for customer search method\r\nError message will be returned if the input parameters does not fit the requirements"
+      operationId: customer_countries_available
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/customercountriesavailable_GET_response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+        '401':
+          description: Access Denied
+        '500':
+          description: Internal Error
+          schema:
+            $ref: '#/definitions/errorResponseTemplate'
+      summary: Available Countries
+definitions:
+  errorResponseTemplate:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      errors:
+        type: array
+        items:
+          $ref: '#/definitions/errors'
+  customercountriesavailable_GET_response:
+    properties:
+      countries:
+        type: array
+        items:
+          $ref: '#/definitions/countries'
+  errors:
+    properties:
+      status:
+        type: string
+      source:
+        type: string
+      detail:
+        type: string
+  customernationalId_GET_response:
+    required:
+      - customer
+      - size
+    properties:
+      size:
+        type: integer
+        minimum: 0
+        exclusiveMinimum: false
+      customer:
+        $ref: '#/definitions/customer'
+  customersearch_POST_response:
+    required:
+      - customers
+      - size
+    properties:
+      size:
+        type: integer
+        minimum: 0
+        exclusiveMinimum: false
+      customers:
+        type: array
+        items:
+          $ref: '#/definitions/customer'
+  customer:
+    type: object
+    x-examples:
+      Example 1:
+        size: 2
+        customers:
+          - nationalId: '40188740100040'
+            nationalIdType: SIRET
+            companyCommercialName: OLYMPIQUE DE MARSEILLE
+            companyTradeName: OLYMPIQUE DE MARSEILLE OM-DROIT AU BUT
+            companyLegalName: OLYMPIQUE DE MARSEILLE
+            legalStatus: Société anonyme à directoire
+            economicActivityCode: 9319Z
+            customerClassification: CLIENT
+            customerCountry: FR
+            address:
+              - street: 33 TSSEDE LA MARTINE
+                building: CTRE ENTRAINEMENT ROBERT LOUIS DREYFUS
+                postalCode: '13012'
+                city: MARSEILLE
+                countryName: FRANCE
+                complement: Complement
+            contactChannel:
+              - phoneNumber: '0491765609'
+                faxNumber: '0491760777'
+            language: France
+            companyActivationStatus: Actif
+          - nationalId: '58162109100015'
+            nationalIdType: SIRET
+            companyCommercialName: SOCIETE HOTEL NEGRE COSTE
+            companyTradeName: string
+            companyLegalName: SOCIETE HOTEL NEGRE COSTE
+            legalStatus: string
+            economicActivityCode: string
+            customerClassification: PROSPECT
+            customerCountry: FR
+            address:
+              - street: 33 COURS MIRABEAU
+                building: string
+                postalCode: '13100'
+                city: AIX-EN-PROVENCE
+                countryName: FRANCE
+                complement: string
+            contactChannel:
+              - phoneNumber: '+33442277422'
+                faxNumber: string
+            language: string
+            companyActivationStatus: string
+    title: customer
+    properties:
+      size:
+        type: integer
+      customers:
+        type: array
+        items:
+          type: object
+          properties:
+            nationalId:
+              type: string
+            nationalIdType:
+              type: string
+            companyCommercialName:
+              type: string
+            companyTradeName:
+              type: string
+            companyLegalName:
+              type: string
+            legalStatus:
+              type: string
+            economicActivityCode:
+              type: string
+            customerClassification:
+              type: string
+            customerCountry:
+              type: string
+            address:
+              type: array
+              items:
+                type: object
+                properties:
+                  street:
+                    type: string
+                  building:
+                    type: string
+                  postalCode:
+                    type: string
+                  city:
+                    type: string
+                  countryName:
+                    type: string
+                  complement:
+                    type: string
+            contactChannel:
+              type: array
+              items:
+                type: object
+                properties:
+                  phoneNumber:
+                    type: string
+                  faxNumber:
+                    type: string
+            language:
+              type: string
+            companyActivationStatus:
+              type: string
+      '':
+        type: string
+        x-stoplight:
+          id: vosvqhtwfvu14
+  contactChannel:
+    properties:
+      email:
+        type: string
+      phoneNumber:
+        type: string
+      faxNumber:
+        type: string
+      mobile:
+        type: string
+  countries:
+    properties:
+      countryISO2:
+        type: string
+      countryName:
+        type: string
+  address:
+    type: object
+    properties:
+      type:
+        type: string
+        description: "Address type = default when a unique address is available\r\nOther types / category if several are returned"
+      streetNumber:
+        type: string
+      street:
+        type: string
+      building:
+        type: string
+      postalCode:
+        type: string
+      city:
+        type: string
+      countryCodeISO2:
+        type: string
+      countryCodeISO3:
+        type: string
+      state:
+        type: string
+      district:
+        type: string
+      countryName:
+        type: string
+      latitude:
+        type: number
+        format: double
+      longitude:
+        type: number
+        format: double
+      region:
+        type: string
+      complement:
+        type: string
+    required:
+      - street
+      - postalCode
+      - city
+    x-examples: {}
+  search:
+    required:
+      - nationalId
+    properties:
+      nationalId:
+        type: array
+        items:
+          type: string
+      startDate:
+        type: string
+        format: date-time
+        description: "Lower datetime for the search intervalle based on customers last update\r\nFormat: yyyy-mm-ddTHH:MM:ss.SSSZ \r\nExample: 2021-01-30T23:59:59.000Z"
+      endDate:
+        type: string
+        format: date-time
+        description: "Upper datetime for the search intervalle based on customers last update\r\nFormat: yyyy-mm-ddTHH:MM:ss.SSSZ \r\nExample: 2021-01-30T23:59:59.000Z"
+  billingInfos:
+    title: billingInfos
+    type: object
+    x-examples: {}
+    description: ''
+    properties:
+      keyAccountCustomer:
+        type: string
+      billingLevel:
+        type: string
+        description: Customer / Delivery point / Payer
+      paymentTerms:
+        type: string
+        description: Net / Net 30 / Net 45
+      paymentMethod:
+        type: string
+        description: Direct debit / bank transfert / Check
+      recipientEmail:
+        type: string
+      paperInvoice:
+        type: boolean
+      payer:
+        type: object
+        properties:
+          id:
+            type: string
+      sendingInvoiceAdress:
+        type: object
+        properties:
+          name:
+            type: string
+          service:
+            type: string
+          address:
+            $ref: ./_model_address.yaml
+          contactChannel:
+            $ref: ./_model_contactChannel.yaml
+parameters:
+  countryCode:
+    name: countryCode
+    in: query
+    required: false
+    schema:
+      type: string
+    description: Country Code ISO2 for the customers requested

@@ -88,5 +88,5 @@ app.post('/api/azure-devops-proxy', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Azure DevOps proxy server running on http://localhost:${PORT}`);
-  console.log(`Accepting requests from: http://localhost:5175`);
+  console.log(`Accepting requests from all localhost origins`);
 });

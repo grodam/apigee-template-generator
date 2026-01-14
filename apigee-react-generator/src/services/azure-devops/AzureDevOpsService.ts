@@ -2,8 +2,17 @@ import type { AzureDevOpsConfig, AzureDevOpsRepository, AzureDevOpsPipeline } fr
 import type { GeneratedProject } from '../../models/GeneratedProject';
 import { config as appConfig } from '../../utils/config';
 import { logger } from '../../utils/logger';
+import { fetchWithTimeout, validateHttps } from '../../utils/fetchUtils';
 
 const log = logger.scope('AzureDevOpsService');
+
+/** Request timeout in milliseconds */
+const REQUEST_TIMEOUT = 30000;
+
+/** Request body type for API calls */
+interface RequestBody {
+  [key: string]: unknown;
+}
 
 export class AzureDevOpsService {
   private baseUrl: string;
@@ -16,33 +25,45 @@ export class AzureDevOpsService {
     this.baseUrl = `https://dev.azure.com/${organization}`;
     this.useProxy = useProxy;
     this.proxyUrl = appConfig.proxyUrl;
+
+    // Validate HTTPS for Azure DevOps URL (always HTTPS)
+    validateHttps(this.baseUrl);
   }
 
   /**
-   * Make an API request (via proxy or direct)
+   * Make an API request (via proxy or direct) with timeout
    */
   private async makeRequest(
     url: string,
     method: string = 'GET',
-    body?: any
+    body?: RequestBody
   ): Promise<Response> {
+    // Validate target URL uses HTTPS (except localhost proxy)
+    if (!this.useProxy) {
+      validateHttps(url);
+    }
+
     if (this.useProxy) {
       // Use proxy server to avoid CORS
-      const response = await fetch(this.proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await fetchWithTimeout(
+        this.proxyUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url,
+            method,
+            headers: this.getHeaders(),
+            body
+          })
         },
-        body: JSON.stringify({
-          url,
-          method,
-          headers: this.getHeaders(),
-          body
-        })
-      });
+        REQUEST_TIMEOUT
+      );
 
       if (!response.ok) {
-        throw new Error(`Proxy request failed: ${response.statusText}`);
+        throw new Error(`Proxy request failed: ${method} ${url} - ${response.status} ${response.statusText}`);
       }
 
       const proxyResponse = await response.json();
@@ -58,11 +79,15 @@ export class AzureDevOpsService {
       );
     } else {
       // Direct API call (may have CORS issues)
-      return fetch(url, {
-        method,
-        headers: this.getHeaders(),
-        body: body ? JSON.stringify(body) : undefined
-      });
+      return fetchWithTimeout(
+        url,
+        {
+          method,
+          headers: this.getHeaders(),
+          body: body ? JSON.stringify(body) : undefined
+        },
+        REQUEST_TIMEOUT
+      );
     }
   }
 
@@ -86,7 +111,7 @@ export class AzureDevOpsService {
       }
 
       return response.ok;
-    } catch (error: any) {
+    } catch (error) {
       log.error('Azure DevOps connection test failed:', error);
       throw error;
     }
@@ -122,8 +147,9 @@ export class AzureDevOpsService {
         id: data.id,
         name: data.name
       };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get project details');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get project details';
+      throw new Error(message);
     }
   }
 
@@ -132,8 +158,7 @@ export class AzureDevOpsService {
    */
   async createRepository(
     projectName: string,
-    repositoryName: string,
-    _defaultBranch: string = 'main'
+    repositoryName: string
   ): Promise<AzureDevOpsRepository> {
     try {
       // First, get the project ID
@@ -177,9 +202,10 @@ export class AzureDevOpsService {
         sshUrl: data.sshUrl,
         webUrl: data.webUrl
       };
-    } catch (error: any) {
+    } catch (error) {
       log.error('Failed to create repository:', error);
-      throw new Error(error.message || 'Failed to create repository in Azure DevOps');
+      const message = error instanceof Error ? error.message : 'Failed to create repository in Azure DevOps';
+      throw new Error(message);
     }
   }
 
@@ -231,9 +257,10 @@ export class AzureDevOpsService {
         const error = await response.text();
         throw new Error(`Failed to initialize repository: ${error}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       // If repository is already initialized, ignore the error
-      if (!error.message.includes('already exists')) {
+      const message = error instanceof Error ? error.message : '';
+      if (!message.includes('already exists')) {
         throw error;
       }
     }
@@ -284,8 +311,15 @@ export class AzureDevOpsService {
       // Get list of existing files in the repository
       const existingFiles = await this.getExistingFiles(config.project, repository.id, config.defaultBranch);
 
+      // Azure DevOps Git change item interface
+      interface GitChange {
+        changeType: 'add' | 'edit' | 'delete';
+        item: { path: string };
+        newContent?: { content: string; contentType: string };
+      }
+
       // Convert files to Azure DevOps Git changes format
-      const changes: any[] = [];
+      const changes: GitChange[] = [];
 
       project.files.forEach((content, filePath) => {
         const fullPath = `/${filePath}`;
@@ -323,7 +357,7 @@ export class AzureDevOpsService {
 
       // Split changes into batches (Azure DevOps has a limit per push)
       const batchSize = 100;
-      const batches: any[][] = [];
+      const batches: GitChange[][] = [];
 
       for (let i = 0; i < changes.length; i += batchSize) {
         batches.push(changes.slice(i, i + batchSize));
@@ -390,9 +424,10 @@ export class AzureDevOpsService {
           }
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       log.error('Failed to push files:', error);
-      throw new Error(error.message || 'Failed to push files to repository');
+      const message = error instanceof Error ? error.message : 'Failed to push files to repository';
+      throw new Error(message);
     }
   }
 
@@ -414,8 +449,7 @@ export class AzureDevOpsService {
       if (!exists) {
         repository = await this.createRepository(
           config.project,
-          config.repositoryName,
-          config.defaultBranch
+          config.repositoryName
         );
       } else {
         // Get repository details
@@ -430,10 +464,10 @@ export class AzureDevOpsService {
         message: `Successfully pushed ${project.files.size} files to Azure DevOps repository: ${config.repositoryName}`,
         repositoryUrl: repository.webUrl
       };
-    } catch (error: any) {
+    } catch (error) {
       log.error('Push to Azure DevOps failed:', error);
 
-      let errorMessage = error.message || 'Failed to push to Azure DevOps';
+      let errorMessage = error instanceof Error ? error.message : 'Failed to push to Azure DevOps';
 
       // Add additional context based on error type
       if (errorMessage.includes('Network') || errorMessage.includes('fetch') || errorMessage.includes('CORS')) {
@@ -473,8 +507,9 @@ export class AzureDevOpsService {
         sshUrl: data.sshUrl,
         webUrl: data.webUrl
       };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get repository details');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get repository details';
+      throw new Error(message);
     }
   }
 
