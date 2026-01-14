@@ -1,31 +1,34 @@
 # Apigee Template Generator
 
-A modern web application for generating professional Apigee API proxy bundles from OpenAPI specifications.
+A modern React application for generating Google Apigee API proxy bundles from OpenAPI specifications.
 
-![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)
+![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite)
+![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-06B6D4?logo=tailwindcss)
 
 ## Overview
 
-**Apigee Template Generator** streamlines the creation of Apigee API proxy projects by providing a guided wizard interface. Simply configure your API settings, upload your OpenAPI specification, and generate a complete, deployment-ready Apigee bundle.
+**Apigee Template Generator** streamlines the creation of Apigee API proxy projects through a modern Canvas-based interface. Configure your API settings, upload your OpenAPI specification, and generate a complete, deployment-ready Apigee bundle.
 
 ### Key Features
 
-- **6-Step Wizard**: Intuitive step-by-step configuration process
+- **Canvas UI**: Modern card-based interface with Swiss Design aesthetics
 - **OpenAPI Support**: Import JSON or YAML specifications (OpenAPI 2.0, 3.0.x, 3.1.x)
+- **Auto-Detection**: Automatically extracts API configuration from OpenAPI spec
 - **Multi-Environment**: Pre-configured for DEV, UAT, STAGING, and PROD environments
 - **Azure DevOps Integration**: Direct push to Azure DevOps repositories
 - **Template Customization**: Override default templates for custom policies
+- **Template Sync**: Synchronize templates from Azure DevOps repositories
+- **Portal Generation**: Generate portal-ready Swagger files
 - **Internationalization**: English and French language support
-- **Modern UI**: Clean, utility-first design inspired by Linear and GitHub
+- **Dark Mode**: Toggle between light and dark themes
 
 ---
 
 ## Quick Start
 
-### 1. Start the Generator Application
+### 1. Start the Application
 
 ```bash
 # Clone and install
@@ -33,41 +36,29 @@ git clone https://github.com/grodam/apigee-template-generator.git
 cd apigee-template-generator/apigee-react-generator
 npm install
 
-# Start the application
+# Start the application with proxy server
+npm run dev:full
+```
+
+Or start separately:
+
+```bash
+# Terminal 1: Start React app
 npm run dev
+
+# Terminal 2: Start proxy server (required for Azure DevOps)
+npm run proxy
 ```
 
 Open http://localhost:5173 in your browser.
 
 ### 2. Generate Your Proxy
 
-1. **Step 1**: Configure API settings (entity, domain, backend apps, version...)
-2. **Step 2**: Upload your OpenAPI specification (JSON/YAML)
-3. **Step 3**: Review environment configurations
-4. **Step 4**: Click "Generate Project"
-5. **Step 5**: (Optional) Push to Azure DevOps
-6. **Step 6**: Download ZIP
-
-### 3. Deploy to Apigee
-
-```bash
-# Extract the generated ZIP
-unzip [proxyName].zip
-cd [proxyName]
-
-# Deploy using Maven
-mvn install -Pgoogleapi \
-  -Denv=dev1 \
-  -Dorg=YOUR_APIGEE_ORG \
-  -Dbearer=YOUR_ACCESS_TOKEN
-
-# Or deploy using apigeecli
-apigeecli apis create bundle \
-  -f src/main/apigee/gateway/apiproxy \
-  -n [proxyName] \
-  --org YOUR_APIGEE_ORG \
-  --token YOUR_ACCESS_TOKEN
-```
+1. **OpenAPI Card**: Upload or paste your OpenAPI specification
+2. **Proxy Config Card**: Configure entity, domain, backend apps, version, authentication
+3. **API Products Card**: Review auto-generated API products per environment
+4. **Target Servers Card**: Configure backend hosts for each environment
+5. **Export Panel**: Generate, download ZIP, or push to Azure DevOps
 
 ---
 
@@ -88,8 +79,8 @@ cd apigee-template-generator/apigee-react-generator
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# Start development server with proxy
+npm run dev:full
 ```
 
 The application will be available at `http://localhost:5173`
@@ -104,9 +95,21 @@ npm run build
 npm run preview
 ```
 
-## Usage Guide
+---
 
-### Step 1: API Configuration
+## User Interface
+
+The application uses a Canvas-based UI with expandable cards:
+
+### 1. OpenAPI Card
+
+- Upload JSON/YAML files via drag & drop or file picker
+- Paste specification directly into Monaco editor
+- Real-time validation with error reporting
+- Auto-detection of API configuration (title, version, basePath, security)
+- Displays detected endpoints and security schemes
+
+### 2. Proxy Configuration Card
 
 Configure the fundamental parameters of your API proxy:
 
@@ -117,93 +120,83 @@ Configure the fundamental parameters of your API proxy:
 | Backend Apps | Backend systems (dash-separated) | `sap-salesforce` |
 | Business Object | Main API resource | `invoice` |
 | Version | API version | `v1` |
-| Description | API description | `Invoice management API` |
-| Proxy Basepath | Base URL path | `/invoice-api/v1` |
-| Target Path | Backend path prefix | `/v1` |
-| Southbound Auth | Backend authentication | `Basic`, `OAuth2`, `None` |
+| Proxy Basepath | Base URL path (auto-generated) | `/invoice/v1` |
+| Southbound Auth | Backend authentication | `Basic`, `OAuth2`, `ApiKey`, `None` |
 | Rate Limit | Global rate limiting | `500pm`, `100ps` |
 
-**Generated Proxy Name**: `[entity].[domain].[backendApps].[businessObject].[version]`
+**Generated Proxy Name**: `{entity}.{domain}.{backendApps}.{businessObject}.{version}`
 
 Example: `elis.finance.sap-salesforce.invoice.v1`
 
-### Step 2: OpenAPI Specification
+### 3. API Products Card
 
-- Upload a JSON or YAML file (drag & drop supported)
-- Real-time validation with error reporting
-- Supports OpenAPI 2.0, 3.0.x, and 3.1.x
-- Integrated code editor for modifications
+- Auto-generated API products for each environment
+- Configure product name, display name, description
+- Environment-specific suffixes (dev, uat, stg, prod)
+- Authorized paths configuration
 
-### Step 3: Environment Configuration
+### 4. Target Servers Card
 
 Configure for each environment (DEV1, UAT1, STAGING, PROD1):
 
-#### Target Servers
-| Field | Description | Auto-generated |
-|-------|-------------|----------------|
-| Name | Server identifier | Yes: `[entity].[backendApps].[version].backend` |
-| Host | Backend hostname | No: `backend-[env].example.com` |
-| Port | Backend port | No (default: 443) |
+| Field | Description |
+|-------|-------------|
+| Server Name | Auto-generated identifier |
+| Host | Backend hostname |
+| Port | Backend port (default: 443) |
+| SSL Enabled | TLS configuration |
 
-#### API Products
-| Field | Description | Auto-generated |
-|-------|-------------|----------------|
-| Product Name | Unique identifier | Yes |
-| Display Name | Human-readable name | Yes: `[businessObject]-[version]-[env]` |
-| Description | Product description | Yes |
+### 5. Export & Console Panel
 
-**Environment Suffix Rules**:
-| Environment | Product Name | Display Name |
-|-------------|--------------|--------------|
-| dev1 | `.dev` | `-dev` |
-| uat1 | `.uat` | `-uat` |
-| staging | `.stg` | `-stg` |
-| prod1 | (none) | (none) |
+- **Generate API**: Creates the Apigee project structure
+- **Download ZIP**: Downloads the generated project as ZIP
+- **Push to Azure DevOps**: Pushes to configured repository
+- **Console**: Real-time generation logs and status
 
-#### Key-Value Maps (KVM)
-- Store credentials and configuration per environment
-- Optional encryption for sensitive data
-- Add custom key-value entries
+---
 
-### Step 4: Generation
+## Settings
 
-Click "Generate Project" to create:
-- Apigee proxy configuration (`apiproxy/`)
-- Security and routing policies
-- Environment-specific configurations (`config/env/`)
-- Maven deployment files (`pom.xml`)
-- Eclipse project files (`.project`, `.classpath`)
+Access settings via the gear icon in the header:
 
-### Step 5: Azure DevOps (Optional)
+### Azure DevOps Settings
 
-Push your generated project directly to Azure DevOps:
+- Organization name
+- Project name
+- Personal Access Token (PAT)
+- Repository name
+- Default branch
+- Auto-create repository option
 
-1. **Configure Settings** (Settings > Azure DevOps):
-   - Organization name
-   - Project name
-   - Personal Access Token (PAT)
-   - Default branch
+### Portal Settings
 
-2. **Configure Repository**:
-   - Enter repository name
-   - Enable auto-create if needed
+- Enable portal Swagger generation
+- Configure portal-specific options
 
-3. **Push**: Click "Push to Azure DevOps"
+### Template Sync Settings
 
-### Step 6: Export
+- Enable remote template synchronization
+- Configure Azure DevOps repository for templates
+- Auto-sync on startup
 
-Download your complete project as a ZIP file ready for deployment.
+### Template Manager
+
+- View and edit XML policy templates
+- Override default templates
+- Reset to defaults
+
+---
 
 ## Generated Project Structure
 
 ```
-[proxyName]/
+{proxyName}/
 ├── .project                          # Eclipse configuration
 ├── .classpath                        # Eclipse classpath
 ├── pom.xml                           # Maven POM
 ├── apigee-configuration.json         # Global configuration
 ├── apiproxy/
-│   ├── [proxyName].xml              # Proxy descriptor
+│   ├── {proxyName}.xml              # Proxy descriptor
 │   ├── proxies/
 │   │   └── default.xml              # ProxyEndpoint
 │   ├── targets/
@@ -225,111 +218,14 @@ Download your complete project as a ZIP file ready for deployment.
         └── prod1/
 ```
 
-## Configuration Files
-
-### apigee-configuration.json
-
-```json
-{
-  "entity": "elis",
-  "description": "API for invoice management",
-  "version": "v1",
-  "apiname": "invoice",
-  "oas.version": "3.0.0",
-  "oas.format": "json",
-  "proxy.basepath": "/invoice-api/v1",
-  "target.path": "/v1",
-  "global-rate-limit": "500pm",
-  "auth-southbound": "basic",
-  "mock.url": ""
-}
-```
-
-### edge-env.json
-
-```json
-{
-  "version": "1.0",
-  "envConfig": {
-    "dev1": {
-      "targetServers": [
-        {
-          "name": "elis.sap.v1.backend",
-          "host": "backend-dev1.example.com",
-          "isEnabled": true,
-          "port": 443,
-          "sSLInfo": {
-            "enabled": true,
-            "clientAuthEnabled": false
-          }
-        }
-      ],
-      "kvms": [
-        {
-          "name": "sap.v1.backend",
-          "encrypted": true
-        }
-      ],
-      "virtualHosts": [],
-      "references": [],
-      "caches": [],
-      "resourcefiles": [],
-      "flowhooks": [],
-      "extensions": [],
-      "keystores": [],
-      "aliases": []
-    }
-  }
-}
-```
-
-### edge-org.json
-
-```json
-{
-  "version": "1.0",
-  "orgConfig": {
-    "specs": [],
-    "apiProducts": [
-      {
-        "name": "elis.finance.sap.invoice.v1.dev",
-        "displayName": "invoice-v1-dev",
-        "description": "API Product for invoice (v1) - Environment: DEV. Backend: SAP. Type: internal.",
-        "approvalType": "auto",
-        "attributes": [
-          { "name": "access", "value": "private" }
-        ],
-        "environments": ["dev1"],
-        "operationGroup": {
-          "operationConfigs": [
-            {
-              "apiSource": "elis.finance.sap.invoice.v1",
-              "operations": [
-                { "resource": "/invoices" },
-                { "resource": "/invoices/**" }
-              ],
-              "quota": {}
-            }
-          ],
-          "operationConfigType": "proxy"
-        }
-      }
-    ],
-    "userroles": [],
-    "reports": [],
-    "developers": [],
-    "developerApps": {},
-    "importKeys": {}
-  }
-}
-```
+---
 
 ## Deployment to Apigee
 
 ### Using Maven
 
 ```bash
-cd [proxyName]
+cd {proxyName}
 
 # Deploy to dev1
 mvn install -Pgoogleapi -Denv=dev1 -Dorg=your-org -Dtoken=your-token
@@ -342,20 +238,22 @@ mvn install -Pgoogleapi -Denv=prod1 -Dorg=your-org -Dtoken=your-token
 
 ```bash
 # Deploy proxy
-apigeecli apis create bundle -f apiproxy -n [proxyName] --org your-org --token your-token
+apigeecli apis create bundle -f apiproxy -n {proxyName} --org your-org --token your-token
 
 # Deploy environment config
 apigeecli targetservers import -f config/env/dev1/edge-env.json --org your-org --env dev1 --token your-token
 ```
 
+---
+
 ## Technology Stack
 
 | Technology | Purpose |
 |------------|---------|
-| **React 18** | UI framework |
-| **TypeScript** | Type safety |
-| **Vite** | Build tool & dev server |
-| **Tailwind CSS** | Utility-first styling |
+| **React 19** | UI framework |
+| **TypeScript 5** | Type safety |
+| **Vite 7** | Build tool & dev server |
+| **Tailwind CSS 3** | Utility-first styling |
 | **Zustand** | State management |
 | **React Hook Form** | Form handling |
 | **Zod** | Schema validation |
@@ -364,65 +262,75 @@ apigeecli targetservers import -f config/env/dev1/edge-env.json --org your-org -
 | **Monaco Editor** | Code editing |
 | **JSZip** | ZIP file generation |
 | **swagger-parser** | OpenAPI parsing |
+| **Lucide React** | Icons |
+
+---
 
 ## Project Structure
 
 ```
 apigee-react-generator/
+├── server/
+│   └── proxy.js                    # Azure DevOps proxy server
 ├── src/
 │   ├── components/
-│   │   ├── Steps/              # Wizard step components
-│   │   │   ├── Step1_ApiConfiguration.tsx
-│   │   │   ├── Step2_OpenAPIEditor.tsx
-│   │   │   ├── Step3_EnvironmentConfig.tsx
-│   │   │   ├── Step4_Generation.tsx
-│   │   │   ├── Step5_AzureDevOps.tsx
-│   │   │   └── Step6_Export.tsx
-│   │   ├── Settings/           # Settings modal
-│   │   ├── Wizard/             # Wizard container
-│   │   └── ui/                 # Reusable UI components
+│   │   ├── Canvas/                 # Main canvas UI
+│   │   │   ├── CanvasContainer.tsx
+│   │   │   ├── ProgressHeader.tsx
+│   │   │   ├── ConsolePanel.tsx
+│   │   │   └── AzurePushModal.tsx
+│   │   ├── Cards/                  # Configuration cards
+│   │   │   ├── OpenAPICard.tsx
+│   │   │   ├── ProxyConfigCard.tsx
+│   │   │   ├── ApiProductCard.tsx
+│   │   │   ├── TargetServersCard.tsx
+│   │   │   └── SwissCard.tsx
+│   │   ├── Settings/               # Settings modal
+│   │   │   ├── SettingsModal.tsx
+│   │   │   ├── AzureDevOpsSettings/
+│   │   │   ├── PortalSettings/
+│   │   │   ├── TemplateSyncSettings/
+│   │   │   └── TemplateManager/
+│   │   ├── Help/                   # Help panels
+│   │   └── ui/                     # Radix UI components
 │   ├── services/
-│   │   ├── generators/         # Code generation logic
+│   │   ├── generators/             # Code generation
 │   │   │   ├── ApigeeGenerator.ts
 │   │   │   ├── ConfigGenerator.ts
+│   │   │   ├── FlowGenerator.ts
 │   │   │   └── PolicyGenerator.ts
-│   │   └── azure-devops/       # Azure DevOps API
+│   │   ├── parsers/
+│   │   │   └── OpenAPIParser.ts
+│   │   ├── exporters/
+│   │   │   └── ZipExporter.ts
+│   │   ├── templates/              # Template management
+│   │   └── azure-devops/
+│   │       └── AzureDevOpsService.ts
 │   ├── store/
-│   │   └── useProjectStore.ts  # Zustand store
-│   ├── models/
-│   │   └── ApiConfiguration.ts # TypeScript interfaces
-│   ├── i18n/
-│   │   └── locales/            # Language files
-│   │       ├── en.ts
-│   │       └── fr.ts
-│   └── utils/                  # Utility functions
-├── docs/
-│   └── USER_GUIDE.md          # User documentation
-├── public/                     # Static assets
-└── index.html                  # Entry point
+│   │   └── useProjectStore.ts      # Zustand store
+│   ├── models/                     # TypeScript interfaces
+│   ├── hooks/                      # Custom hooks
+│   ├── i18n/                       # Translations
+│   └── utils/                      # Utility functions
+├── public/
+│   └── templates/                  # XML policy templates
+└── package.json
 ```
 
-## Design System
-
-The application uses a utility-first design system:
-
-| Aspect | Implementation |
-|--------|----------------|
-| **Spacing** | 4px grid system |
-| **Colors** | Slate neutrals + Indigo accent (#6366f1) |
-| **Typography** | Inter (text), Monospace (data) |
-| **Borders** | 4-8px radius, subtle borders |
-| **Shadows** | Minimal, border-based depth |
+---
 
 ## Scripts
 
 ```bash
 npm run dev          # Start development server
+npm run dev:full     # Start dev server + proxy
+npm run proxy        # Start proxy server only
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
-npm run type-check   # TypeScript type checking
 ```
+
+---
 
 ## Browser Support
 
@@ -431,9 +339,13 @@ npm run type-check   # TypeScript type checking
 - Safari (latest)
 - Edge (latest)
 
+---
+
 ## Documentation
 
-- [User Guide](docs/USER_GUIDE.md) - Complete user documentation
+- [Azure DevOps Setup](AZURE_DEVOPS_SETUP.md) - Azure DevOps integration guide
+
+---
 
 ## Contributing
 
@@ -443,16 +355,11 @@ npm run type-check   # TypeScript type checking
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+---
+
 ## License
 
 This project is proprietary software. All rights reserved.
-
-## Acknowledgments
-
-- [Google Apigee](https://cloud.google.com/apigee) - API Management Platform
-- [OpenAPI Initiative](https://www.openapis.org/) - API Specification Standard
-- [Radix UI](https://www.radix-ui.com/) - Accessible Component Primitives
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-First CSS Framework
 
 ---
 
