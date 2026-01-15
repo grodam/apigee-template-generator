@@ -7,9 +7,15 @@ Outil de generation automatique de proxies Google Apigee a partir de specificati
 ```bash
 cd apigee-react-generator
 npm install
+
+# Mode Web (navigateur)
 npm run dev          # Vite dev server (port 5173)
-npm run proxy        # Express proxy server (port 3001)
+npm run proxy        # Express proxy server pour CORS (port 3001)
 npm run dev:full     # Les deux en parallele
+
+# Mode Desktop (Tauri - recommande)
+npm run tauri:dev    # App desktop avec hot reload
+npm run tauri:build  # Build installateur Windows (.msi/.exe)
 ```
 
 ## Structure du Projet
@@ -22,18 +28,25 @@ apigee-react-generator/
 │   ├── store/           # Zustand state management
 │   ├── models/          # Interfaces TypeScript
 │   ├── types/           # Type definitions
-│   ├── utils/           # Utilitaires (constants.ts, config.ts, logger.ts)
+│   ├── utils/           # Utilitaires (constants.ts, config.ts, logger.ts, tauriHttp.ts)
 │   ├── hooks/           # Custom React hooks
 │   ├── i18n/            # Internationalisation (EN/FR)
 │   └── styles/          # CSS global
+├── src-tauri/           # Backend Rust Tauri
+│   ├── src/             # Code Rust (lib.rs, main.rs)
+│   ├── capabilities/    # Permissions Tauri (HTTP, etc.)
+│   ├── icons/           # Icones app
+│   ├── Cargo.toml       # Dependances Rust
+│   └── tauri.conf.json  # Config Tauri
 ├── public/templates/    # Templates XML Apigee par defaut
-├── server/              # Proxy Express pour Azure DevOps
+├── server/              # Proxy Express pour Azure DevOps (mode web)
 └── dist/                # Build de production
 ```
 
 ## Stack Technique
 
 - **Framework**: React 19 + TypeScript 5.9
+- **Desktop**: Tauri 2 (Rust backend, WebView frontend)
 - **Build**: Vite 7
 - **Styling**: Tailwind CSS (grille 4px, Swiss Design)
 - **State**: Zustand avec persistence localStorage
@@ -42,6 +55,7 @@ apigee-react-generator/
 - **Forms**: React Hook Form + Zod validation
 - **Parsing**: @apidevtools/swagger-parser, js-yaml, fast-xml-parser
 - **Export**: JSZip
+- **HTTP**: tauri-plugin-http (desktop), fetch + proxy (web)
 
 ## Commandes
 
@@ -51,7 +65,9 @@ apigee-react-generator/
 | `npm run build` | Build production (tsc + vite) |
 | `npm run preview` | Preview du build |
 | `npm run lint` | ESLint |
-| `npm run proxy` | Proxy server Express |
+| `npm run proxy` | Proxy server Express (mode web) |
+| `npm run tauri:dev` | App desktop Tauri avec hot reload |
+| `npm run tauri:build` | Build installateur Windows (.msi/.exe) |
 
 ## Conventions de Code
 
@@ -122,10 +138,54 @@ const useProjectStore = create<ProjectState>()(
 
 ## Integration Azure DevOps
 
-Le proxy Express (`server/`) contourne les restrictions CORS du navigateur pour communiquer avec l'API Azure DevOps. Port par defaut: 3001.
+### Mode Desktop (Tauri)
+Pas de proxy necessaire. `tauri-plugin-http` effectue les requetes HTTP depuis le backend Rust, contournant les restrictions CORS du navigateur.
+
+### Mode Web (navigateur)
+Le proxy Express (`server/`) contourne les restrictions CORS. Port: 3001.
+
+### Detection automatique
+```typescript
+// src/utils/tauriHttp.ts
+import { isTauri, tauriFetch } from '@/utils/tauriHttp';
+
+if (isTauri()) {
+  // Utilise tauri-plugin-http (pas de CORS)
+} else {
+  // Utilise fetch via proxy Express
+}
+```
 
 ## i18n
 
 Langues supportees: English (defaut), Francais
 Config: `src/i18n/config.ts`
 Fichiers: `src/i18n/locales/en.ts`, `src/i18n/locales/fr.ts`
+
+## Tauri - Configuration
+
+### Fichiers cles
+- `src-tauri/tauri.conf.json`: Config principale (window, bundle, build)
+- `src-tauri/capabilities/default.json`: Permissions (core, http)
+- `src-tauri/Cargo.toml`: Dependances Rust
+
+### Plugins Tauri actifs
+- `tauri-plugin-http`: Requetes HTTP sans CORS
+- `tauri-plugin-log`: Logging
+
+### Build Windows
+```json
+// tauri.conf.json - Installation sans droits admin
+"bundle": {
+  "windows": {
+    "nsis": {
+      "installMode": "currentUser"
+    }
+  }
+}
+```
+
+### Prerequis dev
+- Rust (rustup)
+- VS Build Tools 2022 (C++ workload)
+- Node.js + npm

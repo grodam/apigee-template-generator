@@ -2,13 +2,14 @@
  * TemplatesSyncService
  *
  * Synchronizes templates from Azure DevOps repository to local cache.
- * Uses the existing proxy server to avoid CORS issues.
+ * Uses Tauri HTTP plugin when running in Tauri, falls back to proxy for browser dev.
  */
 
 import type { TemplateRepoConfig } from '../../models/AzureDevOpsConfig';
 import { templatesCacheService, type CachedTemplate, type SyncInfo } from './TemplatesCacheService';
 import { config as appConfig } from '../../utils/config';
 import { logger } from '../../utils/logger';
+import { tauriFetch, isTauri } from '../../utils/tauriHttp';
 
 const log = logger.scope('TemplatesSyncService');
 
@@ -32,7 +33,7 @@ class TemplatesSyncService {
   private proxyUrl = appConfig.proxyUrl;
 
   /**
-   * Make an API request via proxy
+   * Make an API request (via Tauri HTTP or proxy)
    */
   private async makeRequest(
     url: string,
@@ -44,6 +45,24 @@ class TemplatesSyncService {
       'Authorization': `Basic ${btoa(`:${token}`)}`
     };
 
+    // Use Tauri HTTP plugin when running in Tauri (no CORS restrictions)
+    if (isTauri()) {
+      const response = await tauriFetch(url, {
+        method: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+        headers,
+      });
+
+      return new Response(
+        JSON.stringify(response.data),
+        {
+          status: response.status,
+          statusText: response.ok ? 'OK' : 'Error',
+          headers: new Headers(response.headers)
+        }
+      );
+    }
+
+    // Fall back to proxy for browser development
     const response = await fetch(this.proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -178,7 +197,7 @@ class TemplatesSyncService {
   }
 
   /**
-   * Download file content as text (handles the proxy response)
+   * Download file content as text (handles Tauri or proxy response)
    */
   private async downloadFileContent(config: TemplateRepoConfig, token: string, filePath: string): Promise<string> {
     const baseUrl = `https://dev.azure.com/${config.organization}`;
@@ -191,7 +210,31 @@ class TemplatesSyncService {
       'Accept': 'application/octet-stream'
     };
 
-    // Make request to get raw file content
+    // Use Tauri HTTP plugin when running in Tauri (no CORS restrictions)
+    if (isTauri()) {
+      const response = await tauriFetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Failed to download file ${filePath}: ${response.status}`);
+      }
+
+      const data = response.data;
+
+      if (typeof data === 'string') {
+        return data;
+      }
+
+      if (data && typeof data === 'object') {
+        return JSON.stringify(data, null, 2);
+      }
+
+      return '';
+    }
+
+    // Fall back to proxy for browser development
     const response = await fetch(this.proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

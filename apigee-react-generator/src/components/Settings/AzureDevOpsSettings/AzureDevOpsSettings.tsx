@@ -48,6 +48,11 @@ export function AzureDevOpsSettings() {
 
       const success = await service.testConnection();
 
+      // Auto-enable Azure DevOps when connection test succeeds
+      if (success) {
+        updateAzureDevOpsConfig({ enabled: true });
+      }
+
       setTestResult({
         success,
         message: success

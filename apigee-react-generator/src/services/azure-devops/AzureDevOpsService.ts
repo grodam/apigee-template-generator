@@ -3,6 +3,7 @@ import type { GeneratedProject } from '../../models/GeneratedProject';
 import { config as appConfig } from '../../utils/config';
 import { logger } from '../../utils/logger';
 import { fetchWithTimeout, validateHttps } from '../../utils/fetchUtils';
+import { tauriFetch, isTauri } from '../../utils/tauriHttp';
 
 const log = logger.scope('AzureDevOpsService');
 
@@ -31,18 +32,37 @@ export class AzureDevOpsService {
   }
 
   /**
-   * Make an API request (via proxy or direct) with timeout
+   * Make an API request (via Tauri HTTP, proxy, or direct) with timeout
    */
   private async makeRequest(
     url: string,
     method: string = 'GET',
     body?: RequestBody
   ): Promise<Response> {
-    // Validate target URL uses HTTPS (except localhost proxy)
-    if (!this.useProxy) {
-      validateHttps(url);
+    // Validate target URL uses HTTPS
+    validateHttps(url);
+
+    // Use Tauri HTTP plugin when running in Tauri (no CORS restrictions)
+    if (isTauri()) {
+      const response = await tauriFetch(url, {
+        method: method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+        headers: this.getHeaders() as Record<string, string>,
+        body,
+        timeout: REQUEST_TIMEOUT,
+      });
+
+      // Create a Response-like object from Tauri response
+      return new Response(
+        JSON.stringify(response.data),
+        {
+          status: response.status,
+          statusText: response.ok ? 'OK' : 'Error',
+          headers: new Headers(response.headers)
+        }
+      );
     }
 
+    // Fall back to proxy for browser development
     if (this.useProxy) {
       // Use proxy server to avoid CORS
       const response = await fetchWithTimeout(
@@ -78,7 +98,7 @@ export class AzureDevOpsService {
         }
       );
     } else {
-      // Direct API call (may have CORS issues)
+      // Direct API call (may have CORS issues in browser)
       return fetchWithTimeout(
         url,
         {
