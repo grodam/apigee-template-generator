@@ -42,7 +42,7 @@ function App() {
                   <RefreshCw className="h-3.5 w-3.5 text-[var(--swiss-gray-500)] animate-spin" />
                 ) : templateSyncState.source === 'remote' ? (
                   <span
-                    className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700 cursor-help"
+                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--swiss-gray-300)] text-[var(--swiss-gray-600)] cursor-help"
                     title="Templates synchronized with Azure DevOps repository"
                   >
                     Synced
