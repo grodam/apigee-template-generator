@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, HelpCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Trash2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { SwissCard } from './SwissCard';
 import { HelpPanel } from '../Help/HelpPanel';
 import { targetServersHelpContent } from '../Help/helpContent';
@@ -9,45 +8,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
 import { cn } from '@/lib/utils';
-
-// Input with tooltip helper component
-const InputWithTooltip: React.FC<{
-  tooltip: string;
-  showSparkle?: boolean;
-  children: React.ReactNode;
-}> = ({ tooltip, showSparkle = false, children }) => (
-  <div className="relative">
-    {children}
-    <div className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1">
-      {showSparkle && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1">
-              Auto-filled from OpenAPI spec
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center">
-              <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1 max-w-xs">
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  </div>
-);
+import { InputWithTooltip } from '@/components/ui/InputWithTooltip';
 
 interface TargetServersCardProps {
   isExpanded: boolean;
@@ -55,7 +16,7 @@ interface TargetServersCardProps {
   disabled?: boolean;
 }
 
-export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded, onToggle, disabled }) => {
+export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({ isExpanded, onToggle, disabled }) => {
   const { t } = useTranslation();
   const { apiConfig, updateEnvironmentConfig, autoDetectedConfig } = useProjectStore();
   const [selectedEnv, setSelectedEnv] = useState<Environment>('dev1');
@@ -567,4 +528,4 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
     />
     </>
   );
-};
+});

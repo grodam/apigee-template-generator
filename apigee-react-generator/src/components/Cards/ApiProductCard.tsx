@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Sparkles, Plus, Trash2, Wand2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Trash2, Wand2 } from 'lucide-react';
 import { SwissCard } from './SwissCard';
 import { AuthorizedPathsEditor } from './AuthorizedPathsEditor';
 import { ProductSuggestionsModal } from '../Modals/ProductSuggestionsModal';
@@ -12,49 +11,7 @@ import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
 import { createProductForEnv, getDefaultAuthorizedPaths, extractGroupPrefix, findSmallestCommonRoot } from '../../utils/pathAnalyzer';
 import { cn } from '@/lib/utils';
-
-// Input with tooltip helper component
-const InputWithTooltip: React.FC<{
-  tooltip: string;
-  showSparkle?: boolean;
-  isSelect?: boolean;
-  children: React.ReactNode;
-}> = ({ tooltip, showSparkle = false, isSelect = false, children }) => (
-  <div className="relative">
-    {children}
-    <div className={cn(
-      "absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1",
-      isSelect ? "right-8" : "right-2"
-    )}>
-      {showSparkle && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1">
-              Auto-generated from proxy name
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center">
-              <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1 max-w-xs">
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  </div>
-);
+import { InputWithTooltip } from '@/components/ui/InputWithTooltip';
 
 interface ApiProductCardProps {
   isExpanded: boolean;
@@ -62,7 +19,7 @@ interface ApiProductCardProps {
   disabled?: boolean;
 }
 
-export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onToggle, disabled }) => {
+export const ApiProductCard: React.FC<ApiProductCardProps> = React.memo(({ isExpanded, onToggle, disabled }) => {
   const { t } = useTranslation();
   const {
     apiConfig,
@@ -341,6 +298,8 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                     <InputWithTooltip
                       tooltip="The unique identifier for this API product in the environment"
                       showSparkle={!!product.name}
+                      sparkleTooltip="Auto-generated from proxy name"
+                      rightOffset="small"
                     >
                       <input
                         value={product.name || ''}
@@ -359,6 +318,8 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                     <InputWithTooltip
                       tooltip="The human-readable name shown in the developer portal"
                       showSparkle={!!product.displayName}
+                      sparkleTooltip="Auto-generated from proxy name"
+                      rightOffset="small"
                     >
                       <input
                         value={product.displayName || ''}
@@ -378,6 +339,8 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                   <InputWithTooltip
                     tooltip="A description of this API product for developers"
                     showSparkle={!!product.description}
+                    sparkleTooltip="Auto-generated from proxy name"
+                    rightOffset="small"
                   >
                     <textarea
                       ref={(el) => {
@@ -415,7 +378,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                     <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
                       {t('step3.apiProduct.approvalType', 'Approval Type')}
                     </label>
-                    <InputWithTooltip tooltip="Auto: Developers can use immediately. Manual: Requires admin approval." isSelect>
+                    <InputWithTooltip tooltip="Auto: Developers can use immediately. Manual: Requires admin approval." rightOffset="select">
                       <select
                         value={product.approvalType || 'manual'}
                         onChange={(e) => handleProductChange(index, 'approvalType', e.target.value)}
@@ -431,7 +394,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
                     <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
                       Access Level
                     </label>
-                    <InputWithTooltip tooltip="Private: Only specific apps. Public: All developers. Internal: Internal use only." isSelect>
+                    <InputWithTooltip tooltip="Private: Only specific apps. Public: All developers. Internal: Internal use only." rightOffset="select">
                       <select
                         value={product.attributes?.find(a => a.name === 'access')?.value || 'private'}
                         onChange={(e) => {
@@ -500,4 +463,4 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
     />
     </>
   );
-};
+});

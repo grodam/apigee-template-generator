@@ -3,96 +3,13 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Sparkles, ChevronDown } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SwissCard } from './SwissCard';
 import { HelpPanel } from '../Help/HelpPanel';
 import { proxyConfigHelpContent } from '../Help/helpContent';
 import { useProjectStore } from '../../store/useProjectStore';
 import { cn } from '@/lib/utils';
-
-// Input with tooltip helper component
-const InputWithTooltip: React.FC<{
-  tooltip: string;
-  showSparkle?: boolean;
-  children: React.ReactNode;
-}> = ({ tooltip, showSparkle = false, children }) => (
-  <div className="relative">
-    {children}
-    <div className="absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1 right-0">
-      {showSparkle && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center pointer-events-auto">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1">
-              Auto-filled from OpenAPI spec
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center pointer-events-auto">
-              <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1 max-w-xs">
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  </div>
-);
-
-// Select with tooltip helper component (with custom chevron)
-const SelectWithTooltip: React.FC<{
-  tooltip: string;
-  showSparkle?: boolean;
-  children: React.ReactNode;
-}> = ({ tooltip, showSparkle = false, children }) => (
-  <div className="relative">
-    {children}
-    <div className="absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1 right-0 pointer-events-none">
-      {showSparkle && (
-        <span className="inline-flex items-center pointer-events-auto">
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1">
-                Auto-filled from OpenAPI spec
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </span>
-      )}
-      <span className="inline-flex items-center pointer-events-auto">
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center">
-                <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1 max-w-xs">
-              {tooltip}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </span>
-      <ChevronDown className="h-4 w-4 text-[var(--swiss-gray-400)]" />
-    </div>
-  </div>
-);
+import { InputWithTooltip } from '@/components/ui/InputWithTooltip';
+import { SelectWithTooltip } from '@/components/ui/SelectWithTooltip';
 
 // Validation schemas
 const kebabCaseRegex = /^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/;
@@ -120,7 +37,7 @@ interface ProxyConfigCardProps {
   disabled?: boolean;
 }
 
-export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, onToggle, disabled }) => {
+export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = React.memo(({ isExpanded, onToggle, disabled }) => {
   const { t } = useTranslation();
   const { apiConfig, updateApiConfig, autoDetectedConfig, applyAutoDetectedConfig } = useProjectStore();
 
@@ -488,4 +405,4 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
     />
     </>
   );
-};
+});
