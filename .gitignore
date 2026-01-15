@@ -39,8 +39,7 @@ nul
 *.png
 test-*.js
 test-*.json
-.claude/*
-!.claude/skills/
+.claude/
 
 # Documentation from old version
 DOCUMENTATION_COMPLETE.*
