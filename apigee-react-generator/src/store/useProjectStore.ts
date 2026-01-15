@@ -8,7 +8,7 @@ import type { AutoDetectedConfig, BackendInfoEntry } from '../models/AutoDetecte
 import { DEFAULT_AZURE_DEVOPS_CONFIG, DEFAULT_TEMPLATE_REPO_CONFIG, DEFAULT_PORTAL_CONFIG } from '../models/AzureDevOpsConfig';
 import { generateProxyName } from '../utils/stringUtils';
 import { mergeKvmEntries, updateBackendInfoValue as updateKvmValue } from '../utils/kvmGenerator';
-import { suggestProductsFromPaths, createProductForEnv, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
+import { suggestProductsFromPaths, createProductForEnv, getDefaultAuthorizedPaths, type SuggestedProduct, type PathInfo } from '../utils/pathAnalyzer';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -195,6 +195,7 @@ const createDefaultEnvironmentConfig = (params: EnvConfigParams): EnvironmentCon
       description: description,
       approvalType: 'manual',
       environments: [env],
+      authorizedPaths: getDefaultAuthorizedPaths(),
       attributes: [
         { name: 'access', value: 'private' }
       ]
@@ -240,6 +241,7 @@ const updateEnvironmentWithProxyName = (envConfig: EnvironmentConfig, params: En
       name: index === 0 ? productName : product.name,
       displayName: index === 0 ? displayName : product.displayName,
       description: index === 0 ? description : product.description,
+      authorizedPaths: product.authorizedPaths || getDefaultAuthorizedPaths(),
     })),
     kvms: newKvms,
   };

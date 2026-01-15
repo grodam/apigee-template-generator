@@ -35,9 +35,9 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({
   const { t } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages are added
+  // Auto-scroll to bottom when new messages are added (only if there are messages)
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (messages.length > 0 && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
