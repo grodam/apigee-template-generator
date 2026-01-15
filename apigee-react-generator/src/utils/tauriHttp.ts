@@ -36,12 +36,25 @@ export async function tauriFetch<T = unknown>(
     // Use Tauri HTTP plugin - no CORS restrictions
     const { fetch } = await import('@tauri-apps/plugin-http');
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      connectTimeout: timeout,
-    });
+    let response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        connectTimeout: timeout,
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Provide more helpful error message for common enterprise issues
+      if (errorMessage.includes('certificate') || errorMessage.includes('SSL') || errorMessage.includes('TLS')) {
+        throw new Error(`SSL/Certificate error - Your corporate proxy may be intercepting HTTPS traffic. Contact IT to whitelist this application. (${errorMessage})`);
+      }
+      if (errorMessage.includes('proxy') || errorMessage.includes('connect')) {
+        throw new Error(`Connection error - Check your network/proxy settings. (${errorMessage})`);
+      }
+      throw new Error(`Network request failed: ${errorMessage}`);
+    }
 
     // Parse response
     let data: T;
