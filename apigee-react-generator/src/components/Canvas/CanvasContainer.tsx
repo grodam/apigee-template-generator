@@ -12,6 +12,7 @@ import { ApigeeProjectGenerator } from '../../services/generators/ApigeeGenerato
 import { ZipExporter } from '../../services/exporters/ZipExporter';
 import { AzureDevOpsService } from '../../services/azure-devops/AzureDevOpsService';
 import { ENVIRONMENTS } from '../../utils/constants';
+import type { ApiProduct } from '../../models/ApiConfiguration';
 
 type CardId = 'openapi' | 'proxy' | 'targets' | 'products';
 
@@ -165,8 +166,9 @@ export const CanvasContainer: React.FC = () => {
       setGeneratedProject(project);
 
       addConsoleMessage(`SUCCESS: PROJECT GENERATED (${project.files.size} files)`, 'success');
-    } catch (error: any) {
-      addConsoleMessage(`ERROR: ${error.message}`, 'error');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      addConsoleMessage(`ERROR: ${message}`, 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -186,8 +188,9 @@ export const CanvasContainer: React.FC = () => {
       const exporter = new ZipExporter();
       await exporter.exportAndDownload(generatedProject);
       addConsoleMessage(`SUCCESS: ZIP DOWNLOADED - ${config.proxyName}.zip`, 'success');
-    } catch (error: any) {
-      addConsoleMessage(`ERROR: ${error.message}`, 'error');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      addConsoleMessage(`ERROR: ${message}`, 'error');
     }
   };
 
@@ -242,8 +245,9 @@ export const CanvasContainer: React.FC = () => {
       } else {
         throw new Error(result.message || 'Push failed');
       }
-    } catch (error: any) {
-      addConsoleMessage(`ERROR: ${error.message}`, 'error');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      addConsoleMessage(`ERROR: ${message}`, 'error');
     } finally {
       setIsPushing(false);
     }
@@ -259,12 +263,12 @@ export const CanvasContainer: React.FC = () => {
   ];
 
   // Check if a product is fully configured (all required fields filled)
-  const isProductComplete = (product: any) => {
+  const isProductComplete = (product: ApiProduct) => {
     return !!(
       product?.name &&
       product?.displayName &&
       product?.description &&
-      product?.authorizedPaths?.length > 0
+      (product?.authorizedPaths?.length ?? 0) > 0
     );
   };
 

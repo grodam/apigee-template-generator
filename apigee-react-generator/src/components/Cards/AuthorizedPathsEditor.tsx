@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isValidPath, normalizePath } from '../../utils/pathAnalyzer';
@@ -18,6 +19,7 @@ export const AuthorizedPathsEditor: React.FC<AuthorizedPathsEditorProps> = ({
   disabled = false,
   placeholder = '/api/resource/**'
 }) => {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,17 +47,17 @@ export const AuthorizedPathsEditor: React.FC<AuthorizedPathsEditorProps> = ({
     const normalizedPath = normalizePath(path.trim());
 
     if (!normalizedPath) {
-      setError('Path cannot be empty');
+      setError(t('validation.pathCannotBeEmpty', 'Path cannot be empty'));
       return;
     }
 
     if (!isValidPath(normalizedPath)) {
-      setError('Invalid path format. Must start with /');
+      setError(t('validation.invalidPathFormat', 'Invalid path format. Must start with /'));
       return;
     }
 
     if (paths.includes(normalizedPath)) {
-      setError('Path already added');
+      setError(t('validation.pathAlreadyAdded', 'Path already added'));
       return;
     }
 

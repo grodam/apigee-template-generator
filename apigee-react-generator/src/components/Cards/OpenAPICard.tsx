@@ -90,8 +90,9 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
 
       // Notify parent that a new spec was loaded (to collapse other cards)
       onSpecLoaded?.();
-    } catch (error: any) {
-      setValidationError(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setValidationError(message);
       setParsedOpenAPI(null);
       setAutoDetectedConfig(null);
     } finally {

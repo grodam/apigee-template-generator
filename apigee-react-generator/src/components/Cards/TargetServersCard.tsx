@@ -217,10 +217,10 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
     <table className="w-full text-xs">
       <thead>
         <tr className="border-b border-[var(--swiss-gray-200)]">
-          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">Env</th>
-          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-[40%]">Host</th>
-          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)]">Target Path</th>
-          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">Port</th>
+          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">{t('canvas.cards.targetServers.env', 'Env')}</th>
+          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-[40%]">{t('canvas.cards.targetServers.host', 'Host')}</th>
+          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)]">{t('canvas.cards.targetServers.targetPath', 'Target Path')}</th>
+          <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">{t('canvas.cards.targetServers.port', 'Port')}</th>
         </tr>
       </thead>
       <tbody>
@@ -235,7 +235,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
             )}>
               <td className="py-2 font-mono font-bold">{env}</td>
               <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
-                {targetServer?.host || <span className="text-[var(--swiss-gray-300)]">Not configured</span>}
+                {targetServer?.host || <span className="text-[var(--swiss-gray-300)]">{t('canvas.cards.targetServers.notConfigured', 'Not configured')}</span>}
               </td>
               <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
                 {targetServer?.host ? targetPath : <span className="text-[var(--swiss-gray-300)]">-</span>}
@@ -325,13 +325,13 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
               {t('step3.targetServer.host', 'Host')}
             </label>
             <InputWithTooltip
-              tooltip="The hostname of your backend server for this environment"
+              tooltip={t('canvas.cards.targetServers.hostTooltip', 'The hostname of your backend server for this environment')}
               showSparkle={autoFilledHosts.has(selectedEnv)}
             >
               <input
                 value={targetServer?.host || ''}
                 onChange={(e) => handleTargetServerChange('host', e.target.value)}
-                placeholder={`api-${selectedEnv}.example.com`}
+                placeholder={t('canvas.cards.targetServers.hostPlaceholder', `api-${selectedEnv}.example.com`)}
                 className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none pr-14"
               />
             </InputWithTooltip>
@@ -342,7 +342,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
             <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
               {t('step3.targetServer.port', 'Port')}
             </label>
-            <InputWithTooltip tooltip="The port number of your backend server (default: 443 for HTTPS)">
+            <InputWithTooltip tooltip={t('canvas.cards.targetServers.portTooltip', 'The port number of your backend server (default: 443 for HTTPS)')}>
               <input
                 type="number"
                 value={targetServer?.port || 443}
@@ -365,7 +365,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
               })}
               className="w-4 h-4 accent-[var(--swiss-black)]"
             />
-            <span className="text-xs font-medium uppercase">SSL Enabled</span>
+            <span className="text-xs font-medium uppercase">{t('canvas.cards.targetServers.sslEnabled', 'SSL Enabled')}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -377,14 +377,14 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
               })}
               className="w-4 h-4 accent-[var(--swiss-black)]"
             />
-            <span className="text-xs font-medium uppercase">Client Auth</span>
+            <span className="text-xs font-medium uppercase">{t('canvas.cards.targetServers.clientAuth', 'Client Auth')}</span>
           </label>
         </div>
 
         {/* KVMs */}
         <div>
           <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--swiss-gray-400)] mb-3">
-            KVM Entries
+            {t('canvas.cards.targetServers.kvmEntries', 'KVM Entries')}
           </h4>
 
           {/* Existing KVMs */}
@@ -400,7 +400,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                     <button
                       onClick={() => handleRemoveKVM(kvmIndex)}
                       className="text-[var(--swiss-gray-400)] hover:text-red-500"
-                      title="Delete KVM"
+                      title={t('canvas.cards.targetServers.deleteKvm', 'Delete KVM')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -411,14 +411,14 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                     <input
                       value={entry.name}
                       onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'name', e.target.value)}
-                      placeholder="Key"
+                      placeholder={t('canvas.cards.targetServers.keyPlaceholder', 'Key')}
                       className="flex-1 bg-transparent border-b border-[var(--swiss-gray-200)] py-1 text-xs font-mono focus:outline-none focus:border-[var(--swiss-black)]"
                     />
                     <div className="flex-1 relative">
                       <input
                         value={entry.value}
                         onChange={(e) => handleKVMEntryChange(kvmIndex, entryIndex, 'value', e.target.value)}
-                        placeholder="Value"
+                        placeholder={t('canvas.cards.targetServers.valuePlaceholder', 'Value')}
                         type={kvm.encrypted && !isValueVisible(kvmIndex, entryIndex) ? 'password' : 'text'}
                         className="w-full bg-transparent border-b border-[var(--swiss-gray-200)] py-1 text-xs font-mono focus:outline-none focus:border-[var(--swiss-black)] pr-7"
                       />
@@ -427,7 +427,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                           type="button"
                           onClick={() => toggleValueVisibility(kvmIndex, entryIndex)}
                           className="absolute right-0 top-1/2 -translate-y-1/2 text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)]"
-                          title={isValueVisible(kvmIndex, entryIndex) ? 'Hide value' : 'Show value'}
+                          title={isValueVisible(kvmIndex, entryIndex) ? t('canvas.cards.targetServers.hideValue', 'Hide value') : t('canvas.cards.targetServers.showValue', 'Show value')}
                         >
                           {isValueVisible(kvmIndex, entryIndex) ? (
                             <EyeOff className="w-3.5 h-3.5" />
@@ -449,7 +449,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                   onClick={() => handleAddKVMEntry(kvmIndex)}
                   className="w-full px-4 py-2 text-[10px] font-bold uppercase text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)] hover:bg-[var(--swiss-gray-50)] flex items-center justify-center gap-1"
                 >
-                  <Plus className="w-3 h-3" /> Add Entry
+                  <Plus className="w-3 h-3" /> {t('canvas.cards.targetServers.addEntry', 'Add Entry')}
                 </button>
               </div>
             ))}
@@ -459,13 +459,13 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
           {isAddingKvm ? (
             <div className="mt-3 border border-dashed border-[var(--swiss-gray-300)] p-4">
               <label className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase block mb-2">
-                Map Identifier (KVM Name)
+                {t('canvas.cards.targetServers.mapIdentifier', 'Map Identifier (KVM Name)')}
               </label>
               <div className="flex gap-2">
                 <input
                   value={newKvmName}
                   onChange={(e) => setNewKvmName(e.target.value)}
-                  placeholder="e.g., my-app.v1.config"
+                  placeholder={t('canvas.cards.targetServers.kvmNamePlaceholder', 'e.g., my-app.v1.config')}
                   className="flex-1 bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-mono focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newKvmName.trim()) {
@@ -495,7 +495,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                       : "bg-[var(--swiss-gray-200)] text-[var(--swiss-gray-400)] cursor-not-allowed"
                   )}
                 >
-                  Create
+                  {t('common.create', 'Create')}
                 </button>
                 <button
                   onClick={() => {
@@ -504,7 +504,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
                   }}
                   className="px-4 py-2 text-[10px] font-black uppercase text-[var(--swiss-gray-500)] hover:text-[var(--swiss-black)]"
                 >
-                  Cancel
+                  {t('common.cancel', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -513,7 +513,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = React.memo(({
               onClick={() => setIsAddingKvm(true)}
               className="mt-3 w-full px-4 py-3 border-2 border-dashed border-[var(--swiss-gray-300)] text-[10px] font-bold uppercase text-[var(--swiss-gray-400)] hover:text-[var(--swiss-black)] hover:border-[var(--swiss-black)] flex items-center justify-center gap-2 transition-colors"
             >
-              <Plus className="w-4 h-4" /> Add KVM
+              <Plus className="w-4 h-4" /> {t('canvas.cards.targetServers.addKvm', 'Add KVM')}
             </button>
           )}
         </div>

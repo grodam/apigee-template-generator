@@ -45,7 +45,8 @@ export function TemplateSyncSettings() {
     };
   }, []);
 
-  const loadSyncInfo = async () => {
+  // Reusable function to reload sync info (used by both useEffect and handleSync)
+  const reloadSyncInfo = async () => {
     const info = await templateRegistry.getSyncInfo();
     if (info) {
       setSyncInfo({
@@ -64,10 +65,11 @@ export function TemplateSyncSettings() {
       const token = azureDevOpsConfig.personalAccessToken || '';
       const result = await templatesSyncService.testConnection(templateRepoConfig, token);
       setTestResult(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('templateSync.messages.connectionError');
       setTestResult({
         success: false,
-        message: error.message || t('templateSync.messages.connectionError'),
+        message: errorMessage,
       });
     } finally {
       setIsTesting(false);
@@ -97,7 +99,7 @@ export function TemplateSyncSettings() {
         });
 
         // Reload sync info
-        await loadSyncInfo();
+        await reloadSyncInfo();
 
         // Enable remote templates in registry
         await templateRegistry.enableRemoteTemplates(true);
@@ -117,13 +119,14 @@ export function TemplateSyncSettings() {
           error: result.message,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('templateSync.messages.syncError');
       setSyncProgress({
         status: 'error',
-        message: error.message || t('templateSync.messages.syncError'),
+        message: errorMessage,
         filesDownloaded: 0,
         totalFiles: 0,
-        error: error.message,
+        error: errorMessage,
       });
     }
   };

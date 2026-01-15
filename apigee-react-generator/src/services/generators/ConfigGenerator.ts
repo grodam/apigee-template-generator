@@ -2,6 +2,31 @@ import type { ApiConfiguration, EnvironmentConfig, ApiProduct } from '../../mode
 import type { OpenAPIDocument } from '../../types/openapi';
 import { extractPathPrefixes } from '../../utils/stringUtils';
 
+// Types for generated configurations
+interface OperationConfig {
+  apiSource: string;
+  operations: Array<{ resource: string }>;
+}
+
+interface OperationGroup {
+  operationConfigs: OperationConfig[];
+  operationConfigType: 'proxy' | 'remoteservice';
+}
+
+interface ApigeeConfiguration {
+  entity: string;
+  description: string;
+  version: string;
+  apiname: string;
+  'oas.version': string;
+  'oas.format': string;
+  'proxy.basepath': string;
+  'target.path': string;
+  'global-rate-limit'?: string;
+  'auth-southbound'?: string;
+  'mock.url': string;
+}
+
 export class ConfigGenerator {
   private config: ApiConfiguration;
   private openAPI: OpenAPIDocument;
@@ -71,7 +96,7 @@ export class ConfigGenerator {
     };
   }
 
-  private generateOperationGroup(): any {
+  private generateOperationGroup(): OperationGroup {
     const operations = this.extractOperationsFromOpenAPI();
 
     // Each operation should be in its own operationConfig
@@ -89,7 +114,7 @@ export class ConfigGenerator {
    * If the product has explicit authorizedPaths, use those.
    * Otherwise, fall back to extracting from OpenAPI paths.
    */
-  private generateOperationGroupForProduct(product: ApiProduct): any {
+  private generateOperationGroupForProduct(product: ApiProduct): OperationGroup {
     // Use explicit authorized paths if defined
     if (product.authorizedPaths && product.authorizedPaths.length > 0) {
       return {
@@ -151,7 +176,7 @@ export class ConfigGenerator {
     return formatted;
   }
 
-  generateApigeConfiguration(): any {
+  generateApigeConfiguration(): ApigeeConfiguration {
     return {
       entity: this.config.entity,
       description: this.config.description,

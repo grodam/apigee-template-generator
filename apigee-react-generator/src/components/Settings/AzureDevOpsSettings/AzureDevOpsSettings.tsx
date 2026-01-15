@@ -59,10 +59,11 @@ export function AzureDevOpsSettings() {
           ? t('azureSettings.testSuccess')
           : t('azureSettings.testFailure'),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t('azureSettings.testError');
       setTestResult({
         success: false,
-        message: error.message || t('azureSettings.testError'),
+        message,
       });
     } finally {
       setIsTesting(false);
