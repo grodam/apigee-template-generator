@@ -3,9 +3,17 @@
  * falls back to browser fetch when running in browser (dev mode).
  */
 
-// Check if running in Tauri
+// Check if running in Tauri (supports both Tauri 1.x and 2.x)
 export const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
+  if (typeof window === 'undefined') return false;
+  // Tauri 2.x uses __TAURI_INTERNALS__, Tauri 1.x uses __TAURI__
+  const hasTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
+  console.log('[TauriHTTP] isTauri check:', {
+    hasTauri,
+    has__TAURI__: '__TAURI__' in window,
+    has__TAURI_INTERNALS__: '__TAURI_INTERNALS__' in window
+  });
+  return hasTauri;
 };
 
 interface HttpOptions {
