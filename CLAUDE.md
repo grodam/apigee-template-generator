@@ -48,7 +48,7 @@ apigee-react-generator/
 - **Framework**: React 19 + TypeScript 5.9
 - **Desktop**: Tauri 2 (Rust backend, WebView frontend)
 - **Build**: Vite 7
-- **Styling**: Tailwind CSS (grille 4px, Swiss Design)
+- **Styling**: Tailwind CSS (grille 4px, Swiss Design, Shadow-style theme)
 - **State**: Zustand avec persistence localStorage
 - **UI**: Radix UI primitives + Lucide icons
 - **Editor**: Monaco Editor
@@ -128,6 +128,29 @@ const useProjectStore = create<ProjectState>()(
 - `tailwind.config.js`: Theme, couleurs, dark mode
 - `tsconfig.json`: ES2022, strict mode
 - `src/utils/constants.ts`: Constantes applicatives
+- `src/styles/swiss-theme.css`: Variables CSS Swiss Design
+- `src/index.css`: Variables CSS globales et dark mode
+
+## Theming (Dark/Light Mode)
+
+### Architecture
+- Variables CSS dans `swiss-theme.css` et `index.css`
+- Toggle via classe `.dark` sur `<html>`
+- Shadow-style: cards "flottent" sur le background avec ombres
+
+### Couleurs principales
+| Element | Light Mode | Dark Mode |
+|---------|------------|-----------|
+| Background | `#D4DAE2` | `#363636` |
+| Cards | `#FFFFFF` | `#1A1A1A` |
+| Text primary | `#000000` | `#E5E5E5` |
+| Text secondary | `#6B7280` | `#888888` |
+| Borders | `rgba(0,0,0,0.08)` | `#404040` |
+
+### Composants avec theming
+- `SwissCard`: Cards avec shadow et hover effect
+- `SelectWithTooltip`: Select avec chevron personnalise
+- `InputWithTooltip`: Input avec icone d'aide
 
 ## Dette Technique Connue
 
