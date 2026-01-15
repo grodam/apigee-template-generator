@@ -144,10 +144,7 @@ export class AzureDevOpsService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log.error('Azure DevOps connection test failed:', { error: errorMessage, url });
-      // Re-throw with more context if it's a generic error
-      if (errorMessage === 'Failed to fetch' || errorMessage.includes('NetworkError')) {
-        throw new Error(`Network error while connecting to Azure DevOps (${this.baseUrl}). Check your network connection and firewall settings.`);
-      }
+      // Re-throw the original error - it already contains detailed info from tauriFetch
       throw error;
     }
   }
