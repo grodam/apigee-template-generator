@@ -13,6 +13,8 @@ interface HttpOptions {
   headers?: Record<string, string>;
   body?: unknown;
   timeout?: number;
+  /** Accept invalid/self-signed SSL certificates (for corporate proxies with SSL inspection) */
+  dangerAcceptInvalidCerts?: boolean;
 }
 
 interface HttpResponse<T = unknown> {
@@ -30,7 +32,7 @@ export async function tauriFetch<T = unknown>(
   url: string,
   options: HttpOptions = {}
 ): Promise<HttpResponse<T>> {
-  const { method = 'GET', headers = {}, body, timeout = 30000 } = options;
+  const { method = 'GET', headers = {}, body, timeout = 30000, dangerAcceptInvalidCerts = false } = options;
 
   if (isTauri()) {
     // Use Tauri HTTP plugin - no CORS restrictions
@@ -43,17 +45,33 @@ export async function tauriFetch<T = unknown>(
         headers,
         body: body ? JSON.stringify(body) : undefined,
         connectTimeout: timeout,
+        // Allow accepting invalid certs for corporate proxy environments with SSL inspection
+        danger: dangerAcceptInvalidCerts ? { acceptInvalidCerts: true } : undefined,
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorLower = errorMessage.toLowerCase();
+
+      // Log full error for debugging
+      console.error('[TauriHTTP] Request failed:', { url, method, error: errorMessage, fullError: err });
+
       // Provide more helpful error message for common enterprise issues
-      if (errorMessage.includes('certificate') || errorMessage.includes('SSL') || errorMessage.includes('TLS')) {
-        throw new Error(`SSL/Certificate error - Your corporate proxy may be intercepting HTTPS traffic. Contact IT to whitelist this application. (${errorMessage})`);
+      if (errorLower.includes('certificate') || errorLower.includes('ssl') || errorLower.includes('tls')) {
+        throw new Error(`SSL/Certificate error - Your corporate proxy may be intercepting HTTPS traffic. Contact IT to whitelist this application. (Original: ${errorMessage})`);
       }
-      if (errorMessage.includes('proxy') || errorMessage.includes('connect')) {
-        throw new Error(`Connection error - Check your network/proxy settings. (${errorMessage})`);
+      if (errorLower.includes('proxy') || errorLower.includes('connect')) {
+        throw new Error(`Connection error - Check your network/proxy settings. (Original: ${errorMessage})`);
       }
-      throw new Error(`Network request failed: ${errorMessage}`);
+      if (errorLower.includes('timeout') || errorLower.includes('timed out')) {
+        throw new Error(`Request timeout - The server took too long to respond. Check your network connection. (Original: ${errorMessage})`);
+      }
+      if (errorLower.includes('dns') || errorLower.includes('resolve') || errorLower.includes('getaddrinfo')) {
+        throw new Error(`DNS resolution failed - Cannot resolve hostname. Check your network/DNS settings. (Original: ${errorMessage})`);
+      }
+      if (errorLower.includes('failed to fetch') || errorLower.includes('network') || errorLower.includes('fetch')) {
+        throw new Error(`Network error connecting to ${url}. This could be caused by: (1) Corporate firewall/proxy blocking the request, (2) SSL inspection interfering with HTTPS, (3) Network connectivity issues. (Original: ${errorMessage})`);
+      }
+      throw new Error(`Request to ${url} failed: ${errorMessage}`);
     }
 
     // Parse response

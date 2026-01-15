@@ -20,12 +20,14 @@ export class AzureDevOpsService {
   private token: string;
   private useProxy: boolean;
   private proxyUrl: string;
+  private acceptInvalidCerts: boolean;
 
-  constructor(organization: string, token: string, useProxy: boolean = true) {
+  constructor(organization: string, token: string, useProxy: boolean = true, acceptInvalidCerts: boolean = false) {
     this.token = token;
     this.baseUrl = `https://dev.azure.com/${organization}`;
     this.useProxy = useProxy;
     this.proxyUrl = appConfig.proxyUrl;
+    this.acceptInvalidCerts = acceptInvalidCerts;
 
     // Validate HTTPS for Azure DevOps URL (always HTTPS)
     validateHttps(this.baseUrl);
@@ -49,6 +51,7 @@ export class AzureDevOpsService {
         headers: this.getHeaders() as Record<string, string>,
         body,
         timeout: REQUEST_TIMEOUT,
+        dangerAcceptInvalidCerts: this.acceptInvalidCerts,
       });
 
       // Create a Response-like object from Tauri response
@@ -115,8 +118,10 @@ export class AzureDevOpsService {
    * Test connection to Azure DevOps
    */
   async testConnection(): Promise<boolean> {
+    const url = `${this.baseUrl}/_apis/projects?api-version=7.0`;
+    log.info(`Testing connection to: ${url}`);
+
     try {
-      const url = `${this.baseUrl}/_apis/projects?api-version=7.0`;
       const response = await this.makeRequest(url, 'GET');
 
       if (!response.ok) {
@@ -127,12 +132,22 @@ export class AzureDevOpsService {
           throw new Error('Authentication failed. Please check your Personal Access Token.');
         } else if (response.status === 404) {
           throw new Error('Organization not found. Please verify your organization name.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden. Your PAT may lack required permissions or the organization restricts access.');
+        } else {
+          throw new Error(`Connection failed with status ${response.status}. Please verify your settings.`);
         }
       }
 
+      log.info('Azure DevOps connection test successful');
       return response.ok;
     } catch (error) {
-      log.error('Azure DevOps connection test failed:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.error('Azure DevOps connection test failed:', { error: errorMessage, url });
+      // Re-throw with more context if it's a generic error
+      if (errorMessage === 'Failed to fetch' || errorMessage.includes('NetworkError')) {
+        throw new Error(`Network error while connecting to Azure DevOps (${this.baseUrl}). Check your network connection and firewall settings.`);
+      }
       throw error;
     }
   }

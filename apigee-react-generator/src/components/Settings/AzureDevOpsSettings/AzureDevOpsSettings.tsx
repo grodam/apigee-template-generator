@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '@/store/useProjectStore';
 import { AzureDevOpsService } from '@/services/azure-devops/AzureDevOpsService';
-import { Cloud, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Info } from 'lucide-react';
+import { Cloud, CheckCircle2, XCircle, Loader2, Eye, EyeOff, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isTauri } from '@/utils/tauriHttp';
 
 export function AzureDevOpsSettings() {
   const { t } = useTranslation();
@@ -43,7 +44,8 @@ export function AzureDevOpsSettings() {
       const service = new AzureDevOpsService(
         azureDevOpsConfig.organization,
         azureDevOpsConfig.personalAccessToken,
-        true
+        true,
+        azureDevOpsConfig.acceptInvalidCerts || false
       );
 
       const success = await service.testConnection();
@@ -165,6 +167,31 @@ export function AzureDevOpsSettings() {
             {t('azureSettings.fields.defaultBranch.help')}
           </p>
         </div>
+
+        {/* SSL Certificate Option (only in Tauri) */}
+        {isTauri() && (
+          <div className="bg-[var(--swiss-gray-50)] p-4 border-l-4 border-amber-500">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={azureDevOpsConfig.acceptInvalidCerts || false}
+                    onChange={(e) => updateAzureDevOpsConfig({ acceptInvalidCerts: e.target.checked })}
+                    className="w-4 h-4 accent-amber-500"
+                  />
+                  <span className="text-sm font-medium">
+                    {t('azureSettings.fields.acceptInvalidCerts.label', 'Accept invalid SSL certificates')}
+                  </span>
+                </label>
+                <p className="text-[10px] text-[var(--swiss-gray-500)] mt-2 ml-7">
+                  {t('azureSettings.fields.acceptInvalidCerts.help', 'Enable this if your corporate proxy uses SSL inspection (MITM). This is less secure but may be required in some enterprise environments.')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}

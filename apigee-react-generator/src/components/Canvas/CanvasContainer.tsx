@@ -219,7 +219,8 @@ export const CanvasContainer: React.FC = () => {
       const azureService = new AzureDevOpsService(
         azureDevOpsConfig.organization,
         azureDevOpsConfig.personalAccessToken,
-        true
+        true,
+        azureDevOpsConfig.acceptInvalidCerts || false
       );
 
       addConsoleMessage(`CREATING REPOSITORY: ${azureDevOpsConfig.repositoryName}`, 'info');
