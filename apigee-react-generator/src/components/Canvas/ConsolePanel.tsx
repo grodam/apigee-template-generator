@@ -44,11 +44,21 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({
 
   return (
     <section className="max-w-6xl mx-auto px-8 pb-10">
-      {/* Section Header */}
-      <div className="border-t-2 border-[var(--swiss-black)] pt-6 mb-6">
-        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--swiss-gray-400)]">
-          05 / {t('canvas.export.title', 'Export & Deployment')}
-        </span>
+      {/* Section Header - Same style as SwissCard */}
+      <div className="bg-[var(--swiss-white)] border-t-2 border-[var(--swiss-black)] swiss-card-shadow px-6 py-5 mb-6">
+        <div className="flex items-center gap-6">
+          <span className="text-3xl font-black text-[var(--swiss-gray-200)] font-sans">
+            05
+          </span>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-wide text-[var(--swiss-black)]">
+              {t('canvas.export.title', 'Export & Deployment')}
+            </h2>
+            <p className="text-xs text-[var(--swiss-gray-500)] font-mono mt-1">
+              {t('canvas.export.subtitle', 'Generate and push your API proxy')}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Action Buttons */}
