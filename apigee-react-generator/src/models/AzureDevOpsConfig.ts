@@ -6,7 +6,6 @@ export interface AzureDevOpsConfig {
   personalAccessToken?: string;        // PAT token (not stored, only used during push)
   createRepository: boolean;           // Always true - auto-create repository if it doesn't exist
   defaultBranch: string;               // Default branch (main, master, develop, etc.)
-  acceptInvalidCerts?: boolean;        // Accept invalid SSL certs (for corporate proxy with SSL inspection)
 }
 
 // Configuration for template repository synchronization
@@ -44,8 +43,7 @@ export const DEFAULT_AZURE_DEVOPS_CONFIG: AzureDevOpsConfig = {
   repositoryName: '',
   personalAccessToken: '',
   createRepository: true,
-  defaultBranch: 'main',
-  acceptInvalidCerts: false
+  defaultBranch: 'main'
 };
 
 export const DEFAULT_TEMPLATE_REPO_CONFIG: TemplateRepoConfig = {

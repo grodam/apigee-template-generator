@@ -20,14 +20,12 @@ export class AzureDevOpsService {
   private token: string;
   private useProxy: boolean;
   private proxyUrl: string;
-  private acceptInvalidCerts: boolean;
 
-  constructor(organization: string, token: string, useProxy: boolean = true, acceptInvalidCerts: boolean = false) {
+  constructor(organization: string, token: string, useProxy: boolean = true) {
     this.token = token;
     this.baseUrl = `https://dev.azure.com/${organization}`;
     this.useProxy = useProxy;
     this.proxyUrl = appConfig.proxyUrl;
-    this.acceptInvalidCerts = acceptInvalidCerts;
 
     // Validate HTTPS for Azure DevOps URL (always HTTPS)
     validateHttps(this.baseUrl);
@@ -51,7 +49,6 @@ export class AzureDevOpsService {
         headers: this.getHeaders() as Record<string, string>,
         body,
         timeout: REQUEST_TIMEOUT,
-        dangerAcceptInvalidCerts: this.acceptInvalidCerts,
       });
 
       // Create a Response-like object from Tauri response

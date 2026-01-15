@@ -15,8 +15,6 @@ interface HttpOptions {
   headers?: Record<string, string>;
   body?: unknown;
   timeout?: number;
-  /** Accept invalid/self-signed SSL certificates (for corporate proxies with SSL inspection) */
-  dangerAcceptInvalidCerts?: boolean;
 }
 
 interface HttpResponse<T = unknown> {
@@ -34,7 +32,7 @@ export async function tauriFetch<T = unknown>(
   url: string,
   options: HttpOptions = {}
 ): Promise<HttpResponse<T>> {
-  const { method = 'GET', headers = {}, body, timeout = 30000, dangerAcceptInvalidCerts = false } = options;
+  const { method = 'GET', headers = {}, body, timeout = 30000 } = options;
 
   if (isTauri()) {
     // Use Tauri HTTP plugin - no CORS restrictions
@@ -47,8 +45,6 @@ export async function tauriFetch<T = unknown>(
         headers,
         body: body ? JSON.stringify(body) : undefined,
         connectTimeout: timeout,
-        // Allow accepting invalid certs for corporate proxy environments with SSL inspection
-        danger: dangerAcceptInvalidCerts ? { acceptInvalidCerts: true } : undefined,
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);

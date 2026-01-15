@@ -344,10 +344,6 @@ export default {
         placeholder: 'main',
         help: 'La branche par défaut pour les nouveaux repositories (main, master, develop...)',
       },
-      acceptInvalidCerts: {
-        label: 'Accepter les certificats SSL invalides',
-        help: 'Activez cette option si votre proxy d\'entreprise utilise l\'inspection SSL (MITM). Moins sécurisé mais parfois nécessaire en environnement d\'entreprise.',
-      },
     },
     testConnection: 'Tester la connexion',
     testing: 'Test en cours...',
