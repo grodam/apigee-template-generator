@@ -1,7 +1,7 @@
 {
   "name": "apigee-react-generator",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,9 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run proxy\"",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "bump": "node scripts/bump-version.js",
+    "release": "node scripts/bump-version.js patch --tag && git push origin main --tags"
   },
   "dependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",

@@ -38,9 +38,14 @@ apigee-react-generator/
 │   ├── icons/           # Icones app
 │   ├── Cargo.toml       # Dependances Rust
 │   └── tauri.conf.json  # Config Tauri
+├── scripts/             # Scripts utilitaires (bump-version.js)
 ├── public/templates/    # Templates XML Apigee par defaut
 ├── server/              # Proxy Express pour Azure DevOps (mode web)
 └── dist/                # Build de production
+
+.github/
+└── workflows/
+    └── release.yml      # CI/CD GitHub Actions pour releases Tauri
 ```
 
 ## Stack Technique
@@ -68,6 +73,8 @@ apigee-react-generator/
 | `npm run proxy` | Proxy server Express (mode web) |
 | `npm run tauri:dev` | App desktop Tauri avec hot reload |
 | `npm run tauri:build` | Build installateur Windows (.msi/.exe) |
+| `npm run bump <type>` | Bump de version (patch/minor/major) |
+| `npm run release` | Bump patch + commit + tag + push |
 
 ## Conventions de Code
 
@@ -212,3 +219,37 @@ Fichiers: `src/i18n/locales/en.ts`, `src/i18n/locales/fr.ts`
 - Rust (rustup)
 - VS Build Tools 2022 (C++ workload)
 - Node.js + npm
+
+## Versioning et Releases
+
+### Semantic Versioning (SemVer)
+Format: `MAJOR.MINOR.PATCH`
+- **PATCH** (0.1.1): corrections de bugs
+- **MINOR** (0.2.0): nouvelles fonctionnalites (retrocompatibles)
+- **MAJOR** (1.0.0): breaking changes
+
+### Fichiers de version (doivent etre synchronises)
+- `package.json`: version npm
+- `src-tauri/tauri.conf.json`: version Tauri
+
+### Script de bump
+```bash
+npm run bump patch          # 0.1.0 → 0.1.1
+npm run bump minor          # 0.1.0 → 0.2.0
+npm run bump major          # 0.1.0 → 1.0.0
+npm run bump minor --tag    # + commit + tag git
+npm run release             # bump patch + push (declenche CI)
+```
+
+### CI/CD GitHub Actions
+Le workflow `.github/workflows/release.yml` se declenche sur push de tag `v*`:
+1. Build Tauri sur Windows
+2. Generation des installateurs (.exe NSIS, .msi WiX)
+3. Creation automatique de la release GitHub avec les binaires
+
+### Creer une release
+```bash
+npm run bump minor --tag    # Bump + commit + tag
+git push origin main --tags # Declenche le workflow
+```
+Les installateurs seront disponibles dans l'onglet Releases de GitHub.
