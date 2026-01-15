@@ -79,7 +79,7 @@ export const ProductSuggestionsModal: React.FC<ProductSuggestionsModalProps> = (
           {/* Select All Bar */}
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-[var(--swiss-gray-200)]">
             <span className="text-xs text-[var(--swiss-gray-500)]">
-              {selectedCount} of {localSuggestions.length} selected
+              {t('canvas.cards.apiProduct.suggestionsModal.selectedCount', '{{selected}} of {{total}} selected', { selected: selectedCount, total: localSuggestions.length })}
             </span>
             <button
               type="button"
@@ -130,7 +130,7 @@ export const ProductSuggestionsModal: React.FC<ProductSuggestionsModalProps> = (
                     </div>
 
                     <div className="text-xs text-[var(--swiss-gray-500)] mb-2">
-                      Path prefix: <span className="font-mono">{suggestion.pathPrefix}</span>
+                      {t('canvas.cards.apiProduct.suggestionsModal.pathPrefix', 'Path prefix:')} <span className="font-mono">{suggestion.pathPrefix}</span>
                     </div>
 
                     {/* Authorized Paths */}
@@ -166,7 +166,7 @@ export const ProductSuggestionsModal: React.FC<ProductSuggestionsModalProps> = (
 
                     {/* Paths count */}
                     <div className="text-[10px] text-[var(--swiss-gray-400)] mt-2">
-                      {suggestion.paths.length} endpoint{suggestion.paths.length !== 1 ? 's' : ''} in this group
+                      {t('canvas.cards.apiProduct.suggestionsModal.endpointsCount', '{{count}} endpoint(s) in this group', { count: suggestion.paths.length })}
                     </div>
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export const ProductSuggestionsModal: React.FC<ProductSuggestionsModalProps> = (
 
           {localSuggestions.length === 0 && (
             <div className="text-center py-8 text-[var(--swiss-gray-500)]">
-              No product suggestions available
+              {t('canvas.cards.apiProduct.suggestionsModal.noSuggestions', 'No product suggestions available')}
             </div>
           )}
         </div>

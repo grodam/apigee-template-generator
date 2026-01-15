@@ -129,7 +129,7 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-800">
           <span className="w-2 h-2 bg-green-500 rounded-full" />
           <span className="text-gray-500 uppercase text-[10px] font-bold tracking-widest">
-            Console Output
+            {t('canvas.console.title', 'Console Output')}
           </span>
         </div>
 
