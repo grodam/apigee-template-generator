@@ -256,11 +256,11 @@ export function TemplateSyncSettings() {
             </label>
           </div>
 
-          {/* PAT Notice */}
+          {/* PAT Notice - Monochrome style */}
           {!azureDevOpsConfig.personalAccessToken && (
-            <div className="bg-amber-50 p-4 border-l-4 border-amber-500 flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700">
+            <div className="bg-[var(--bg-primary)] p-4 border-l-4 border-amber-500 flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[var(--text-primary)]">
                 {t('templateSync.messages.proxyRequired')} - Configure your PAT in the Azure DevOps tab.
               </p>
             </div>
@@ -344,23 +344,20 @@ export function TemplateSyncSettings() {
         </div>
       )}
 
-      {/* Test Result */}
+      {/* Test Result - Monochrome style */}
       {testResult && (
         <div className={cn(
-          "p-4 border-l-4 flex items-start gap-3",
+          "p-4 border-l-4 flex items-start gap-3 bg-[var(--bg-primary)]",
           testResult.success
-            ? "bg-green-50 border-green-500"
-            : "bg-red-50 border-red-500"
+            ? "border-green-500"
+            : "border-red-500"
         )}>
           {testResult.success ? (
-            <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
           ) : (
-            <XCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+            <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
           )}
-          <span className={cn(
-            "text-sm",
-            testResult.success ? "text-green-700" : "text-red-700"
-          )}>
+          <span className="text-sm text-[var(--text-primary)]">
             {testResult.message}
           </span>
         </div>

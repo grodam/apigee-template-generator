@@ -199,18 +199,18 @@ export const OpenAPICard: React.FC<OpenAPICardProps> = ({ isExpanded, onToggle, 
         />
       </div>
 
-      {/* Validation Messages */}
+      {/* Validation Messages - Monochrome style */}
       {validationError && (
-        <div className="flex items-center gap-2 p-4 mb-6 bg-red-50 border-l-4 border-red-500">
-          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-          <p className="text-xs text-red-700">{validationError}</p>
+        <div className="flex items-center gap-3 p-4 mb-6 bg-[var(--bg-primary)] border-l-4 border-red-500">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-[var(--text-primary)]">{validationError}</p>
         </div>
       )}
 
       {parsedOpenAPI && !validationError && (
-        <div className="flex items-center gap-2 p-4 mb-6 bg-green-50 border-l-4 border-green-500">
-          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-          <p className="text-xs text-green-700 font-medium">
+        <div className="flex items-center gap-3 p-4 mb-6 bg-[var(--bg-primary)] border-l-4 border-green-500">
+          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+          <p className="text-sm text-[var(--text-primary)] font-medium">
             {t('step2.validation.valid', 'Valid OpenAPI specification')} - {parsedOpenAPI.paths.length} endpoints
           </p>
         </div>

@@ -518,14 +518,17 @@
     transition: width 200ms ease;
   }
 
-  /* Alert */
+  /* Alert - Monochrome style with colored left border */
   .soft-alert {
-    border-radius: var(--radius-md);
+    border-radius: 0;
     padding: var(--space-3) var(--space-4);
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    border: 1px solid;
+    border: none;
+    border-left: 4px solid;
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
 
   /* Override shadcn Alert absolute positioning for icons */
@@ -543,27 +546,35 @@
   }
 
   .soft-alert.info {
-    border-color: var(--info-base);
-    background: var(--info-light);
-    color: var(--info-text);
+    border-left-color: var(--info-base);
+  }
+
+  .soft-alert.info > svg {
+    color: var(--info-base);
   }
 
   .soft-alert.success {
-    border-color: var(--success-base);
-    background: var(--success-light);
-    color: var(--success-text);
+    border-left-color: var(--success-base);
+  }
+
+  .soft-alert.success > svg {
+    color: var(--success-base);
   }
 
   .soft-alert.warning {
-    border-color: var(--warning-base);
-    background: var(--warning-light);
-    color: var(--warning-text);
+    border-left-color: var(--warning-base);
+  }
+
+  .soft-alert.warning > svg {
+    color: var(--warning-base);
   }
 
   .soft-alert.error {
-    border-color: var(--error-base);
-    background: var(--error-light);
-    color: var(--error-text);
+    border-left-color: var(--error-base);
+  }
+
+  .soft-alert.error > svg {
+    color: var(--error-base);
   }
 
   /* Divider */

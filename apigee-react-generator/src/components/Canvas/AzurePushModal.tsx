@@ -75,22 +75,22 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Configuration Warning */}
+          {/* Configuration Warning - Monochrome style */}
           {!isConfigured && (
-            <div className="border-l-4 border-amber-500 bg-amber-50 p-4">
+            <div className="border-l-4 border-amber-500 bg-[var(--bg-primary)] p-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">
+                  <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide mb-1">
                     Configuration Required
                   </p>
-                  <p className="text-xs text-amber-700">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {t('step5.notConfiguredAlert', 'Azure DevOps settings are not configured. Please configure your organization, project, and PAT in the settings.')}
                   </p>
                   <button
                     type="button"
                     onClick={handleOpenSettings}
-                    className="mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-800 hover:text-amber-900 underline transition-colors"
+                    className="mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 hover:text-amber-400 underline transition-colors"
                   >
                     {t('step5.openSettings', 'Open Settings')}
                   </button>
