@@ -45,10 +45,17 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Prepare portable exe
-        shell: bash
+        shell: pwsh
         run: |
-          cp "apigee-react-generator/src-tauri/target/release/Apigee Template Generator.exe" \
-             "apigee-react-generator/src-tauri/target/release/Apigee-Template-Generator-v${{ steps.version.outputs.VERSION }}-portable.exe"
+          $exe = Get-ChildItem -Path "apigee-react-generator/src-tauri/target/release/*.exe" -File | Where-Object { $_.Name -notmatch "\.pdb$" } | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName "apigee-react-generator/src-tauri/target/release/Apigee-Template-Generator-v${{ steps.version.outputs.VERSION }}-portable.exe"
+            Write-Host "Copied $($exe.Name) to portable exe"
+          } else {
+            Write-Host "Listing release folder contents:"
+            Get-ChildItem "apigee-react-generator/src-tauri/target/release/" | ForEach-Object { Write-Host $_.Name }
+            throw "No exe found in release folder"
+          }
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
