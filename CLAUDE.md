@@ -129,3 +129,17 @@ Le proxy Express (`server/`) contourne les restrictions CORS du navigateur pour 
 Langues supportees: English (defaut), Francais
 Config: `src/i18n/config.ts`
 Fichiers: `src/i18n/locales/en.ts`, `src/i18n/locales/fr.ts`
+
+## Workflow Documentation
+
+Apres toute modification significative du code, mettre a jour la documentation:
+- Utiliser `/update-docs` pour declencher la mise a jour
+- Verifier que CLAUDE.md reflete les changements
+- Mettre a jour README.md si impact utilisateur
+
+Modifications necessitant une mise a jour doc:
+- Nouveaux services/composants
+- Nouvelles commandes npm
+- Changements d'architecture
+- Nouvelles dependances majeures
+- Nouvelles conventions de code
