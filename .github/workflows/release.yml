@@ -44,6 +44,12 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Prepare portable exe
+        shell: bash
+        run: |
+          cp "apigee-react-generator/src-tauri/target/release/Apigee Template Generator.exe" \
+             "apigee-react-generator/src-tauri/target/release/Apigee-Template-Generator-v${{ steps.version.outputs.VERSION }}-portable.exe"
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -54,5 +60,6 @@ jobs:
           files: |
             apigee-react-generator/src-tauri/target/release/bundle/nsis/*.exe
             apigee-react-generator/src-tauri/target/release/bundle/msi/*.msi
+            apigee-react-generator/src-tauri/target/release/*-portable.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
