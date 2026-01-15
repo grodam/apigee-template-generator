@@ -3,6 +3,10 @@
  * falls back to browser fetch when running in browser (dev mode).
  */
 
+import { logger } from './logger';
+
+const log = logger.scope('TauriHTTP');
+
 // Check if running in Tauri (supports both Tauri 1.x and 2.x)
 export const isTauri = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -51,7 +55,7 @@ export async function tauriFetch<T = unknown>(
       const errorLower = errorMessage.toLowerCase();
 
       // Log full error for debugging
-      console.error('[TauriHTTP] Request failed:', { url, method, error: errorMessage, fullError: err });
+      log.error('Request failed:', { url, method, error: errorMessage, fullError: err });
 
       // Provide more helpful error message for common enterprise issues
       if (errorLower.includes('certificate') || errorLower.includes('ssl') || errorLower.includes('tls')) {

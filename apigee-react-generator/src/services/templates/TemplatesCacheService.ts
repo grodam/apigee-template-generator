@@ -5,6 +5,10 @@
  * Provides offline access and versioning for synced templates.
  */
 
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('TemplatesCacheService');
+
 const DB_NAME = 'apigee-templates-cache';
 const DB_VERSION = 1;
 const STORE_TEMPLATES = 'templates';
@@ -19,7 +23,7 @@ export interface CachedTemplate {
 
 export interface CacheMetadata {
   key: string;            // Metadata key (e.g., 'lastSync')
-  value: any;             // Metadata value
+  value: SyncInfo | null; // Metadata value (currently only used for SyncInfo)
 }
 
 export interface SyncInfo {
@@ -47,7 +51,7 @@ class TemplatesCacheService {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('Failed to open templates cache database:', request.error);
+        log.error('Failed to open templates cache database:', request.error);
         reject(request.error);
       };
 

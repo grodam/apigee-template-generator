@@ -587,10 +587,3 @@ function fillMissingEnvironmentValues(
   }
 }
 
-/**
- * Get the next available KVM index
- */
-export function getNextKvmIndex(existingEntries: BackendInfoEntry[]): number {
-  if (existingEntries.length === 0) return 1;
-  return Math.max(...existingEntries.map(e => e.kvmIndex)) + 1;
-}

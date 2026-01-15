@@ -15,6 +15,15 @@ interface RequestBody {
   [key: string]: unknown;
 }
 
+/** Azure DevOps Git Item from API response */
+interface AzureDevOpsGitItem {
+  path: string;
+  isFolder: boolean;
+  objectId?: string;
+  commitId?: string;
+  url?: string;
+}
+
 export class AzureDevOpsService {
   private baseUrl: string;
   private token: string;
@@ -312,7 +321,7 @@ export class AzureDevOpsService {
       if (response.ok) {
         const data = await response.json();
         if (data.value) {
-          data.value.forEach((item: any) => {
+          data.value.forEach((item: AzureDevOpsGitItem) => {
             if (!item.isFolder) {
               existingFiles.add(item.path);
             }

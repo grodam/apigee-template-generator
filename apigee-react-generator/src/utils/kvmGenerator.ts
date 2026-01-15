@@ -95,17 +95,6 @@ export function mergeKvmEntries(
 }
 
 /**
- * Get the next available KVM index from existing entries
- *
- * @param existingEntries - Current backend_info entries
- * @returns Next available index (e.g., if 1,2 exist, returns 3)
- */
-export function getNextKvmIndex(existingEntries: BackendInfoEntry[]): number {
-  if (existingEntries.length === 0) return 1;
-  return Math.max(...existingEntries.map(e => e.kvmIndex)) + 1;
-}
-
-/**
  * Convert BackendInfoEntry array to KVM entries for a specific environment
  *
  * @param entries - Backend info entries

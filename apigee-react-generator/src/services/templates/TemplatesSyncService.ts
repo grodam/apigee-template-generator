@@ -147,9 +147,17 @@ class TemplatesSyncService {
       return [];
     }
 
+    // Define the raw item type from Azure DevOps API
+    interface AzureDevOpsItem {
+      path: string;
+      isFolder: boolean;
+      url: string;
+      commitId?: string;
+    }
+
     // Filter to only include template files (not folders, not README, etc.)
     return data.value
-      .filter((item: any) => {
+      .filter((item: AzureDevOpsItem) => {
         if (item.isFolder) return false;
         const path = item.path.toLowerCase();
         // Include XML files and specific template files
@@ -158,7 +166,7 @@ class TemplatesSyncService {
                path.endsWith('.yaml') ||
                path.endsWith('.yml');
       })
-      .map((item: any) => ({
+      .map((item: AzureDevOpsItem): FileItem => ({
         path: item.path.startsWith('/') ? item.path.substring(1) : item.path,
         isFolder: item.isFolder,
         url: item.url,
@@ -345,8 +353,9 @@ class TemplatesSyncService {
             log.warn(`Empty content for ${file.path}`);
             failedFiles.push(file.path);
           }
-        } catch (error: any) {
-          log.error(`Failed to download ${file.path}:`, error.message || error);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          log.error(`Failed to download ${file.path}:`, errorMessage);
           failedFiles.push(file.path);
           // Continue with other files
         }
@@ -394,8 +403,8 @@ class TemplatesSyncService {
         message: successMessage,
         filesCount: templates.length
       };
-    } catch (error: any) {
-      const errorMessage = error.message || 'Unknown error during sync';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error during sync';
 
       updateProgress({
         status: 'error',
@@ -439,8 +448,8 @@ class TemplatesSyncService {
         message: `Connection successful! Found ${files.length} template files.`,
         filesCount: files.length
       };
-    } catch (error: any) {
-      let message = error.message || 'Connection failed';
+    } catch (error: unknown) {
+      let message = error instanceof Error ? error.message : 'Connection failed';
 
       if (message.includes('401') || message.includes('Unauthorized')) {
         message = 'Authentication failed. Please check your PAT token.';

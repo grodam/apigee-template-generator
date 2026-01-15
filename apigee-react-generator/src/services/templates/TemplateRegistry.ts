@@ -2,6 +2,9 @@ import type { TemplateFile, TemplateTreeNode, TemplateCategory, TemplateExport }
 import { TemplateLoader, type TemplateSource } from './TemplateLoader';
 import { templatesCacheService, type SyncInfo } from './TemplatesCacheService';
 import JSZip from 'jszip';
+import { logger } from '../../utils/logger';
+
+const log = logger.scope('TemplateRegistry');
 
 // Template definitions - combining file-based and inline templates
 interface TemplateDefinition {
@@ -394,7 +397,7 @@ class TemplateRegistry {
           content = result.content;
           sourceType = result.source;
         } catch (error) {
-          console.warn(`Failed to load template ${def.path}:`, error);
+          log.warn(`Failed to load template ${def.path}:`, error);
           continue;
         }
       } else {

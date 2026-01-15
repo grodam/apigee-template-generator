@@ -7,6 +7,9 @@ import type { TemplateFile, TemplateTreeNode } from '@/models/Template';
 import { useProjectStore } from '@/store/useProjectStore';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, RotateCcw, Save } from 'lucide-react';
+import { logger } from '@/utils/logger';
+
+const log = logger.scope('TemplateManager');
 
 export function TemplateManager() {
   const { t } = useTranslation();
@@ -19,23 +22,33 @@ export function TemplateManager() {
 
   const { templateOverrides, setTemplateOverride } = useProjectStore();
 
+  // Load templates on mount with cleanup to prevent memory leaks
   useEffect(() => {
-    loadTemplates();
-  }, []);
+    let isMounted = true;
 
-  const loadTemplates = async () => {
-    setIsLoading(true);
-    try {
-      // Convert templateOverrides Record to Map
-      const overridesMap = new Map(Object.entries(templateOverrides));
-      await templateRegistry.initialize(overridesMap);
-      setTreeData(templateRegistry.getTemplateTree());
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const loadTemplatesOnMount = async () => {
+      setIsLoading(true);
+      try {
+        const overridesMap = new Map(Object.entries(templateOverrides));
+        await templateRegistry.initialize(overridesMap);
+        if (isMounted) {
+          setTreeData(templateRegistry.getTemplateTree());
+        }
+      } catch (error) {
+        log.error('Failed to load templates:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadTemplatesOnMount();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [templateOverrides]);
 
   const handleTemplateSelect = (template: TemplateFile) => {
     setSelectedTemplate(template);
@@ -71,7 +84,7 @@ export function TemplateManager() {
       // Refresh tree
       setTreeData(templateRegistry.getTemplateTree());
     } catch (error) {
-      console.error('Failed to save template:', error);
+      log.error('Failed to save template:', error);
     } finally {
       setIsSaving(false);
     }
@@ -96,7 +109,7 @@ export function TemplateManager() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export templates:', error);
+      log.error('Failed to export templates:', error);
     }
   };
 
@@ -125,7 +138,7 @@ export function TemplateManager() {
 
       alert(`Imported ${result.imported} template(s).${result.errors.length > 0 ? `\nErrors: ${result.errors.join(', ')}` : ''}`);
     } catch (error) {
-      console.error('Failed to import templates:', error);
+      log.error('Failed to import templates:', error);
       alert('Failed to import templates. Please check the file format.');
     }
 

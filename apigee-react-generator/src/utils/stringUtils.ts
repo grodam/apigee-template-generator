@@ -20,18 +20,6 @@ export function generateProxyName(
   return `${entity}.${domain}.${backendAppsStr}.${businessObject}.${version}`;
 }
 
-/**
- * Legacy function for backward compatibility
- * @deprecated Use the new generateProxyName with all parameters
- */
-export function generateProxyNameLegacy(entity: string, apiname: string, version: string): string {
-  return `${entity}.${apiname}.${version}`;
-}
-
-export function sanitizePath(path: string): string {
-  return path.replace(/\\/g, '/');
-}
-
 export function pathToPathSuffix(path: string): string {
   // Convertir /customer/{id} -> /customer/*
   return path.replace(/{[^}]+}/g, '*');

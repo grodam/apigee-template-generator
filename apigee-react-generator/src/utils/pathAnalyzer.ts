@@ -5,7 +5,7 @@
  * Groups paths by their logical prefixes to enable fine-grained access control.
  */
 
-import type { ApiProduct, ResourceGroup } from '../models/ApiConfiguration';
+import type { ApiProduct } from '../models/ApiConfiguration';
 
 /**
  * Represents a grouped set of paths under a common prefix
@@ -304,28 +304,6 @@ export function createProductForEnv(
 }
 
 /**
- * Create products for all environments from a suggestion.
- */
-export function createProductsFromSuggestion(
-  suggestion: SuggestedProduct,
-  proxyName: string,
-  environments: string[]
-): Map<string, ApiProduct> {
-  const products = new Map<string, ApiProduct>();
-
-  for (const env of environments) {
-    products.set(env, createProductForEnv(
-      proxyName,
-      suggestion.name,
-      env,
-      suggestion.authorizedPaths
-    ));
-  }
-
-  return products;
-}
-
-/**
  * Get the environment suffix for product naming.
  * - prod/prod1: no suffix
  * - staging: .stg
@@ -378,21 +356,3 @@ export function normalizePath(path: string): string {
   return normalized || '/';
 }
 
-/**
- * Create a ResourceGroup from a path prefix.
- */
-export function createResourceGroup(pathPrefix: string): ResourceGroup {
-  const normalizedPrefix = normalizePath(pathPrefix);
-  return {
-    id: generateUUID(),
-    pathPrefix: normalizedPrefix,
-    authorizedPaths: [normalizedPrefix, `${normalizedPrefix}/**`]
-  };
-}
-
-/**
- * Generate unique product ID.
- */
-export function generateProductId(): string {
-  return generateUUID();
-}

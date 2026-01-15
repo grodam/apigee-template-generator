@@ -23,9 +23,26 @@ export function TemplateSyncSettings() {
     totalFiles?: number;
   } | null>(null);
 
-  // Load sync info on mount
+  // Load sync info on mount with cleanup to prevent memory leaks
   useEffect(() => {
+    let isMounted = true;
+
+    const loadSyncInfo = async () => {
+      const info = await templateRegistry.getSyncInfo();
+      if (isMounted && info) {
+        setSyncInfo({
+          lastSyncDate: info.lastSyncDate,
+          lastCommitSha: info.lastCommitSha,
+          totalFiles: info.totalFiles,
+        });
+      }
+    };
+
     loadSyncInfo();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const loadSyncInfo = async () => {
