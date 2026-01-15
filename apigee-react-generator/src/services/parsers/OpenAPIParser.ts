@@ -15,17 +15,24 @@ const SUPPORTED_METHODS: HttpMethod[] = ['get', 'post', 'put', 'delete', 'patch'
 export class OpenAPIParserService {
   async parse(spec: string, format: 'json' | 'yaml'): Promise<ParsedOpenAPI> {
     try {
-      const parsedSpec = format === 'json' ? JSON.parse(spec) : YAML.load(spec);
-      const api = await SwaggerParser.validate(parsedSpec) as unknown as OpenAPIDocument;
-      const securitySchemes = getSecuritySchemes(api) as Record<string, OpenAPISecurityScheme>;
+      // Parse the original spec (preserve $ref references for export)
+      const originalSpec = format === 'json' ? JSON.parse(spec) : YAML.load(spec);
+
+      // Create a deep copy for validation (SwaggerParser.validate modifies the object)
+      const specForValidation = JSON.parse(JSON.stringify(originalSpec));
+
+      // Validate and dereference for internal processing
+      const dereferencedApi = await SwaggerParser.validate(specForValidation) as unknown as OpenAPIDocument;
+      const securitySchemes = getSecuritySchemes(dereferencedApi) as Record<string, OpenAPISecurityScheme>;
 
       return {
-        version: getOpenAPIVersion(api),
-        paths: this.extractPaths(api),
+        version: getOpenAPIVersion(dereferencedApi),
+        paths: this.extractPaths(dereferencedApi),
         securitySchemes,
-        globalSecurity: api.security || [],
-        rawSpec: api,
-        autoDetected: this.extractAutoConfig(api, securitySchemes)
+        globalSecurity: dereferencedApi.security || [],
+        // Use original spec to preserve $ref structure for swagger.json export
+        rawSpec: originalSpec as OpenAPIDocument,
+        autoDetected: this.extractAutoConfig(dereferencedApi, securitySchemes)
       };
     } catch (error) {
       log.error('Error parsing OpenAPI spec', error);
