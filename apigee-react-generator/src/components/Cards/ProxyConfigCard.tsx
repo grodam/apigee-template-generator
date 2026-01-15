@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Sparkles } from 'lucide-react';
+import { HelpCircle, Sparkles, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SwissCard } from './SwissCard';
 import { HelpPanel } from '../Help/HelpPanel';
@@ -15,20 +15,16 @@ import { cn } from '@/lib/utils';
 const InputWithTooltip: React.FC<{
   tooltip: string;
   showSparkle?: boolean;
-  isSelect?: boolean;
   children: React.ReactNode;
-}> = ({ tooltip, showSparkle = false, isSelect = false, children }) => (
+}> = ({ tooltip, showSparkle = false, children }) => (
   <div className="relative">
     {children}
-    <div className={cn(
-      "absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1",
-      isSelect ? "right-8" : "right-2"
-    )}>
+    <div className="absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1 right-0">
       {showSparkle && (
         <TooltipProvider delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex items-center">
+              <span className="inline-flex items-center pointer-events-auto">
                 <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
               </span>
             </TooltipTrigger>
@@ -41,7 +37,7 @@ const InputWithTooltip: React.FC<{
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex items-center">
+            <span className="inline-flex items-center pointer-events-auto">
               <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
             </span>
           </TooltipTrigger>
@@ -50,6 +46,50 @@ const InputWithTooltip: React.FC<{
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+    </div>
+  </div>
+);
+
+// Select with tooltip helper component (with custom chevron)
+const SelectWithTooltip: React.FC<{
+  tooltip: string;
+  showSparkle?: boolean;
+  children: React.ReactNode;
+}> = ({ tooltip, showSparkle = false, children }) => (
+  <div className="relative">
+    {children}
+    <div className="absolute top-1/2 -translate-y-1/2 inline-flex items-center gap-1 right-0 pointer-events-none">
+      {showSparkle && (
+        <span className="inline-flex items-center pointer-events-auto">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500 cursor-help" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1">
+                Auto-filled from OpenAPI spec
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </span>
+      )}
+      <span className="inline-flex items-center pointer-events-auto">
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center">
+                <HelpCircle className="h-3.5 w-3.5 text-[var(--swiss-gray-400)] cursor-help hover:text-[var(--swiss-black)] transition-colors" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="end" collisionPadding={16} className="bg-[var(--swiss-black)] text-[var(--swiss-white)] text-xs px-2 py-1 max-w-xs">
+              {tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </span>
+      <ChevronDown className="h-4 w-4 text-[var(--swiss-gray-400)]" />
     </div>
   </div>
 );
@@ -227,18 +267,18 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
                 name="entity"
                 control={control}
                 render={({ field }) => (
-                  <InputWithTooltip tooltip={t('step1.fields.entity.tooltip')} isSelect>
+                  <SelectWithTooltip tooltip={t('step1.fields.entity.tooltip')}>
                     <select
                       {...field}
                       className={cn(
-                        "w-full bg-transparent border-b-2 py-2 text-sm font-medium font-mono focus:outline-none pr-12",
+                        "w-full bg-transparent border-b-2 py-2 text-sm font-medium font-mono focus:outline-none pr-14 appearance-none cursor-pointer",
                         errors.entity ? "border-red-500" : "border-[var(--swiss-black)]"
                       )}
                     >
                       <option value="elis">elis</option>
                       <option value="ext">ext</option>
                     </select>
-                  </InputWithTooltip>
+                  </SelectWithTooltip>
                 )}
               />
             </div>
@@ -390,10 +430,9 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
               name="authSouthbound"
               control={control}
               render={({ field }) => (
-                <InputWithTooltip
+                <SelectWithTooltip
                   tooltip={t('step1.fields.authSouthbound.tooltip')}
                   showSparkle={autoFilledFields.has('authSouthbound')}
-                  isSelect
                 >
                   <select
                     {...field}
@@ -405,14 +444,14 @@ export const ProxyConfigCard: React.FC<ProxyConfigCardProps> = ({ isExpanded, on
                         return next;
                       });
                     }}
-                    className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none pr-16"
+                    className="w-full bg-transparent border-b-2 border-[var(--swiss-black)] py-2 text-sm font-medium font-mono focus:outline-none pr-14 appearance-none cursor-pointer"
                   >
                     <option value="None">{t('step1.fields.authSouthbound.options.none')}</option>
                     <option value="Basic">{t('step1.fields.authSouthbound.options.basic')}</option>
                     <option value="OAuth2-ClientCredentials">{t('step1.fields.authSouthbound.options.oauth2')}</option>
                     <option value="ApiKey">{t('step1.fields.authSouthbound.options.apikey', 'API Key')}</option>
                   </select>
-                </InputWithTooltip>
+                </SelectWithTooltip>
               )}
             />
           </div>
