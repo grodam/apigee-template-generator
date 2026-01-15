@@ -7,13 +7,7 @@
 export const isTauri = (): boolean => {
   if (typeof window === 'undefined') return false;
   // Tauri 2.x uses __TAURI_INTERNALS__, Tauri 1.x uses __TAURI__
-  const hasTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
-  console.log('[TauriHTTP] isTauri check:', {
-    hasTauri,
-    has__TAURI__: '__TAURI__' in window,
-    has__TAURI_INTERNALS__: '__TAURI_INTERNALS__' in window
-  });
-  return hasTauri;
+  return '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
 };
 
 interface HttpOptions {
