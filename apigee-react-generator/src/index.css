@@ -120,20 +120,23 @@
 
 /* ============================================
    DARK THEME
+   Shadow-style with visual hierarchy:
+   - Canvas background (#1F1F1F) lighter than cards
+   - Cards (#1A1A1A) appear "floating" with shadows
    ============================================ */
 .dark {
-  /* === NEUTRAL PALETTE - Inverted === */
-  --slate-50: #0f172a;
-  --slate-100: #1e293b;
-  --slate-200: #334155;
-  --slate-300: #475569;
-  --slate-400: #64748b;
-  --slate-500: #94a3b8;
-  --slate-600: #cbd5e1;
-  --slate-700: #e2e8f0;
-  --slate-800: #f1f5f9;
-  --slate-900: #f8fafc;
-  --slate-950: #ffffff;
+  /* === NEUTRAL PALETTE - Shadow Theme === */
+  --slate-50: #1A1A1A;              /* Card background */
+  --slate-100: #242424;             /* Highlighted zones */
+  --slate-200: #333333;             /* Borders */
+  --slate-300: #404040;             /* Card borders */
+  --slate-400: #888888;             /* Secondary text */
+  --slate-500: #888888;             /* Secondary text */
+  --slate-600: #AAAAAA;             /* Lighter muted */
+  --slate-700: #CCCCCC;             /* Near-primary */
+  --slate-800: #E5E5E5;             /* Primary text */
+  --slate-900: #F5F5F5;             /* Brightest text */
+  --slate-950: #FFFFFF;             /* Pure white */
 
   /* === ACCENT - Indigo (Adjusted for dark) === */
   --accent-50: #1e1b4b;
@@ -146,67 +149,67 @@
   --accent-700: #c7d2fe;
 
   /* === SEMANTIC COLORS (Dark variants) === */
-  --success-light: #064e3b;
+  --success-light: #0D2818;
   --success-base: #10b981;
   --success-text: #6ee7b7;
 
-  --warning-light: #78350f;
+  --warning-light: #2D1F0D;
   --warning-base: #f59e0b;
   --warning-text: #fcd34d;
 
-  --error-light: #7f1d1d;
+  --error-light: #2D0D0D;
   --error-base: #ef4444;
   --error-text: #fca5a5;
 
-  --info-light: #1e3a5f;
+  --info-light: #0D1F2D;
   --info-base: #3b82f6;
   --info-text: #93c5fd;
 
-  /* === TEXT HIERARCHY (4 levels) === */
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-faint: #64748b;
-  --text-placeholder: #475569;
+  /* === TEXT HIERARCHY === */
+  --text-primary: #E5E5E5;          /* Main text */
+  --text-secondary: #888888;        /* Labels, descriptions */
+  --text-muted: #888888;            /* Secondary text */
+  --text-faint: #666666;            /* Very muted */
+  --text-placeholder: #555555;      /* Placeholder text */
   --text-on-accent: #ffffff;
 
-  /* === BACKGROUNDS === */
-  --bg-primary: #0f172a;
-  --bg-secondary: #020617;
-  --bg-tertiary: #1e293b;
-  --bg-elevated: #1e293b;
-  --bg-overlay: rgba(15, 23, 42, 0.95);
+  /* === BACKGROUNDS - Shadow Theme Hierarchy === */
+  --bg-primary: #1A1A1A;            /* Cards (darker) */
+  --bg-secondary: #1F1F1F;          /* Canvas (lighter than cards) */
+  --bg-tertiary: #242424;           /* Highlighted zones */
+  --bg-elevated: #1A1A1A;           /* Elevated surfaces */
+  --bg-overlay: rgba(26, 26, 26, 0.95);
 
-  /* === BORDERS (subtle, functional) === */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  /* === BORDERS === */
+  --border-subtle: #2A2A2A;
+  --border-default: #333333;
+  --border-strong: #404040;
 
-  /* === SHADOWS (minimal, single-layer) === */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+  /* === SHADOWS (prominent for floating effect) === */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
   /* === Shadcn compatibility (HSL format) === */
-  --background: 222 47% 5%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 40% 98%;
+  --background: 0 0% 12%;           /* #1F1F1F */
+  --foreground: 0 0% 90%;           /* #E5E5E5 */
+  --card: 0 0% 10%;                 /* #1A1A1A */
+  --card-foreground: 0 0% 90%;     /* #E5E5E5 */
+  --popover: 0 0% 10%;              /* #1A1A1A */
+  --popover-foreground: 0 0% 90%; /* #E5E5E5 */
   --primary: 239 84% 67%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 215 28% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 215 28% 17%;
-  --muted-foreground: 215 20% 65%;
+  --secondary: 0 0% 14%;            /* #242424 */
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 14%;                /* #242424 */
+  --muted-foreground: 0 0% 53%;    /* #888888 */
   --accent: 239 84% 67%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 100%;
-  --border: 215 28% 17%;
-  --input: 215 28% 17%;
+  --border: 0 0% 20%;               /* #333333 */
+  --input: 0 0% 20%;                /* #333333 */
   --ring: 239 84% 67%;
 }
 
@@ -618,6 +621,15 @@
   background: var(--slate-400);
 }
 
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: #555555;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #666666;
+}
+
 /* Selection */
 ::selection {
   background: var(--accent-200);
@@ -627,6 +639,17 @@
 ::-moz-selection {
   background: var(--accent-200);
   color: var(--accent-700);
+}
+
+/* Dark mode selection */
+.dark ::selection {
+  background: var(--accent-500);
+  color: #ffffff;
+}
+
+.dark ::-moz-selection {
+  background: var(--accent-500);
+  color: #ffffff;
 }
 
 /* Focus Visible for Accessibility */
