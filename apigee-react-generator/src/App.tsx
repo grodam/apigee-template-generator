@@ -5,6 +5,7 @@ import { SettingsModal } from './components/Settings/SettingsModal'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useProjectStore } from './store/useProjectStore'
 import { useTemplateSync } from './hooks/useTemplateSync'
+import { version } from '../package.json'
 
 function App() {
   const { t } = useTranslation();
@@ -69,7 +70,7 @@ function App() {
       {/* Footer - Swiss Style */}
       <footer className="swiss-footer">
         <p className="swiss-footer-text">
-          Apigee Template Generator &mdash; v1.0.0
+          Apigee Template Generator &mdash; v{version}
         </p>
       </footer>
     </div>
