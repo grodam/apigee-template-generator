@@ -320,6 +320,22 @@ export default {
     },
   },
 
+  // Azure Push Modal
+  azurePushModal: {
+    title: 'Pousser vers Azure DevOps',
+    description: 'Créer ou mettre à jour le repository',
+    repoHint: 'Un nouveau repository sera créé s\'il n\'existe pas.',
+    progress: {
+      connecting: 'Connexion à Azure DevOps...',
+      checking: 'Vérification du repository...',
+      creating: 'Création du repository...',
+      pushing: 'Envoi des fichiers ({{current}}/{{total}})...',
+      done: 'Push terminé !',
+      error: 'Erreur survenue',
+      filesInfo: '{{files}} fichiers au total',
+    },
+  },
+
   // Settings Modal
   settings: {
     title: 'Paramètres',

@@ -6,7 +6,7 @@ import { OpenAPICard } from '../Cards/OpenAPICard';
 import { ProxyConfigCard } from '../Cards/ProxyConfigCard';
 import { TargetServersCard } from '../Cards/TargetServersCard';
 import { ApiProductCard } from '../Cards/ApiProductCard';
-import { AzurePushModal } from './AzurePushModal';
+import { AzurePushModal, type PushProgress } from './AzurePushModal';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ApigeeProjectGenerator } from '../../services/generators/ApigeeGenerator';
 import { ZipExporter } from '../../services/exporters/ZipExporter';
@@ -204,7 +204,7 @@ export const CanvasContainer: React.FC = () => {
   };
 
   // Actually perform the push to Azure DevOps
-  const performPushToAzure = async () => {
+  const performPushToAzure = async (onProgress: (progress: PushProgress) => void) => {
     if (!generatedProject) {
       addConsoleMessage('ERROR: No project generated yet', 'error');
       return;
@@ -217,6 +217,7 @@ export const CanvasContainer: React.FC = () => {
 
     setIsPushing(true);
     addConsoleMessage('CONNECTING TO AZURE DEVOPS...', 'info');
+    onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: generatedProject.files.size, stage: 'connecting' });
 
     try {
       const azureService = new AzureDevOpsService(
@@ -225,8 +226,6 @@ export const CanvasContainer: React.FC = () => {
         true
       );
 
-      addConsoleMessage(`CREATING REPOSITORY: ${azureDevOpsConfig.repositoryName}`, 'info');
-
       // Test connection first
       const connectionSuccess = await azureService.testConnection();
       if (!connectionSuccess) {
@@ -234,19 +233,33 @@ export const CanvasContainer: React.FC = () => {
       }
 
       addConsoleMessage('CONNECTION VERIFIED', 'success');
-      addConsoleMessage(`PUSHING FILES (${generatedProject.files.size}/${generatedProject.files.size})...`, 'info');
+      onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: generatedProject.files.size, stage: 'checking' });
 
-      // Push to Azure DevOps
-      const result = await azureService.pushProject(azureDevOpsConfig, generatedProject);
+      addConsoleMessage(`CREATING REPOSITORY: ${azureDevOpsConfig.repositoryName}`, 'info');
+      onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: generatedProject.files.size, stage: 'creating' });
+
+      // Push to Azure DevOps with progress callback
+      const result = await azureService.pushProject(
+        azureDevOpsConfig,
+        generatedProject,
+        (currentBatch, totalBatches, totalFiles) => {
+          addConsoleMessage(`PUSHING FILES (batch ${currentBatch}/${totalBatches})...`, 'info');
+          onProgress({ currentBatch, totalBatches, totalFiles, stage: 'pushing' });
+        }
+      );
 
       if (result.success) {
+        onProgress({ currentBatch: 1, totalBatches: 1, totalFiles: generatedProject.files.size, stage: 'done' });
         addConsoleMessage(`SUCCESS: REPOSITORY CREATED AT ${result.repositoryUrl}`, 'success');
+        // Small delay to show "done" state before closing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         setIsAzurePushModalOpen(false);
       } else {
         throw new Error(result.message || 'Push failed');
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
+      onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: 0, stage: 'error', message });
       addConsoleMessage(`ERROR: ${message}`, 'error');
     } finally {
       setIsPushing(false);

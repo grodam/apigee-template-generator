@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, AlertTriangle, Cloud } from 'lucide-react';
+import { Upload, AlertTriangle, Cloud, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,18 @@ import {
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '../../store/useProjectStore';
 
+export interface PushProgress {
+  currentBatch: number;
+  totalBatches: number;
+  totalFiles: number;
+  stage: 'connecting' | 'checking' | 'creating' | 'pushing' | 'done' | 'error';
+  message?: string;
+}
+
 interface AzurePushModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPush: () => Promise<void>;
+  onPush: (onProgress: (progress: PushProgress) => void) => Promise<void>;
   isPushing: boolean;
 }
 
@@ -30,10 +38,14 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   // Local state for repository name
   const [repositoryName, setRepositoryName] = useState(azureDevOpsConfig.repositoryName);
 
+  // Progress state
+  const [progress, setProgress] = useState<PushProgress | null>(null);
+
   // Sync local state with store when modal opens
   useEffect(() => {
     if (isOpen) {
       setRepositoryName(azureDevOpsConfig.repositoryName);
+      setProgress(null); // Reset progress when modal opens
     }
   }, [isOpen, azureDevOpsConfig.repositoryName]);
 
@@ -44,7 +56,33 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   const handlePush = async () => {
     // Save repository name to store before pushing
     updateAzureDevOpsConfig({ repositoryName });
-    await onPush();
+    await onPush(setProgress);
+  };
+
+  // Calculate progress percentage
+  const progressPercent = progress
+    ? progress.stage === 'done'
+      ? 100
+      : progress.stage === 'pushing' && progress.totalBatches > 0
+        ? Math.round((progress.currentBatch / progress.totalBatches) * 100)
+        : progress.stage === 'connecting' ? 10
+        : progress.stage === 'checking' ? 25
+        : progress.stage === 'creating' ? 40
+        : 0
+    : 0;
+
+  // Get stage label
+  const getStageLabel = () => {
+    if (!progress) return '';
+    switch (progress.stage) {
+      case 'connecting': return t('azurePushModal.progress.connecting', 'Connecting to Azure DevOps...');
+      case 'checking': return t('azurePushModal.progress.checking', 'Checking repository...');
+      case 'creating': return t('azurePushModal.progress.creating', 'Creating repository...');
+      case 'pushing': return t('azurePushModal.progress.pushing', 'Pushing files ({{current}}/{{total}})...', { current: progress.currentBatch, total: progress.totalBatches });
+      case 'done': return t('azurePushModal.progress.done', 'Push completed!');
+      case 'error': return progress.message || t('azurePushModal.progress.error', 'Error occurred');
+      default: return '';
+    }
   };
 
   const handleOpenSettings = () => {
@@ -127,7 +165,7 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
           </div>
 
           {/* Configuration Summary */}
-          {isConfigured && (
+          {isConfigured && !isPushing && (
             <div className="border-l-4 border-[var(--swiss-black)] pl-4 py-2 bg-[var(--swiss-gray-50)]">
               <p className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase tracking-widest mb-2">
                 Target
@@ -135,6 +173,50 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
               <p className="text-xs font-mono text-[var(--swiss-gray-700)]">
                 {azureDevOpsConfig.organization}/{azureDevOpsConfig.project}
               </p>
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          {isPushing && progress && (
+            <div className="space-y-3">
+              {/* Progress info */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {progress.stage === 'done' ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : progress.stage === 'error' ? (
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <div className="h-4 w-4 border-2 border-[var(--swiss-black)] border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span className="text-xs text-[var(--swiss-gray-600)]">
+                    {getStageLabel()}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-[var(--swiss-gray-500)]">
+                  {progressPercent}%
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-2 bg-[var(--swiss-gray-200)] overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-300 ease-out",
+                    progress.stage === 'done' ? "bg-green-500" :
+                    progress.stage === 'error' ? "bg-red-500" :
+                    "bg-[var(--swiss-black)]"
+                  )}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+
+              {/* Files info */}
+              {progress.totalFiles > 0 && (
+                <p className="text-[10px] text-[var(--swiss-gray-400)] text-center">
+                  {t('azurePushModal.progress.filesInfo', '{{files}} files total', { files: progress.totalFiles })}
+                </p>
+              )}
             </div>
           )}
         </div>
