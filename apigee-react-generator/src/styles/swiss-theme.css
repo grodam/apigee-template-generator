@@ -584,11 +584,9 @@ select:-webkit-autofill:active {
 .swiss-header-logo {
   width: 40px;
   height: 40px;
-  background: var(--swiss-black);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--swiss-white);
 }
 
 /* === SWISS FOOTER === */

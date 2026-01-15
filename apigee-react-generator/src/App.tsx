@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { CanvasContainer } from './components/Canvas/CanvasContainer'
-import { FileCode2, Settings, RefreshCw } from 'lucide-react'
+import { Settings, RefreshCw } from 'lucide-react'
+import { AppIcon } from './components/AppIcon'
 import { SettingsModal } from './components/Settings/SettingsModal'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useProjectStore } from './store/useProjectStore'
@@ -22,7 +23,7 @@ function App() {
         <div className="swiss-header-inner">
           <div className="flex items-center gap-4">
             <div className="swiss-header-logo">
-              <FileCode2 className="h-5 w-5" />
+              <AppIcon className="h-10 w-10" />
             </div>
             <div>
               <h1 className="text-xl font-black uppercase tracking-tight">
