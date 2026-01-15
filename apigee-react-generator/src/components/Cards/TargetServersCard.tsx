@@ -260,17 +260,18 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-[40%]">Host</th>
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)]">Target Path</th>
           <th className="text-left py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">Port</th>
-          <th className="text-right py-2 font-bold uppercase text-[10px] text-[var(--swiss-gray-400)] w-16">Status</th>
         </tr>
       </thead>
       <tbody>
         {ENVIRONMENTS.map((env) => {
           const envConfig = apiConfig.environments?.[env];
           const targetServer = envConfig?.targetServers?.[0];
-          const hasHost = !!targetServer?.host;
 
           return (
-            <tr key={env} className="border-b border-[var(--swiss-gray-100)]">
+            <tr key={env} className={cn(
+              "border-b border-[var(--swiss-gray-100)]",
+              !targetServer?.host && "opacity-45"
+            )}>
               <td className="py-2 font-mono font-bold">{env}</td>
               <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
                 {targetServer?.host || <span className="text-[var(--swiss-gray-300)]">Not configured</span>}
@@ -280,12 +281,6 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
               </td>
               <td className="py-2 font-mono">
                 {targetServer?.host ? targetServer.port || 443 : <span className="text-[var(--swiss-gray-300)]">-</span>}
-              </td>
-              <td className="py-2 text-right">
-                <span className={cn(
-                  "w-2 h-2 inline-block",
-                  hasHost ? "bg-[var(--swiss-black)]" : "bg-[var(--swiss-gray-200)]"
-                )} />
               </td>
             </tr>
           );
@@ -301,7 +296,7 @@ export const TargetServersCard: React.FC<TargetServersCardProps> = ({ isExpanded
     <SwissCard
       number="04"
       title={t('canvas.cards.targets.title', 'Target Servers')}
-      subtitle={t('canvas.cards.targets.subtitle', 'Multi-environment configuration')}
+      subtitle={t('canvas.cards.targets.subtitle', 'Multi-environment target servers configuration')}
       completion={completion}
       isExpanded={isExpanded}
       onToggle={onToggle}

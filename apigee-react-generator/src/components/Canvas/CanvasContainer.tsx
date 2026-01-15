@@ -258,8 +258,45 @@ export const CanvasContainer: React.FC = () => {
     { id: 'export', label: 'Export', status: getStepStatus('export') },
   ];
 
+  // Check if a product is fully configured (all required fields filled)
+  const isProductComplete = (product: any) => {
+    return !!(
+      product?.name &&
+      product?.displayName &&
+      product?.description &&
+      product?.authorizedPaths?.length > 0
+    );
+  };
+
+  // Check if all cards are 100% complete
+  const isAllCardsComplete = useCallback(() => {
+    // 1. OpenAPI must be loaded
+    if (!parsedOpenAPI) return false;
+
+    // 2. Proxy config must be complete
+    if (!getCompleteConfig()) return false;
+
+    // 3. All environments must have target servers configured
+    const allTargetsComplete = ENVIRONMENTS.every(env => {
+      const envConfig = apiConfig.environments?.[env];
+      return !!envConfig?.targetServers?.[0]?.host;
+    });
+    if (!allTargetsComplete) return false;
+
+    // 4. All environments must have all products fully configured
+    const allProductsComplete = ENVIRONMENTS.every(env => {
+      const envConfig = apiConfig.environments?.[env];
+      const products = envConfig?.apiProducts || [];
+      if (products.length === 0) return false;
+      return products.every(isProductComplete);
+    });
+    if (!allProductsComplete) return false;
+
+    return true;
+  }, [parsedOpenAPI, getCompleteConfig, apiConfig.environments]);
+
   // Can generate/export?
-  const canGenerate = !!parsedOpenAPI && !!getCompleteConfig();
+  const canGenerate = isAllCardsComplete();
   const canDownload = !!generatedProject;
   const canPush = !!generatedProject && azureDevOpsConfig.enabled;
 

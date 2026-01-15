@@ -10,7 +10,7 @@ import { apiProductsHelpContent } from '../Help/helpContent';
 import { useProjectStore } from '../../store/useProjectStore';
 import { ENVIRONMENTS } from '../../utils/constants';
 import type { Environment } from '../../utils/constants';
-import { createProductForEnv, getDefaultAuthorizedPaths, extractGroupPrefix } from '../../utils/pathAnalyzer';
+import { createProductForEnv, getDefaultAuthorizedPaths, extractGroupPrefix, findSmallestCommonRoot } from '../../utils/pathAnalyzer';
 import { cn } from '@/lib/utils';
 
 // Input with tooltip helper component
@@ -88,15 +88,25 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
     if (!parsedOpenAPI?.rawSpec?.paths) return [];
     const paths = Object.keys(parsedOpenAPI.rawSpec.paths);
 
+    // Start with the default/root paths (smallest common root)
+    const suggestions: string[] = [];
+    const commonRoot = findSmallestCommonRoot(paths);
+    if (commonRoot && commonRoot !== '/') {
+      suggestions.push(commonRoot);
+      suggestions.push(`${commonRoot}/**`);
+    }
+
     // Extract unique group prefixes (same logic as auto-generate)
     const prefixSet = new Set<string>();
     paths.forEach(p => {
       const prefix = extractGroupPrefix(p);
-      prefixSet.add(prefix);
+      // Only add if different from the common root
+      if (prefix !== commonRoot) {
+        prefixSet.add(prefix);
+      }
     });
 
     // Add prefix and wildcard versions for each unique group
-    const suggestions: string[] = [];
     Array.from(prefixSet).sort().forEach(prefix => {
       suggestions.push(prefix);
       suggestions.push(`${prefix}/**`);
@@ -121,11 +131,26 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
     textarea.style.height = `${newHeight}px`;
   }, []);
 
-  // Calculate completion - count environments with configured API products
-  const configuredEnvs = ENVIRONMENTS.filter(env => {
+  // Check if a product is fully configured (all required fields filled)
+  const isProductComplete = (product: any) => {
+    return !!(
+      product?.name &&
+      product?.displayName &&
+      product?.description &&
+      product?.authorizedPaths?.length > 0
+    );
+  };
+
+  // Check if an environment's products are fully configured
+  const isEnvComplete = (env: Environment) => {
     const envConfig = apiConfig.environments?.[env];
-    return envConfig?.apiProducts?.[0]?.name;
-  });
+    const envProducts = envConfig?.apiProducts || [];
+    if (envProducts.length === 0) return false;
+    return envProducts.every(isProductComplete);
+  };
+
+  // Calculate completion - count environments with ALL products fully configured
+  const configuredEnvs = ENVIRONMENTS.filter(isEnvComplete);
   const completion = Math.round((configuredEnvs.length / ENVIRONMENTS.length) * 100);
 
   // Handle product field changes
@@ -187,9 +212,13 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
           const envConfig = apiConfig.environments?.[env];
           const envProducts = envConfig?.apiProducts || [];
           const hasProducts = envProducts.length > 0 && envProducts[0]?.name;
+          const envComplete = isEnvComplete(env);
 
           return (
-            <tr key={env} className="border-b border-[var(--swiss-gray-100)]">
+            <tr key={env} className={cn(
+              "border-b border-[var(--swiss-gray-100)]",
+              !envComplete && "opacity-45"
+            )}>
               <td className="py-2 font-mono font-bold">{env}</td>
               <td className="py-2 font-mono text-[var(--swiss-gray-600)]">
                 {hasProducts ? (
@@ -218,7 +247,7 @@ export const ApiProductCard: React.FC<ApiProductCardProps> = ({ isExpanded, onTo
     <SwissCard
       number="03"
       title={t('canvas.cards.apiProduct.title', 'API Products')}
-      subtitle={t('canvas.cards.apiProduct.subtitle', 'Product configuration per environment')}
+      subtitle={t('canvas.cards.apiProduct.subtitle', 'Multi-environment api products configuration')}
       completion={completion}
       isExpanded={isExpanded}
       onToggle={onToggle}
