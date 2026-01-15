@@ -105,7 +105,7 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
               htmlFor="modal-ado-repository"
               className="text-[10px] font-bold text-[var(--swiss-gray-400)] uppercase tracking-widest block mb-2"
             >
-              {t('step5.repository.required', 'Repository Name')} *
+              {t('step5.repository.required', 'Repository Name *')}
             </label>
             <input
               id="modal-ado-repository"
