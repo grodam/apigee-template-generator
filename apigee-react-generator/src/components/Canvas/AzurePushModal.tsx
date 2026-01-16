@@ -22,7 +22,7 @@ export interface PushProgress {
 interface AzurePushModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPush: (onProgress: (progress: PushProgress) => void) => Promise<void>;
+  onPush: (repositoryName: string, onProgress: (progress: PushProgress) => void) => Promise<void>;
   isPushing: boolean;
 }
 
@@ -54,9 +54,9 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   const isReadyToPush = isConfigured && repositoryName;
 
   const handlePush = async () => {
-    // Save repository name to store before pushing
+    // Save repository name to store and pass it directly to onPush
     updateAzureDevOpsConfig({ repositoryName });
-    await onPush(setProgress);
+    await onPush(repositoryName, setProgress);
   };
 
   // Calculate progress percentage

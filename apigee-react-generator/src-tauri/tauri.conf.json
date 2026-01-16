@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Apigee Template Generator",
+  "productName": "APIGEE TEMPLATE BUILDER",
   "version": "0.1.17",
   "identifier": "com.elis.apigee-generator",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Apigee Template Generator",
+        "title": "APIGEE TEMPLATE BUILDER",
         "width": 1400,
         "height": 900,
         "resizable": true,

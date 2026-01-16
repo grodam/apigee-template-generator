@@ -27,7 +27,7 @@ function App() {
             </div>
             <div>
               <h1 className="text-xl font-black uppercase tracking-tight">
-                Apigee Generator
+                Apigee Template Builder
               </h1>
               <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[var(--swiss-gray-400)]">
                 {t('app.subtitle', 'Automate API Proxy Building')}

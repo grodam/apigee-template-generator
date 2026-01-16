@@ -204,7 +204,7 @@ export const CanvasContainer: React.FC = () => {
   };
 
   // Actually perform the push to Azure DevOps
-  const performPushToAzure = async (onProgress: (progress: PushProgress) => void) => {
+  const performPushToAzure = async (repositoryName: string, onProgress: (progress: PushProgress) => void) => {
     if (!generatedProject) {
       addConsoleMessage('ERROR: No project generated yet', 'error');
       return;
@@ -235,12 +235,15 @@ export const CanvasContainer: React.FC = () => {
       addConsoleMessage('CONNECTION VERIFIED', 'success');
       onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: generatedProject.files.size, stage: 'checking' });
 
-      addConsoleMessage(`CREATING REPOSITORY: ${azureDevOpsConfig.repositoryName}`, 'info');
+      addConsoleMessage(`CREATING REPOSITORY: ${repositoryName}`, 'info');
       onProgress({ currentBatch: 0, totalBatches: 0, totalFiles: generatedProject.files.size, stage: 'creating' });
+
+      // Use the repositoryName passed from the modal, not from store
+      const configWithUpdatedRepo = { ...azureDevOpsConfig, repositoryName };
 
       // Push to Azure DevOps with progress callback
       const result = await azureService.pushProject(
-        azureDevOpsConfig,
+        configWithUpdatedRepo,
         generatedProject,
         (currentBatch, totalBatches, totalFiles) => {
           addConsoleMessage(`PUSHING FILES (batch ${currentBatch}/${totalBatches})...`, 'info');

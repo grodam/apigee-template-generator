@@ -580,11 +580,13 @@ extends:
         portalComponents.schemas = portalSpec.components.schemas;
       }
 
-      // Reorder keys for consistent output (no top-level security array)
+      // Reorder keys for consistent output with top-level security array
       const orderedSpec: Record<string, any> = {};
       if (portalSpec.openapi) orderedSpec.openapi = portalSpec.openapi;
       if (portalSpec.info) orderedSpec.info = portalSpec.info;
       if (portalSpec.servers) orderedSpec.servers = portalSpec.servers;
+      // Add top-level security array referencing OAuth2
+      orderedSpec.security = [{ oauth2: [] }];
       orderedSpec.components = portalComponents;
       if (portalSpec.paths) orderedSpec.paths = portalSpec.paths;
 
