@@ -32,7 +32,7 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
   return (
     <div className={cn(
       'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-      'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+      'shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
       'flex flex-col overflow-hidden',
       className
     )}>
@@ -47,7 +47,7 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
         {consoleMessages.length > 0 && (
           <button
             onClick={clearConsole}
-            className="text-[var(--swiss-gray-400)] hover:text-[var(--swiss-gray-600)] dark:hover:text-[var(--swiss-gray-300)] transition-colors p-1 rounded hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#252525]"
+            className="text-[var(--swiss-gray-400)] hover:text-[var(--swiss-gray-600)] dark:hover:text-[var(--swiss-gray-300)] transition-colors p-1  hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#252525]"
             title={t('kvm.console.clear', 'Clear console')}
           >
             <Trash2 className="h-3.5 w-3.5" />

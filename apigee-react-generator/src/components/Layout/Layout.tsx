@@ -25,7 +25,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const isHomePage = location.pathname === '/';
   const isGeneratorPage = location.pathname === '/generator';
-  const isKvmPage = location.pathname === '/kvm';
 
   // Get header title and subtitle based on current route
   const getHeaderContent = () => {

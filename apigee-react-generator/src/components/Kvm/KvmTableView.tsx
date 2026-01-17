@@ -64,7 +64,7 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
             <div
               key={entry.name}
               className={cn(
-                'flex items-center gap-4 p-4 rounded-md',
+                'flex items-center gap-4 p-4 ',
                 'border-2 border-[var(--swiss-gray-200)] dark:border-[#333]',
                 'bg-[var(--swiss-gray-50)] dark:bg-[#252525]',
                 'hover:border-[var(--swiss-gray-300)] dark:hover:border-[#444]',
@@ -116,7 +116,7 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
                   className={cn(
                     'w-full bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
                     'border border-[var(--swiss-gray-200)] dark:border-[#444]',
-                    'rounded-md px-3 py-2 font-mono text-sm',
+                    ' px-3 py-2 font-mono text-sm',
                     'text-[var(--swiss-gray-700)] dark:text-[#E5E5E5]',
                     'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[#666]',
                     'placeholder:text-[var(--swiss-gray-400)]',
@@ -130,7 +130,7 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
               <button
                 onClick={() => toggleEntryForDeletion(entry.name)}
                 className={cn(
-                  'p-2 rounded-md transition-all duration-150',
+                  'p-2  transition-all duration-150',
                   markedForDeletion
                     ? 'bg-green-500 text-white hover:bg-green-600'
                     : 'text-[var(--swiss-gray-400)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'

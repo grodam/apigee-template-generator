@@ -188,14 +188,14 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     <div
       className={cn(
         'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-        'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+        'shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
         'px-6 py-4',
         className
       )}
     >
       <div className="flex items-center gap-6">
         {/* Logo */}
-        <div className="w-10 h-10 bg-[var(--swiss-black)] dark:bg-[#E5E5E5] rounded-md flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 bg-[var(--swiss-black)] dark:bg-[#E5E5E5]  flex items-center justify-center flex-shrink-0">
           <span className="text-[var(--swiss-white)] dark:text-[#1A1A1A] font-black text-lg">K</span>
         </div>
 
@@ -209,7 +209,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
             placeholder="Organization ID"
             className={cn(
               'w-full h-10 bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
-              'border-none rounded-md px-4 text-sm font-mono',
+              'border-none  px-4 text-sm font-mono',
               'placeholder:text-[var(--swiss-gray-400)]',
               'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[var(--swiss-gray-500)]',
               'transition-all duration-200',
@@ -229,7 +229,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
               placeholder="Access Token"
               className={cn(
                 'flex-1 h-10 bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
-                'border-none rounded-md px-4 text-sm font-mono',
+                'border-none  px-4 text-sm font-mono',
                 'placeholder:text-[var(--swiss-gray-400)]',
                 'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[var(--swiss-gray-500)]',
                 'transition-all duration-200',
@@ -247,7 +247,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
               type="button"
               onClick={() => openUrl('https://developers.google.com/oauthplayground')}
               className={cn(
-                'flex items-center justify-center gap-1.5 h-10 px-3 rounded-md',
+                'flex items-center justify-center gap-1.5 h-10 px-3 ',
                 'text-[10px] font-semibold whitespace-nowrap',
                 'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
                 'text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]',
@@ -265,7 +265,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
               <button
                 type="button"
                 className={cn(
-                  'flex items-center justify-center w-10 h-10 rounded-md',
+                  'flex items-center justify-center w-10 h-10 ',
                   'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
                   'text-[var(--swiss-gray-500)] hover:text-[var(--swiss-gray-700)]',
                   'dark:hover:text-[var(--swiss-gray-300)]',
@@ -279,7 +279,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
               {/* Tooltip */}
               <div className={cn(
                 'absolute right-0 top-full mt-2 z-50',
-                'w-72 p-5 rounded-md',
+                'w-72 p-5 ',
                 'bg-[var(--swiss-black)] dark:bg-[#E5E5E5]',
                 'text-[var(--swiss-white)] dark:text-[#1A1A1A]',
                 'shadow-2xl',
@@ -343,7 +343,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
             {tokenRemaining && !isTokenExpired && (
               <div
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono',
+                  'flex items-center gap-1.5 px-3 py-1.5  text-xs font-mono',
                   'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
                   isTokenExpiring ? 'text-yellow-600 dark:text-yellow-400' : 'text-[var(--swiss-gray-500)]'
                 )}
@@ -357,7 +357,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
             <button
               onClick={handleRefreshToken}
               className={cn(
-                'p-2 rounded-md transition-all duration-200',
+                'p-2  transition-all duration-200',
                 'text-[var(--swiss-gray-500)] hover:text-[var(--swiss-black)]',
                 'hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#252525]',
                 'dark:hover:text-[var(--swiss-white)]'
@@ -374,7 +374,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
           onClick={connection.isConnected ? handleDisconnect : handleConnect}
           disabled={isConnecting}
           className={cn(
-            'flex items-center justify-center gap-2 h-10 px-5 rounded-md',
+            'flex items-center justify-center gap-2 h-10 px-5 ',
             'text-[11px] font-bold uppercase tracking-wider',
             'transition-all duration-200',
             connection.isConnected
