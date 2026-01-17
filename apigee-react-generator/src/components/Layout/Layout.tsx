@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Settings, RefreshCw, Home } from 'lucide-react';
+import { Settings, RefreshCw, ArrowLeft } from 'lucide-react';
 import { AppIcon } from '../AppIcon';
 import { SettingsModal } from '../Settings/SettingsModal';
 import { ThemeToggle } from '../ThemeToggle';
@@ -55,6 +55,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="swiss-header">
         <div className="swiss-header-inner">
           <div className="flex items-center gap-4">
+            {/* Back button - only show when not on home page */}
+            {!isHomePage && (
+              <button
+                onClick={() => navigate('/')}
+                className="w-9 h-9 flex items-center justify-center border-2 border-[#999] text-[#888] hover:border-[#333] hover:text-[#333] hover:bg-[#333]/10 dark:border-[#555] dark:text-[#888] dark:hover:border-[#E5E5E5] dark:hover:text-[#E5E5E5] dark:hover:bg-[#E5E5E5]/10 transition-all duration-200"
+                title="Back to Home"
+              >
+                <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+              </button>
+            )}
             <div className="swiss-header-logo">
               <AppIcon className="h-10 w-10" />
             </div>
@@ -68,16 +78,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Home button - only show when not on home page */}
-            {!isHomePage && (
-              <button
-                onClick={() => navigate('/')}
-                className="w-8 h-8 border border-[var(--swiss-gray-200)] flex items-center justify-center hover:bg-[var(--swiss-gray-50)] transition-colors"
-                title="Home"
-              >
-                <Home className="h-4 w-4" />
-              </button>
-            )}
             {/* Template sync indicator - only on generator page */}
             {isGeneratorPage && templateRepoConfig.enabled && (
               <div className="flex items-center gap-1.5">
