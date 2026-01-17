@@ -53,6 +53,7 @@ interface KvmState {
   isSaving: boolean;
   isConnecting: boolean;
   hasUnsavedChanges: boolean;
+  entriesMarkedForDeletion: Set<string>;
 
   // Sidebar expansion state
   expandedEnvironments: Set<string>;
@@ -96,6 +97,9 @@ interface KvmState {
   updateEntry: (name: string, value: string) => void;
   addEntry: (name: string, value: string) => void;
   deleteEntry: (name: string) => void;
+  toggleEntryForDeletion: (name: string) => void;
+  clearEntriesMarkedForDeletion: () => void;
+  applyPendingDeletions: () => void;
   updateEntriesFromJson: (entries: KvmEntry[]) => void;
 
   // Actions - Console
@@ -147,6 +151,7 @@ export const useKvmStore = create<KvmState>()(
       isSaving: false,
       isConnecting: false,
       hasUnsavedChanges: false,
+      entriesMarkedForDeletion: new Set<string>(),
 
       expandedEnvironments: new Set<string>(),
       expandedProxies: new Set<string>(),
@@ -305,6 +310,7 @@ export const useKvmStore = create<KvmState>()(
           currentKvm: kvm,
           originalKvm: kvm ? JSON.parse(JSON.stringify(kvm)) : null,
           hasUnsavedChanges: false,
+          entriesMarkedForDeletion: new Set<string>(),
         }),
 
       // UI actions
@@ -378,12 +384,52 @@ export const useKvmStore = create<KvmState>()(
           const entries = state.currentKvm.keyValueEntries || [];
           const filteredEntries = entries.filter((entry) => entry.name !== name);
 
+          // Also remove from marked for deletion if present
+          const newMarked = new Set(state.entriesMarkedForDeletion);
+          newMarked.delete(name);
+
           return {
             currentKvm: {
               ...state.currentKvm,
               keyValueEntries: filteredEntries,
             },
             hasUnsavedChanges: true,
+            entriesMarkedForDeletion: newMarked,
+          };
+        }),
+
+      toggleEntryForDeletion: (name) =>
+        set((state) => {
+          const newMarked = new Set(state.entriesMarkedForDeletion);
+          if (newMarked.has(name)) {
+            newMarked.delete(name);
+          } else {
+            newMarked.add(name);
+          }
+          return {
+            entriesMarkedForDeletion: newMarked,
+            hasUnsavedChanges: newMarked.size > 0 || state.hasUnsavedChanges,
+          };
+        }),
+
+      clearEntriesMarkedForDeletion: () =>
+        set({ entriesMarkedForDeletion: new Set<string>() }),
+
+      applyPendingDeletions: () =>
+        set((state) => {
+          if (!state.currentKvm || state.entriesMarkedForDeletion.size === 0) return state;
+
+          const entries = state.currentKvm.keyValueEntries || [];
+          const filteredEntries = entries.filter(
+            (entry) => !state.entriesMarkedForDeletion.has(entry.name)
+          );
+
+          return {
+            currentKvm: {
+              ...state.currentKvm,
+              keyValueEntries: filteredEntries,
+            },
+            entriesMarkedForDeletion: new Set<string>(),
           };
         }),
 
@@ -433,6 +479,7 @@ export const useKvmStore = create<KvmState>()(
           isSaving: false,
           isConnecting: false,
           hasUnsavedChanges: false,
+          entriesMarkedForDeletion: new Set<string>(),
           expandedEnvironments: new Set<string>(),
           expandedProxies: new Set<string>(),
           consoleMessages: [],
@@ -451,6 +498,7 @@ export const useKvmStore = create<KvmState>()(
           selectedProxyName: null,
           selectedKvmName: null,
           hasUnsavedChanges: false,
+          entriesMarkedForDeletion: new Set<string>(),
           expandedEnvironments: new Set<string>(),
           expandedProxies: new Set<string>(),
         }),

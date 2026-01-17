@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { Trash2, AlertCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
 
@@ -10,9 +10,7 @@ interface KvmTableViewProps {
 
 export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
   const { t } = useTranslation();
-  const { currentKvm, originalKvm, updateEntry, deleteEntry } = useKvmStore();
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [deletingEntry, setDeletingEntry] = useState<string | null>(null);
+  const { currentKvm, originalKvm, updateEntry, toggleEntryForDeletion, entriesMarkedForDeletion } = useKvmStore();
 
   if (!currentKvm) {
     return (
@@ -38,22 +36,8 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
     return !originalMap.has(name);
   };
 
-  const handleDelete = (name: string) => {
-    if (deleteConfirm === name) {
-      // Show loading spinner briefly for visual feedback
-      setDeletingEntry(name);
-      setDeleteConfirm(null);
-
-      // Small delay for visual feedback, then delete
-      setTimeout(() => {
-        deleteEntry(name);
-        setDeletingEntry(null);
-      }, 300);
-    } else {
-      setDeleteConfirm(name);
-      // Auto-cancel after 3 seconds
-      setTimeout(() => setDeleteConfirm(null), 3000);
-    }
+  const isMarkedForDeletion = (name: string): boolean => {
+    return entriesMarkedForDeletion.has(name);
   };
 
   if (entries.length === 0) {
@@ -74,35 +58,49 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
         {entries.map((entry) => {
           const modified = isModified(entry.name, entry.value);
           const isNew = isNewEntry(entry.name);
-
-          const isDeleting = deletingEntry === entry.name;
+          const markedForDeletion = isMarkedForDeletion(entry.name);
 
           return (
             <div
               key={entry.name}
               className={cn(
                 'flex items-center gap-4 p-4 rounded-lg',
-                'border border-[var(--swiss-gray-200)] dark:border-[#333]',
+                'border-2 border-[var(--swiss-gray-200)] dark:border-[#333]',
                 'bg-[var(--swiss-gray-50)] dark:bg-[#252525]',
                 'hover:border-[var(--swiss-gray-300)] dark:hover:border-[#444]',
                 'hover:shadow-sm',
                 'transition-all duration-150',
-                modified && !isNew && 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20',
-                isNew && 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20',
-                isDeleting && 'opacity-50 scale-95 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
+                // Priority: deletion > new > modified
+                markedForDeletion
+                  ? 'border-red-500 dark:border-red-500 bg-red-50 dark:bg-red-900/20 opacity-60'
+                  : isNew
+                    ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
+                    : modified
+                      ? 'border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                      : ''
               )}
             >
               {/* Key */}
               <div className="w-1/3 flex items-center gap-2">
-                <span className="font-mono text-sm font-medium text-[var(--swiss-black)] dark:text-[#E5E5E5]">
+                <span className={cn(
+                  "font-mono text-sm font-medium",
+                  markedForDeletion
+                    ? "line-through text-red-500 dark:text-red-400"
+                    : "text-[var(--swiss-black)] dark:text-[#E5E5E5]"
+                )}>
                   {entry.name}
                 </span>
-                {isNew && (
+                {markedForDeletion && (
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-red-500 text-white rounded-full">
+                    {t('kvm.table.toDelete', 'To Delete')}
+                  </span>
+                )}
+                {!markedForDeletion && isNew && (
                   <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-green-500 text-white rounded-full">
                     {t('kvm.table.new', 'New')}
                   </span>
                 )}
-                {modified && !isNew && (
+                {!markedForDeletion && modified && !isNew && (
                   <span className="px-2 py-0.5 text-[9px] font-bold uppercase bg-yellow-500 text-white rounded-full">
                     {t('kvm.table.modified', 'Modified')}
                   </span>
@@ -130,26 +128,21 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
 
               {/* Actions */}
               <button
-                onClick={() => handleDelete(entry.name)}
-                disabled={isDeleting}
+                onClick={() => toggleEntryForDeletion(entry.name)}
                 className={cn(
                   'p-2 rounded-lg transition-all duration-150',
-                  isDeleting
-                    ? 'bg-red-500 text-white cursor-not-allowed'
-                    : deleteConfirm === entry.name
-                      ? 'bg-red-500 text-white shadow-md'
-                      : 'text-[var(--swiss-gray-400)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
+                  markedForDeletion
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'text-[var(--swiss-gray-400)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
                 )}
                 title={
-                  isDeleting
-                    ? t('kvm.table.deleting', 'Deleting...')
-                    : deleteConfirm === entry.name
-                      ? t('kvm.table.confirmDelete', 'Click again to confirm')
-                      : t('kvm.table.delete', 'Delete entry')
+                  markedForDeletion
+                    ? t('kvm.table.restore', 'Restore entry')
+                    : t('kvm.table.delete', 'Mark for deletion')
                 }
               >
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                {markedForDeletion ? (
+                  <RotateCcw className="h-4 w-4" />
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
