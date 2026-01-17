@@ -159,7 +159,7 @@ export const useKvmStore = create<KvmState>()(
         })),
 
       connect: (organizationId, accessToken) => {
-        // Parse token expiry from JWT
+        // Parse token expiry from JWT, or default to 1 hour for OAuth tokens
         let tokenExpiry: Date | null = null;
         try {
           const parts = accessToken.split('.');
@@ -171,6 +171,12 @@ export const useKvmStore = create<KvmState>()(
           }
         } catch {
           // Token might not be a valid JWT, that's okay
+        }
+
+        // If we couldn't parse expiry (e.g., GCP OAuth Playground tokens),
+        // default to 1 hour from now (typical OAuth token lifetime)
+        if (!tokenExpiry) {
+          tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
         }
 
         set({

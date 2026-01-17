@@ -6,9 +6,10 @@ import {
   PowerOff,
   RefreshCw,
   Clock,
-  CheckCircle2,
-  AlertCircle,
+  ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
 import {
@@ -35,6 +36,9 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     setProxies,
     addConsoleMessage,
     resetData,
+    setEnvKvmsForEnvironment,
+    toggleEnvironmentExpanded,
+    expandedEnvironments,
   } = useKvmStore();
 
   const [orgId, setOrgId] = useState(connection.organizationId || '');
@@ -107,6 +111,28 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
         message: `Found ${proxies.length} API proxy(ies)`,
       });
 
+      // Auto-load KVMs for all environments
+      addConsoleMessage({ type: 'info', message: 'Loading KVMs for all environments...' });
+      let totalKvms = 0;
+      for (const env of environments) {
+        try {
+          const kvms = await service.listEnvKvms(env);
+          setEnvKvmsForEnvironment(env, kvms);
+          totalKvms += kvms.length;
+          // Expand the environment to show KVMs
+          if (!expandedEnvironments.has(env)) {
+            toggleEnvironmentExpanded(env);
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          addConsoleMessage({ type: 'warning', message: `Failed to load KVMs for ${env}: ${errorMsg}` });
+        }
+      }
+      addConsoleMessage({
+        type: 'success',
+        message: `Loaded ${totalKvms} KVM(s) across ${environments.length} environment(s)`,
+      });
+
       // Clear token from input for security
       setToken('');
     } catch (error) {
@@ -143,55 +169,53 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        'bg-[var(--swiss-white)] border-b-2 border-[var(--swiss-black)] px-6 py-4',
+        'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+        'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+        'px-6 py-4',
         className
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
+        {/* Logo */}
+        <div className="w-10 h-10 bg-[var(--swiss-black)] dark:bg-[#E5E5E5] rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="text-[var(--swiss-white)] dark:text-[#1A1A1A] font-black text-lg">K</span>
+        </div>
+
         {/* Organization ID Input */}
-        <div className="flex-1 max-w-xs">
-          <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--swiss-gray-500)] mb-1">
-            {t('kvm.header.organizationId', 'Organization ID')}
-          </label>
+        <div className="flex-1 max-w-[200px]">
           <input
             type="text"
             value={orgId}
             onChange={(e) => setOrgId(e.target.value)}
             disabled={connection.isConnected || isConnecting}
-            placeholder="my-gcp-project"
+            placeholder="Organization ID"
             className={cn(
-              'w-full bg-transparent border-b-2 py-1.5 text-sm font-mono',
+              'w-full h-10 bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
+              'border-none rounded-lg px-4 text-sm font-mono',
               'placeholder:text-[var(--swiss-gray-400)]',
-              'focus:outline-none transition-colors',
-              connection.isConnected || isConnecting
-                ? 'border-[var(--swiss-gray-300)] text-[var(--swiss-gray-500)]'
-                : 'border-[var(--swiss-black)] focus:border-[var(--swiss-black)]'
+              'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[var(--swiss-gray-500)]',
+              'transition-all duration-200',
+              (connection.isConnected || isConnecting) && 'opacity-60'
             )}
           />
         </div>
 
         {/* Access Token Input */}
         {!connection.isConnected && (
-          <div className="flex-1 max-w-md">
-            <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--swiss-gray-500)] mb-1">
-              {t('kvm.header.accessToken', 'Access Token')}
-              <span className="ml-2 font-normal normal-case text-[var(--swiss-gray-400)]">
-                (gcloud auth print-access-token)
-              </span>
-            </label>
+          <div className="flex items-center gap-2 flex-1 max-w-[400px]">
             <input
               type="password"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               disabled={isConnecting}
-              placeholder="ya29.xxx..."
+              placeholder="Access Token"
               className={cn(
-                'w-full bg-transparent border-b-2 py-1.5 text-sm font-mono',
+                'flex-1 h-10 bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
+                'border-none rounded-lg px-4 text-sm font-mono',
                 'placeholder:text-[var(--swiss-gray-400)]',
-                'focus:outline-none transition-colors',
-                isConnecting
-                  ? 'border-[var(--swiss-gray-300)]'
-                  : 'border-[var(--swiss-black)] focus:border-[var(--swiss-black)]'
+                'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[var(--swiss-gray-500)]',
+                'transition-all duration-200',
+                isConnecting && 'opacity-60'
               )}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !isConnecting) {
@@ -199,38 +223,110 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
                 }
               }}
             />
+
+            {/* OAuth Playground Button */}
+            <button
+              type="button"
+              onClick={() => openUrl('https://developers.google.com/oauthplayground')}
+              className={cn(
+                'flex items-center justify-center gap-1.5 h-10 px-3 rounded-lg',
+                'text-[10px] font-semibold whitespace-nowrap',
+                'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
+                'text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]',
+                'hover:bg-[var(--swiss-gray-200)] dark:hover:bg-[#333]',
+                'transition-all duration-200'
+              )}
+              title="Open OAuth Playground"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              OAuth
+            </button>
+
+            {/* Help Tooltip */}
+            <div className="relative group">
+              <button
+                type="button"
+                className={cn(
+                  'flex items-center justify-center w-10 h-10 rounded-lg',
+                  'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
+                  'text-[var(--swiss-gray-500)] hover:text-[var(--swiss-gray-700)]',
+                  'dark:hover:text-[var(--swiss-gray-300)]',
+                  'hover:bg-[var(--swiss-gray-200)] dark:hover:bg-[#333]',
+                  'transition-all duration-200'
+                )}
+              >
+                <HelpCircle className="h-4 w-4" />
+              </button>
+
+              {/* Tooltip */}
+              <div className={cn(
+                'absolute right-0 top-full mt-2 z-50',
+                'w-72 p-5 rounded-xl',
+                'bg-[var(--swiss-black)] dark:bg-[#E5E5E5]',
+                'text-[var(--swiss-white)] dark:text-[#1A1A1A]',
+                'shadow-2xl',
+                'opacity-0 invisible group-hover:opacity-100 group-hover:visible',
+                'transition-all duration-200'
+              )}>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-4 opacity-60">
+                  {t('kvm.header.howToGetToken', 'How to get a token')}
+                </p>
+
+                <div className="space-y-3">
+                  <div className="flex gap-3 items-center">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 dark:bg-black/10 flex items-center justify-center text-[10px] font-bold">1</span>
+                    <p className="text-[12px]">Open <span className="font-semibold">OAuth Playground</span></p>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 dark:bg-black/10 flex items-center justify-center text-[10px] font-bold">2</span>
+                    <p className="text-[12px]">Select <span className="font-semibold">Apigee API</span> and authorize</p>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 dark:bg-black/10 flex items-center justify-center text-[10px] font-bold">3</span>
+                    <p className="text-[12px]"><span className="font-semibold">Exchange</span> code for tokens</p>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 dark:bg-black/10 flex items-center justify-center text-[10px] font-bold">4</span>
+                    <p className="text-[12px]">Copy <span className="font-semibold">Access Token</span></p>
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="absolute -top-2 right-4 w-0 h-0 border-l-8 border-r-8 border-b-8 border-transparent border-b-[var(--swiss-black)] dark:border-b-[#E5E5E5]" />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Connection Status */}
         {connection.isConnected && (
-          <div className="flex items-center gap-3">
-            {/* Status badge */}
-            <div
-              className={cn(
-                'flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider',
-                isTokenExpired
-                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  : isTokenExpiring
-                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              )}
-            >
-              {isTokenExpired ? (
-                <AlertCircle className="h-3.5 w-3.5" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              )}
-              {isTokenExpired
-                ? t('kvm.header.tokenExpired', 'Token Expired')
-                : t('kvm.header.connected', 'Connected')}
+          <div className="flex items-center gap-4 ml-auto">
+            {/* Status indicator */}
+            <div className="flex items-center gap-2 text-sm text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]">
+              <span
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  isTokenExpired
+                    ? 'bg-red-500'
+                    : isTokenExpiring
+                      ? 'bg-yellow-500'
+                      : 'bg-green-500'
+                )}
+              />
+              <span className="font-medium">
+                {isTokenExpired
+                  ? t('kvm.header.tokenExpired', 'Token Expired')
+                  : t('kvm.header.connectedTo', 'Connected to')}{' '}
+                {!isTokenExpired && <span className="font-mono">{connection.organizationId}</span>}
+              </span>
             </div>
 
             {/* Token expiry countdown */}
             {tokenRemaining && !isTokenExpired && (
               <div
                 className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 text-[10px] font-mono',
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono',
+                  'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
                   isTokenExpiring ? 'text-yellow-600 dark:text-yellow-400' : 'text-[var(--swiss-gray-500)]'
                 )}
               >
@@ -243,8 +339,9 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
             <button
               onClick={handleRefreshToken}
               className={cn(
-                'p-2 transition-colors',
+                'p-2 rounded-lg transition-all duration-200',
                 'text-[var(--swiss-gray-500)] hover:text-[var(--swiss-black)]',
+                'hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#252525]',
                 'dark:hover:text-[var(--swiss-white)]'
               )}
               title={t('kvm.header.refreshToken', 'Refresh Token')}
@@ -259,12 +356,12 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
           onClick={connection.isConnected ? handleDisconnect : handleConnect}
           disabled={isConnecting}
           className={cn(
-            'flex items-center gap-2 px-4 py-2',
-            'text-[10px] font-black uppercase tracking-widest',
-            'transition-all duration-150',
+            'flex items-center justify-center gap-2 h-10 px-5 rounded-lg',
+            'text-[11px] font-bold uppercase tracking-wider',
+            'transition-all duration-200',
             connection.isConnected
-              ? 'bg-[var(--swiss-white)] text-[var(--swiss-black)] border-2 border-[var(--swiss-black)] hover:bg-[var(--swiss-black)] hover:text-[var(--swiss-white)]'
-              : 'bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]',
+              ? 'bg-[var(--swiss-gray-100)] dark:bg-[#252525] text-[var(--swiss-gray-700)] dark:text-[var(--swiss-gray-300)] hover:bg-[var(--swiss-gray-200)] dark:hover:bg-[#333]'
+              : 'bg-[var(--swiss-black)] dark:bg-[#E5E5E5] text-[var(--swiss-white)] dark:text-[#1A1A1A] hover:opacity-90 shadow-md hover:shadow-lg',
             isConnecting && 'opacity-75 cursor-not-allowed'
           )}
         >

@@ -30,19 +30,24 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
   };
 
   return (
-    <div className={cn('bg-black text-white font-mono text-[11px] leading-6', className)}>
+    <div className={cn(
+      'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+      'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+      'flex flex-col overflow-hidden',
+      className
+    )}>
       {/* Console Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--swiss-gray-100)] dark:border-[#333]">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-green-500 rounded-full" />
-          <span className="text-gray-500 uppercase text-[10px] font-bold tracking-widest">
+          <span className="text-[var(--swiss-gray-500)] uppercase text-[10px] font-bold tracking-widest">
             {t('kvm.console.title', 'Console Output')}
           </span>
         </div>
         {consoleMessages.length > 0 && (
           <button
             onClick={clearConsole}
-            className="text-gray-600 hover:text-gray-400 transition-colors p-1"
+            className="text-[var(--swiss-gray-400)] hover:text-[var(--swiss-gray-600)] dark:hover:text-[var(--swiss-gray-300)] transition-colors p-1 rounded hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#252525]"
             title={t('kvm.console.clear', 'Clear console')}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -51,40 +56,43 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
       </div>
 
       {/* Messages */}
-      <div className="px-4 py-3 h-[140px] overflow-auto">
-        {consoleMessages.length === 0 ? (
-          <div className="flex gap-4">
-            <span className="text-gray-600 w-16 flex-shrink-0">{getTimestamp()}</span>
-            <span className="text-gray-300">
-              &gt; {t('kvm.console.ready', 'READY. Enter organization ID and access token to connect.')}
-            </span>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {consoleMessages.map((msg, index) => (
-              <div key={index} className="flex gap-4">
-                <span className="text-gray-600 w-16 flex-shrink-0">{msg.timestamp}</span>
-                <span
-                  className={cn(
-                    msg.type === 'success' && 'text-green-400',
-                    msg.type === 'warning' && 'text-yellow-400',
-                    msg.type === 'error' && 'text-red-400',
-                    msg.type === 'info' && 'text-gray-300'
-                  )}
-                >
-                  &gt; {msg.message}
-                </span>
-              </div>
-            ))}
-            {/* Auto-scroll anchor */}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+      <div className="flex-1 overflow-auto bg-[#0a0a0a] dark:bg-[#0a0a0a]">
+        <div className="px-4 py-3 font-mono text-[11px] leading-6">
+          {consoleMessages.length === 0 ? (
+            <div className="flex gap-4">
+              <span className="text-gray-600 w-16 flex-shrink-0">{getTimestamp()}</span>
+              <span className="text-gray-400">
+                &gt; {t('kvm.console.ready', 'READY. Enter organization ID and access token to connect.')}
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {consoleMessages.map((msg, index) => (
+                <div key={index} className="flex gap-4">
+                  <span className="text-gray-600 w-16 flex-shrink-0">{msg.timestamp}</span>
+                  <span
+                    className={cn(
+                      msg.type === 'success' && 'text-green-400',
+                      msg.type === 'warning' && 'text-yellow-400',
+                      msg.type === 'error' && 'text-red-400',
+                      msg.type === 'info' && 'text-gray-400'
+                    )}
+                  >
+                    &gt; {msg.message}
+                  </span>
+                </div>
+              ))}
+              {/* Auto-scroll anchor */}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Cursor */}
-      <div className="px-4 py-2 border-t border-gray-800">
-        <span className="text-white animate-pulse">_</span>
+      {/* Cursor line */}
+      <div className="px-4 py-2 bg-[#0a0a0a] border-t border-gray-800 font-mono text-[11px]">
+        <span className="text-green-400">$</span>
+        <span className="text-white animate-pulse ml-1">_</span>
       </div>
     </div>
   );

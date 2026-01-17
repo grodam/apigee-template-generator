@@ -24,6 +24,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const templateSyncState = useTemplateSync();
 
   const isHomePage = location.pathname === '/';
+  const isGeneratorPage = location.pathname === '/generator';
+  const isKvmPage = location.pathname === '/kvm';
 
   // Get header title and subtitle based on current route
   const getHeaderContent = () => {
@@ -77,8 +79,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Home className="h-4 w-4" />
               </button>
             )}
-            {/* Template sync indicator */}
-            {templateRepoConfig.enabled && (
+            {/* Template sync indicator - only on generator page */}
+            {isGeneratorPage && templateRepoConfig.enabled && (
               <div className="flex items-center gap-1.5">
                 {templateSyncState.isSyncing ? (
                   <RefreshCw className="h-3.5 w-3.5 text-[var(--swiss-gray-500)] animate-spin" />
@@ -93,13 +95,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             )}
             <ThemeToggle />
-            <button
-              onClick={() => setSettingsModalOpen(true)}
-              className="w-8 h-8 border border-[var(--swiss-gray-200)] flex items-center justify-center hover:bg-[var(--swiss-gray-50)] transition-colors"
-              title={t('common.settings')}
-            >
-              <Settings className="h-4 w-4" />
-            </button>
+            {/* Settings button - only on generator page */}
+            {isGeneratorPage && (
+              <button
+                onClick={() => setSettingsModalOpen(true)}
+                className="w-8 h-8 border border-[var(--swiss-gray-200)] flex items-center justify-center hover:bg-[var(--swiss-gray-50)] transition-colors"
+                title={t('common.settings')}
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </header>

@@ -112,10 +112,15 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
   // Empty state when not connected or no KVM selected
   if (!connection.isConnected) {
     return (
-      <div className={cn('flex flex-col items-center justify-center gap-4', className)}>
+      <div className={cn(
+        'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+        'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+        'flex flex-col items-center justify-center gap-4',
+        className
+      )}>
         <Database className="h-12 w-12 text-[var(--swiss-gray-300)]" />
         <div className="text-center">
-          <p className="text-sm font-medium text-[var(--swiss-gray-600)]">
+          <p className="text-sm font-medium text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]">
             {t('kvm.viewer.notConnected', 'Not Connected')}
           </p>
           <p className="text-xs text-[var(--swiss-gray-400)] mt-1">
@@ -128,10 +133,15 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
 
   if (!currentKvm) {
     return (
-      <div className={cn('flex flex-col items-center justify-center gap-4', className)}>
+      <div className={cn(
+        'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+        'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+        'flex flex-col items-center justify-center gap-4',
+        className
+      )}>
         <Database className="h-12 w-12 text-[var(--swiss-gray-300)]" />
         <div className="text-center">
-          <p className="text-sm font-medium text-[var(--swiss-gray-600)]">
+          <p className="text-sm font-medium text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]">
             {t('kvm.viewer.selectKvm', 'Select a KVM')}
           </p>
           <p className="text-xs text-[var(--swiss-gray-400)] mt-1">
@@ -143,39 +153,53 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
   }
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--swiss-gray-200)] bg-[var(--swiss-white)]">
+    <div className={cn(
+      'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+      'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+      'flex flex-col h-full overflow-hidden',
+      className
+    )}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--swiss-gray-100)] dark:border-[#333]">
         {/* KVM Info */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <FileJson className="h-4 w-4 text-[var(--swiss-gray-600)]" />
-            <span className="font-mono text-sm font-medium">{currentKvm.name}</span>
+        <div>
+          <div className="flex items-center gap-3">
+            <h2 className="font-semibold text-base text-[var(--swiss-black)] dark:text-[#E5E5E5]">
+              {currentKvm.name}
+            </h2>
+            {hasUnsavedChanges && (
+              <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" title={t('kvm.viewer.unsavedChanges', 'Unsaved changes')} />
+            )}
           </div>
-          {currentKvm.encrypted && (
-            <span className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold uppercase bg-[var(--swiss-gray-200)] text-[var(--swiss-gray-600)] rounded">
-              <Lock className="h-3 w-3" />
-              {t('kvm.viewer.encrypted', 'Encrypted')}
-            </span>
-          )}
-          {hasUnsavedChanges && (
-            <span className="w-2 h-2 bg-yellow-500 rounded-full" title={t('kvm.viewer.unsavedChanges', 'Unsaved changes')} />
-          )}
+          <div className="flex items-center gap-2 mt-1 text-xs text-[var(--swiss-gray-500)] dark:text-[var(--swiss-gray-400)]">
+            <span>{selectedEnvironment}</span>
+            <span>·</span>
+            <span>{currentKvm.keyValueEntries?.length || 0} entries</span>
+            {currentKvm.encrypted && (
+              <>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  encrypted
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex border-2 border-[var(--swiss-black)]">
+        <div className="flex items-center gap-3">
+          {/* View Toggle - Pill style */}
+          <div className="flex items-center h-9 bg-[var(--swiss-gray-100)] dark:bg-[#252525] rounded-lg p-1">
             <button
               onClick={() => setViewMode('table')}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5',
-                'text-[10px] font-bold uppercase tracking-wider',
-                'transition-colors',
+                'flex items-center justify-center gap-1.5 h-7 px-3 rounded-md',
+                'text-[11px] font-semibold',
+                'transition-all duration-150',
                 viewMode === 'table'
-                  ? 'bg-[var(--swiss-black)] text-[var(--swiss-white)]'
-                  : 'bg-[var(--swiss-white)] text-[var(--swiss-black)] hover:bg-[var(--swiss-gray-100)]'
+                  ? 'bg-[var(--swiss-white)] dark:bg-[#333] shadow-sm text-[var(--swiss-black)] dark:text-[#E5E5E5]'
+                  : 'text-[var(--swiss-gray-500)] dark:text-[var(--swiss-gray-400)] hover:text-[var(--swiss-gray-700)] dark:hover:text-[#E5E5E5]'
               )}
             >
               <Table className="h-3.5 w-3.5" />
@@ -184,12 +208,12 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
             <button
               onClick={() => setViewMode('json')}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5',
-                'text-[10px] font-bold uppercase tracking-wider',
-                'transition-colors border-l-2 border-[var(--swiss-black)]',
+                'flex items-center justify-center gap-1.5 h-7 px-3 rounded-md',
+                'text-[11px] font-semibold',
+                'transition-all duration-150',
                 viewMode === 'json'
-                  ? 'bg-[var(--swiss-black)] text-[var(--swiss-white)]'
-                  : 'bg-[var(--swiss-white)] text-[var(--swiss-black)] hover:bg-[var(--swiss-gray-100)]'
+                  ? 'bg-[var(--swiss-white)] dark:bg-[#333] shadow-sm text-[var(--swiss-black)] dark:text-[#E5E5E5]'
+                  : 'text-[var(--swiss-gray-500)] dark:text-[var(--swiss-gray-400)] hover:text-[var(--swiss-gray-700)] dark:hover:text-[#E5E5E5]'
               )}
             >
               <FileJson className="h-3.5 w-3.5" />
@@ -201,12 +225,12 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
           <button
             onClick={onAddEntry}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5',
-              'text-[10px] font-bold uppercase tracking-wider',
-              'border-2 border-[var(--swiss-black)]',
-              'bg-[var(--swiss-white)] text-[var(--swiss-black)]',
-              'hover:bg-[var(--swiss-black)] hover:text-[var(--swiss-white)]',
-              'transition-colors'
+              'flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg',
+              'text-[11px] font-semibold',
+              'bg-[var(--swiss-gray-100)] dark:bg-[#333]',
+              'text-[var(--swiss-gray-700)] dark:text-[#E5E5E5]',
+              'hover:bg-[var(--swiss-gray-200)] dark:hover:bg-[#444]',
+              'transition-all duration-150'
             )}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -218,12 +242,12 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
             onClick={handleSave}
             disabled={!hasUnsavedChanges || isSaving}
             className={cn(
-              'flex items-center gap-1.5 px-4 py-1.5',
-              'text-[10px] font-bold uppercase tracking-wider',
-              'transition-colors',
+              'flex items-center justify-center gap-1.5 h-9 px-5 rounded-lg',
+              'text-[11px] font-semibold',
+              'transition-all duration-150',
               hasUnsavedChanges && !isSaving
-                ? 'bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]'
-                : 'bg-[var(--swiss-gray-300)] text-[var(--swiss-white)] cursor-not-allowed'
+                ? 'bg-[var(--swiss-black)] dark:bg-[#E5E5E5] text-[var(--swiss-white)] dark:text-[#1A1A1A] shadow-md hover:shadow-lg hover:opacity-90'
+                : 'bg-[var(--swiss-gray-200)] dark:bg-[#333] text-[var(--swiss-gray-400)] cursor-not-allowed'
             )}
           >
             {isSaving ? (
@@ -237,7 +261,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden bg-[var(--swiss-white)]">
+      <div className="flex-1 overflow-hidden">
         {viewMode === 'json' ? (
           <KvmJsonView className="h-full" />
         ) : (
