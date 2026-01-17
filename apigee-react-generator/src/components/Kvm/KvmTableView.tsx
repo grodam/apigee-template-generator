@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
 
@@ -12,6 +12,7 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
   const { t } = useTranslation();
   const { currentKvm, originalKvm, updateEntry, deleteEntry } = useKvmStore();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<string | null>(null);
 
   if (!currentKvm) {
     return (
@@ -39,8 +40,15 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
 
   const handleDelete = (name: string) => {
     if (deleteConfirm === name) {
-      deleteEntry(name);
+      // Show loading spinner briefly for visual feedback
+      setDeletingEntry(name);
       setDeleteConfirm(null);
+
+      // Small delay for visual feedback, then delete
+      setTimeout(() => {
+        deleteEntry(name);
+        setDeletingEntry(null);
+      }, 300);
     } else {
       setDeleteConfirm(name);
       // Auto-cancel after 3 seconds
@@ -67,6 +75,8 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
           const modified = isModified(entry.name, entry.value);
           const isNew = isNewEntry(entry.name);
 
+          const isDeleting = deletingEntry === entry.name;
+
           return (
             <div
               key={entry.name}
@@ -78,7 +88,8 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
                 'hover:shadow-sm',
                 'transition-all duration-150',
                 modified && !isNew && 'border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/20',
-                isNew && 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
+                isNew && 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20',
+                isDeleting && 'opacity-50 scale-95 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
               )}
             >
               {/* Key */}
@@ -120,19 +131,28 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
               {/* Actions */}
               <button
                 onClick={() => handleDelete(entry.name)}
+                disabled={isDeleting}
                 className={cn(
                   'p-2 rounded-lg transition-all duration-150',
-                  deleteConfirm === entry.name
-                    ? 'bg-red-500 text-white shadow-md'
-                    : 'text-[var(--swiss-gray-400)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
+                  isDeleting
+                    ? 'bg-red-500 text-white cursor-not-allowed'
+                    : deleteConfirm === entry.name
+                      ? 'bg-red-500 text-white shadow-md'
+                      : 'text-[var(--swiss-gray-400)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
                 )}
                 title={
-                  deleteConfirm === entry.name
-                    ? t('kvm.table.confirmDelete', 'Click again to confirm')
-                    : t('kvm.table.delete', 'Delete entry')
+                  isDeleting
+                    ? t('kvm.table.deleting', 'Deleting...')
+                    : deleteConfirm === entry.name
+                      ? t('kvm.table.confirmDelete', 'Click again to confirm')
+                      : t('kvm.table.delete', 'Delete entry')
                 }
               >
-                <Trash2 className="h-4 w-4" />
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </button>
             </div>
           );
