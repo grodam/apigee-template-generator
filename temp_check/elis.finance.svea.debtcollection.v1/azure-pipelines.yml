@@ -1,0 +1,38 @@
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: Common.template
+    ref: main
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- template: pipelines/prep-env-deployment-v2.yml@templates
+  parameters:
+    workingDirectory: $(workingDirectory)
+    environments:
+    - name: dev1
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: dev1
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: uat1
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: uat1
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: staging
+      GCP_SERVICE_ACCOUNT: apigeex-config-nprd.json
+      APIGEE_ENV: staging
+      APIGEE_ORG: apigeex-nprd
+      API_VERSION: googleapi
+    - name: prod1
+      GCP_SERVICE_ACCOUNT: apigeex-config-prd.json
+      APIGEE_ENV: prod1
+      APIGEE_ORG: apigeex-prd
+      API_VERSION: googleapi

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apigee Template Generator - Canvas Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #FAFAFA;
+            color: #000;
+        }
+
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image:
+                linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+        }
+
+        .swiss-card {
+            transition: all 0.2s ease;
+        }
+
+        .swiss-card:hover {
+            background-color: #FAFAFA;
+        }
+
+        .swiss-card.expanded {
+            background-color: #FFFFFF;
+        }
+
+        .progress-fill {
+            transition: width 0.5s ease;
+        }
+
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .card-content.expanded {
+            max-height: 2000px;
+        }
+
+        .console-text {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        .badge-auto {
+            font-size: 8px;
+            padding: 2px 4px;
+            background: #E5E7EB;
+            border-radius: 2px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F3F4F6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #000;
+        }
+
+        .env-tab {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .env-tab:hover {
+            background-color: #F3F4F6;
+        }
+
+        .env-tab.active {
+            background-color: #000;
+            color: #FFF;
+        }
+    </style>
+</head>
+<body class="min-h-screen grid-bg">
+
+    <!-- HEADER -->
+    <header class="bg-white border-b-2 border-black sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-black flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black uppercase tracking-tight">Apigee Generator</h1>
+                        <p class="text-[10px] font-medium uppercase tracking-[0.3em] text-gray-400">Template Configuration Canvas</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-mono uppercase text-gray-400">v2.0.0</span>
+                    <button class="w-8 h-8 border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- PROGRESS BAR SECTION -->
+    <section class="bg-white border-b border-gray-200">
+        <div class="max-w-6xl mx-auto px-8 py-6">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Configuration Progress</span>
+                <span class="text-2xl font-black">78%</span>
+            </div>
+            <div class="w-full h-1 bg-gray-100 mb-4">
+                <div class="h-full bg-black progress-fill" style="width: 78%"></div>
+            </div>
+            <div class="flex gap-8">
+                <div class="flex items-center gap-2">
+                    <span class="w-4 h-4 bg-black text-white text-[10px] flex items-center justify-center font-bold">&#10003;</span>
+                    <span class="text-xs font-medium uppercase tracking-wide">OpenAPI</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-4 h-4 bg-black text-white text-[10px] flex items-center justify-center font-bold">&#10003;</span>
+                    <span class="text-xs font-medium uppercase tracking-wide">Product</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-4 h-4 border-2 border-black text-[10px] flex items-center justify-center font-bold bg-white">&#9679;</span>
+                    <span class="text-xs font-medium uppercase tracking-wide">Proxy</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-4 h-4 border border-gray-300 text-[10px] flex items-center justify-center font-bold text-gray-300">&#9675;</span>
+                    <span class="text-xs font-medium uppercase tracking-wide text-gray-400">Targets</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN CANVAS -->
+    <main class="max-w-6xl mx-auto px-8 py-10 space-y-6">
+
+        <!-- CARD 1: OpenAPI Specification (Collapsed) -->
+        <article class="swiss-card bg-white border-t-2 border-black cursor-pointer" onclick="toggleCard(this)">
+            <div class="px-6 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <span class="text-3xl font-black text-gray-200">01</span>
+                    <div>
+                        <h2 class="text-sm font-black uppercase tracking-wide">OpenAPI Specification</h2>
+                        <p class="text-xs text-gray-400 mt-1 font-mono">petstore-api-v1.yaml</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="px-3 py-1 bg-black text-white text-[10px] font-bold uppercase tracking-wide">Loaded</span>
+                    <svg class="w-5 h-5 transition-transform chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="card-content px-6">
+                <div class="border-t border-gray-100 py-6">
+                    <!-- Dropzone -->
+                    <div class="border-2 border-dashed border-gray-200 p-8 text-center mb-6 hover:border-black transition-colors">
+                        <svg class="w-8 h-8 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Drop OpenAPI file or click to browse</p>
+                        <p class="text-[10px] text-gray-300 mt-1">YAML or JSON format</p>
+                    </div>
+                    <!-- Monaco Editor Placeholder -->
+                    <div class="bg-gray-900 p-4 h-48 overflow-auto mb-6">
+                        <pre class="text-[11px] text-gray-300 font-mono leading-relaxed">
+openapi: "3.0.0"
+info:
+  title: Pet Store API
+  version: "1.0.0"
+  description: A sample API for pet store
+servers:
+  - url: https://api-dev.example.com/v1
+    description: Development
+  - url: https://api-uat.example.com/v1
+    description: UAT
+  - url: https://api.example.com/v1
+    description: Production
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      ...</pre>
+                    </div>
+                    <!-- Detected Values -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="border-l-2 border-black pl-4">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase">API Name</p>
+                            <p class="text-sm font-bold">Pet Store API</p>
+                        </div>
+                        <div class="border-l-2 border-black pl-4">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase">Version</p>
+                            <p class="text-sm font-bold">1.0.0</p>
+                        </div>
+                        <div class="border-l-2 border-black pl-4">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase">Auth Detected</p>
+                            <p class="text-sm font-bold">OAuth2</p>
+                        </div>
+                    </div>
+                    <button class="bg-black text-white px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all">
+                        Parse & Auto-fill
+                    </button>
+                </div>
+            </div>
+        </article>
+
+        <!-- CARD 2: API Product (Collapsed) -->
+        <article class="swiss-card bg-white border-t-2 border-black cursor-pointer" onclick="toggleCard(this)">
+            <div class="px-6 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <span class="text-3xl font-black text-gray-200">02</span>
+                    <div>
+                        <h2 class="text-sm font-black uppercase tracking-wide">API Product</h2>
+                        <div class="flex items-center gap-3 mt-1">
+                            <p class="text-xs text-gray-500 font-mono">elis.banking.account.v1</p>
+                            <span class="text-[9px] px-2 py-0.5 border border-gray-300 uppercase font-bold">Auto</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold">Completion</span>
+                        <p class="text-lg font-black">100%</p>
+                    </div>
+                    <svg class="w-5 h-5 transition-transform chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="card-content px-6">
+                <div class="border-t border-gray-100 py-6 space-y-6">
+                    <!-- Product Name -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Product Name <span class="badge-auto">AUTO</span></label>
+                            <input type="text" value="elis.banking.account.v1" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Display Name</label>
+                            <input type="text" value="Account API v1" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                        </div>
+                    </div>
+                    <!-- Description -->
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Description <span class="badge-auto">AUTO</span></label>
+                        <textarea rows="2" class="w-full border-2 border-gray-200 p-3 text-sm focus:outline-none focus:border-black transition-colors resize-none">API Product for Account (v1) - Environment: DEV. Backend: SAP. Type: internal.</textarea>
+                    </div>
+                    <!-- Approval & Environments -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Approval Type</label>
+                            <select class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent appearance-none">
+                                <option selected>Auto</option>
+                                <option>Manual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Environments</label>
+                            <div class="flex gap-3 mt-2">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked class="w-4 h-4 accent-black">
+                                    <span class="text-xs font-medium uppercase">dev1</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked class="w-4 h-4 accent-black">
+                                    <span class="text-xs font-medium uppercase">uat1</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked class="w-4 h-4 accent-black">
+                                    <span class="text-xs font-medium uppercase">staging</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked class="w-4 h-4 accent-black">
+                                    <span class="text-xs font-medium uppercase">prod1</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- CARD 3: Proxy Configuration (Expanded) -->
+        <article class="swiss-card bg-white border-t-2 border-black expanded cursor-pointer" onclick="toggleCard(this)">
+            <div class="px-6 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <span class="text-3xl font-black text-gray-200">03</span>
+                    <div>
+                        <h2 class="text-sm font-black uppercase tracking-wide">Proxy Configuration</h2>
+                        <div class="flex items-center gap-3 mt-1">
+                            <p class="text-xs text-gray-500 font-mono">elis.banking.sap.account.v1</p>
+                            <span class="text-[9px] px-2 py-0.5 bg-gray-100 uppercase font-bold">OAuth2</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold">Completion</span>
+                        <p class="text-lg font-black">85%</p>
+                    </div>
+                    <svg class="w-5 h-5 transition-transform rotate-90 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="card-content expanded px-6">
+                <div class="border-t border-gray-100 py-6 space-y-8">
+
+                    <!-- Naming Convention Section -->
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 pb-2 border-b border-gray-100">Naming Convention</h3>
+                        <div class="grid grid-cols-5 gap-4 mb-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Entity</label>
+                                <select class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                                    <option selected>elis</option>
+                                    <option>exts</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Domain</label>
+                                <input type="text" value="banking" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Backend Apps</label>
+                                <input type="text" value="sap" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent" placeholder="sap, salesforce...">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Business Object</label>
+                                <input type="text" value="account" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Version</label>
+                                <input type="text" value="v1" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                            </div>
+                        </div>
+                        <!-- Generated Proxy Name Preview -->
+                        <div class="bg-gray-50 p-4 border-l-4 border-black">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Generated Proxy Name</p>
+                            <p class="text-lg font-black font-mono tracking-tight">elis.banking.sap.account.v1</p>
+                        </div>
+                    </div>
+
+                    <!-- Paths & Auth -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Base Path <span class="badge-auto">AUTO</span></label>
+                            <input type="text" value="/banking/account/v1" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Target Path <span class="badge-auto">AUTO</span></label>
+                            <input type="text" value="/api/v1/accounts" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-6">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Auth Southbound</label>
+                            <select class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                                <option>None</option>
+                                <option selected>OAuth2</option>
+                                <option>API Key</option>
+                                <option>Basic Auth</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">OAS Format</label>
+                            <select class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                                <option selected>YAML</option>
+                                <option>JSON</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">OAS Version</label>
+                            <select class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                                <option>2.0</option>
+                                <option selected>3.0</option>
+                                <option>3.1</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- CARD 4: Target Servers (Collapsed with table preview) -->
+        <article class="swiss-card bg-white border-t-2 border-black cursor-pointer" onclick="toggleCard(this)">
+            <div class="px-6 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                    <span class="text-3xl font-black text-gray-200">04</span>
+                    <div>
+                        <h2 class="text-sm font-black uppercase tracking-wide">Target Servers</h2>
+                        <p class="text-xs text-gray-400 mt-1">Multi-environment configuration</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <span class="text-[10px] text-gray-400 uppercase font-bold">Completion</span>
+                        <p class="text-lg font-black">50%</p>
+                    </div>
+                    <svg class="w-5 h-5 transition-transform chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            </div>
+            <!-- Compact Table Preview (visible when collapsed) -->
+            <div class="px-6 pb-4 collapsed-preview">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 font-bold uppercase text-[10px] text-gray-400 w-20">Env</th>
+                            <th class="text-left py-2 font-bold uppercase text-[10px] text-gray-400">Host</th>
+                            <th class="text-left py-2 font-bold uppercase text-[10px] text-gray-400 w-16">Port</th>
+                            <th class="text-right py-2 font-bold uppercase text-[10px] text-gray-400 w-20">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 font-mono font-bold">dev1</td>
+                            <td class="py-2 font-mono text-gray-600">api-dev.example.com</td>
+                            <td class="py-2 font-mono">443</td>
+                            <td class="py-2 text-right"><span class="w-2 h-2 bg-black inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 font-mono font-bold">uat1</td>
+                            <td class="py-2 font-mono text-gray-600">api-uat.example.com</td>
+                            <td class="py-2 font-mono">443</td>
+                            <td class="py-2 text-right"><span class="w-2 h-2 bg-black inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 font-mono font-bold">staging</td>
+                            <td class="py-2 font-mono text-gray-300">Not configured</td>
+                            <td class="py-2 font-mono text-gray-300">-</td>
+                            <td class="py-2 text-right"><span class="w-2 h-2 bg-gray-200 inline-block"></span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 font-mono font-bold">prod1</td>
+                            <td class="py-2 font-mono text-gray-300">Not configured</td>
+                            <td class="py-2 font-mono text-gray-300">-</td>
+                            <td class="py-2 text-right"><span class="w-2 h-2 bg-gray-200 inline-block"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Expanded Content -->
+            <div class="card-content px-6">
+                <div class="border-t border-gray-100 py-6">
+                    <!-- Environment Tabs -->
+                    <div class="flex border-b border-gray-200 mb-6">
+                        <button class="env-tab active px-6 py-3 text-[10px] font-black uppercase tracking-widest">dev1</button>
+                        <button class="env-tab px-6 py-3 text-[10px] font-black uppercase tracking-widest">uat1</button>
+                        <button class="env-tab px-6 py-3 text-[10px] font-black uppercase tracking-widest">staging</button>
+                        <button class="env-tab px-6 py-3 text-[10px] font-black uppercase tracking-widest">prod1</button>
+                    </div>
+
+                    <!-- Environment Content (dev1 shown) -->
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-3 gap-6">
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Target Server Name <span class="badge-auto">AUTO</span></label>
+                                <input type="text" value="elis.sap.v1.backend" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent font-mono">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Host <span class="badge-auto">AUTO</span></label>
+                                <input type="text" value="api-dev.example.com" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-2">Port</label>
+                                <input type="number" value="443" class="w-full border-b-2 border-black py-2 text-sm font-medium focus:outline-none bg-transparent">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-6">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked class="w-4 h-4 accent-black">
+                                <span class="text-xs font-medium uppercase">SSL Enabled</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" class="w-4 h-4 accent-black">
+                                <span class="text-xs font-medium uppercase">Client Auth</span>
+                            </label>
+                        </div>
+
+                        <!-- KVMs -->
+                        <div>
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">KVM Entries</h4>
+                            <div class="border border-gray-200 divide-y divide-gray-100">
+                                <div class="flex items-center px-4 py-3">
+                                    <span class="font-mono text-xs w-1/3">sap.v1.backend</span>
+                                    <span class="font-mono text-xs text-gray-400 flex-1">2 entries</span>
+                                    <button class="text-[10px] font-bold uppercase text-gray-400 hover:text-black">Edit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+    </main>
+
+    <!-- EXPORT & CONSOLE SECTION -->
+    <section class="max-w-6xl mx-auto px-8 pb-10">
+        <div class="border-t-2 border-black pt-6 mb-6">
+            <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">05 / Export & Deployment</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <button class="bg-black text-white px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-3 group">
+                <svg class="w-5 h-5 group-hover:translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download ZIP
+            </button>
+            <button class="bg-white text-black border-2 border-black px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all flex items-center justify-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                Push to Azure DevOps
+            </button>
+            <button class="bg-white text-black border border-gray-200 px-6 py-4 text-[10px] font-black uppercase tracking-widest hover:border-black transition-all flex items-center justify-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                Preview Files
+            </button>
+        </div>
+
+        <!-- Console Panel -->
+        <div class="bg-black text-white p-6 font-mono text-[11px] leading-6">
+            <div class="flex items-center gap-2 mb-4 pb-3 border-b border-gray-800">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span class="text-gray-500 uppercase text-[10px] font-bold tracking-widest">Console Output</span>
+            </div>
+            <div class="space-y-1 h-32 overflow-auto">
+                <div class="flex gap-4">
+                    <span class="text-gray-600 w-16 flex-shrink-0">14:02:01</span>
+                    <span class="text-gray-300">&gt; INITIALIZING ARCHITECTURE CANVAS...</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-gray-600 w-16 flex-shrink-0">14:02:02</span>
+                    <span class="text-green-400">&gt; SUCCESS: OPENAPI SPECIFICATION PARSED</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-gray-600 w-16 flex-shrink-0">14:02:03</span>
+                    <span class="text-gray-300">&gt; AUTO-FILL COMPLETE: 12 FIELDS POPULATED</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-gray-600 w-16 flex-shrink-0">14:02:05</span>
+                    <span class="text-yellow-400">&gt; WARNING: 2 TARGET SERVERS NOT CONFIGURED</span>
+                </div>
+                <div class="flex gap-4">
+                    <span class="text-gray-600 w-16 flex-shrink-0">14:02:05</span>
+                    <span class="text-white">&gt; READY FOR EXPORT</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-800">
+                <span class="text-white animate-pulse">_</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-gray-200 bg-white">
+        <div class="max-w-6xl mx-auto px-8 py-4">
+            <p class="text-[10px] text-center text-gray-400 uppercase tracking-widest">
+                Apigee Template Generator &mdash; Swiss Design Edition &mdash; 2024
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleCard(card) {
+            const content = card.querySelector('.card-content');
+            const chevron = card.querySelector('.chevron');
+            const collapsedPreview = card.querySelector('.collapsed-preview');
+
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                chevron.classList.remove('rotate-90');
+                card.classList.remove('expanded');
+                if (collapsedPreview) collapsedPreview.style.display = 'block';
+            } else {
+                content.classList.add('expanded');
+                chevron.classList.add('rotate-90');
+                card.classList.add('expanded');
+                if (collapsedPreview) collapsedPreview.style.display = 'none';
+            }
+        }
+
+        // Initialize: hide collapsed preview for expanded cards
+        document.querySelectorAll('.swiss-card.expanded .collapsed-preview').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // Tab switching
+        document.querySelectorAll('.env-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.env-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+    </script>
+
+</body>
+</html>

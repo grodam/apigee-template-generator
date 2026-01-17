@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker - Guide Complet pour Débutants</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #e5e5e5;
+            --text-secondary: #888;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 48px 0 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 32px 0 16px;
+            color: var(--text-primary);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 24px 0;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* Schéma: Sans Docker vs Avec Docker */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .comparison-card.problem {
+            border-color: var(--danger);
+        }
+
+        .comparison-card.solution {
+            border-color: var(--success);
+        }
+
+        .comparison-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comparison-card.problem .comparison-title {
+            color: var(--danger);
+        }
+
+        .comparison-card.solution .comparison-title {
+            color: var(--success);
+        }
+
+        /* Schéma visuel des machines */
+        .machine-diagram {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .machine {
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 8px 0;
+        }
+
+        .machine-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .machine-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .app-box {
+            background: var(--accent);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .os-box {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            width: 100%;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* Schéma Architecture Docker */
+        .docker-architecture {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .arch-layer {
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .arch-layer-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .arch-boxes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            flex: 1;
+            min-width: 150px;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .arch-box.container {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .arch-box.image {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+        }
+
+        .arch-box.engine {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+        }
+
+        .arch-box.os {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .arch-arrow {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            margin: 8px 0;
+        }
+
+        /* Analogie */
+        .analogy {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .analogy-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 600px) {
+            .analogy-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .analogy-item {
+            text-align: center;
+        }
+
+        .analogy-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .analogy-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .analogy-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .analogy-arrow {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .code-block code {
+            color: #e6edf3;
+        }
+
+        .code-comment {
+            color: #8b949e;
+        }
+
+        .code-keyword {
+            color: #ff7b72;
+        }
+
+        .code-string {
+            color: #a5d6ff;
+        }
+
+        /* Liste des commandes */
+        .command-list {
+            display: grid;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .command-item {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 16px;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .command-item {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .command-code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: var(--bg-tertiary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+        }
+
+        .command-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Pros/Cons */
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        @media (max-width: 768px) {
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pros, .cons {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .pros {
+            border: 1px solid var(--success);
+        }
+
+        .cons {
+            border: 1px solid var(--danger);
+        }
+
+        .pros h3 {
+            color: var(--success);
+        }
+
+        .cons h3 {
+            color: var(--danger);
+        }
+
+        .pros ul, .cons ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pros li, .cons li {
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .pros li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .cons li::before {
+            content: '✗';
+            position: absolute;
+            left: 0;
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* Workflow diagram */
+        .workflow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 32px 0;
+            padding: 32px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .workflow-step {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .workflow-step.active {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .workflow-step-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .workflow-step-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .workflow-arrow {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        /* App specific section */
+        .app-section {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .app-section h3 {
+            color: var(--accent-light);
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 24px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Verdict */
+        .verdict {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 2px solid var(--warning);
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .verdict-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--warning);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 64px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Highlight box */
+        .highlight {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 16px 20px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .highlight p {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        /* Navigation */
+        .toc {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .toc-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .toc-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+
+        .toc-list a {
+            color: var(--accent-light);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: block;
+            transition: background 0.2s;
+        }
+
+        .toc-list a:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Schéma VM vs Container */
+        .vm-container-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin: 32px 0;
+        }
+
+        @media (max-width: 768px) {
+            .vm-container-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stack-diagram {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .stack-title {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .stack-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stack-layer {
+            padding: 12px 16px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stack-layer.hardware {
+            background: #374151;
+        }
+
+        .stack-layer.host-os {
+            background: #4b5563;
+        }
+
+        .stack-layer.hypervisor {
+            background: #f59e0b;
+            color: #000;
+        }
+
+        .stack-layer.docker-engine {
+            background: #3b82f6;
+        }
+
+        .stack-layer.guest-os {
+            background: #6b7280;
+        }
+
+        .stack-layer.bins {
+            background: #8b5cf6;
+        }
+
+        .stack-layer.app {
+            background: #22c55e;
+            color: #000;
+        }
+
+        .stack-apps {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stack-app-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Résumé rapide */
+        .quick-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 32px 0;
+        }
+
+        .summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .summary-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .summary-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Docker</h1>
+        <p class="subtitle">Guide complet pour comprendre la conteneurisation, de zéro à héros</p>
+
+        <!-- Table des matières -->
+        <nav class="toc">
+            <div class="toc-title">📚 Table des matières</div>
+            <ul class="toc-list">
+                <li><a href="#probleme">1. Le problème que Docker résout</a></li>
+                <li><a href="#definition">2. C'est quoi Docker ?</a></li>
+                <li><a href="#concepts">3. Les concepts clés</a></li>
+                <li><a href="#vm-vs-container">4. VM vs Container</a></li>
+                <li><a href="#commandes">5. Commandes essentielles</a></li>
+                <li><a href="#workflow">6. Workflow typique</a></li>
+                <li><a href="#ton-app">7. Docker pour ton app</a></li>
+                <li><a href="#conclusion">8. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <!-- Section 1: Le problème -->
+        <section id="probleme">
+            <h2>Le problème que Docker résout</h2>
+
+            <p>Tu as sûrement déjà entendu cette phrase mythique :</p>
+
+            <div class="highlight">
+                <p><strong>"Mais ça marche sur ma machine !" 🤷‍♂️</strong></p>
+            </div>
+
+            <p>C'est LE problème classique du développement logiciel. Voici pourquoi ça arrive :</p>
+
+            <div class="comparison-grid">
+                <div class="comparison-card problem">
+                    <div class="comparison-title">
+                        <span>❌</span> Sans Docker
+                    </div>
+                    <div class="machine-diagram">
+                        <div class="machine">
+                            <div class="machine-label">💻 PC Développeur (Windows)</div>
+                            <div class="machine-content">
+                                <span class="app-box">Node 18.5</span>
+                                <span class="app-box">Python 3.11</span>
+                                <span class="app-box">npm 9.2</span>
+                            </div>
+                            <div class="os-box">Windows 11</div>
+                        </div>
+                        <div class="machine">
+                            <div class="machine-label">🖥️ Serveur Production (Linux)</div>
+                            <div class="machine-content">
+                                <span class="app-box">Node 16.0</span>
+                                <span class="app-box">Python 3.9</span>
+                                <span class="app-box">npm 8.1</span>
+                            </div>
+                            <div class="os-box">Ubuntu 20.04</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 16px; font-size: 0.9rem;">
+                        <strong>Résultat:</strong> Versions différentes, OS différents = bugs incompréhensibles en prod
+                    </p>
+                </div>
+
+                <div class="comparison-card solution">
+                    <div class="comparison-title">
+                        <span>✅</span> Avec Docker
+                    </div>
+                    <div class="machine-diagram">
+                        <div class="machine">
+                            <div class="machine-label">💻 PC Développeur</div>
+                            <div class="machine-content">
+                                <span class="app-box">🐳 Container identique</span>
+                            </div>
+                            <div class="os-box">N'importe quel OS</div>
+                        </div>
+                        <div class="machine">
+                            <div class="machine-label">🖥️ Serveur Production</div>
+                            <div class="machine-content">
+                                <span class="app-box">🐳 Container identique</span>
+                            </div>
+                            <div class="os-box">N'importe quel OS</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 16px; font-size: 0.9rem;">
+                        <strong>Résultat:</strong> Même environnement partout = comportement identique garanti
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: C'est quoi Docker -->
+        <section id="definition">
+            <h2>C'est quoi Docker exactement ?</h2>
+
+            <p>Docker est un outil qui permet de <strong>packager une application avec tout son environnement</strong> dans une "boîte" isolée appelée <strong>container</strong>.</p>
+
+            <div class="analogy">
+                <h3 style="margin: 0 0 8px 0;">🎯 L'analogie parfaite : le container maritime</h3>
+                <p style="margin: 0;">Docker s'inspire directement des containers de transport !</p>
+
+                <div class="analogy-grid">
+                    <div class="analogy-item">
+                        <div class="analogy-icon">📦</div>
+                        <div class="analogy-label">Container maritime</div>
+                        <div class="analogy-desc">Format standard qui passe sur bateau, camion, train</div>
+                    </div>
+                    <div class="analogy-arrow">→</div>
+                    <div class="analogy-item">
+                        <div class="analogy-icon">🐳</div>
+                        <div class="analogy-label">Container Docker</div>
+                        <div class="analogy-desc">Format standard qui tourne sur Mac, Windows, Linux, Cloud</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-summary">
+                <div class="summary-card">
+                    <div class="summary-icon">📦</div>
+                    <div class="summary-label">Container</div>
+                    <div class="summary-value">Instance en cours d'exécution</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">📸</div>
+                    <div class="summary-label">Image</div>
+                    <div class="summary-value">Template/snapshot de l'app</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">📝</div>
+                    <div class="summary-label">Dockerfile</div>
+                    <div class="summary-value">Recette pour créer l'image</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">🏪</div>
+                    <div class="summary-label">Registry</div>
+                    <div class="summary-value">Magasin d'images (Docker Hub)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Concepts clés -->
+        <section id="concepts">
+            <h2>Les concepts clés</h2>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📝</div>
+                    <div>
+                        <h3 style="margin: 0;">Dockerfile</h3>
+                        <p style="margin: 0; font-size: 0.9rem;">La recette de cuisine</p>
+                    </div>
+                </div>
+                <p>C'est un fichier texte qui décrit étape par étape comment construire ton image. Comme une recette de cuisine !</p>
+
+                <div class="code-block">
+                    <code>
+<span class="code-comment"># 1. On part d'une base (comme partir d'une pâte à pizza toute faite)</span>
+<span class="code-keyword">FROM</span> node:18-alpine
+
+<span class="code-comment"># 2. On définit où on va travailler</span>
+<span class="code-keyword">WORKDIR</span> /app
+
+<span class="code-comment"># 3. On copie les ingrédients (fichiers de dépendances)</span>
+<span class="code-keyword">COPY</span> package*.json ./
+
+<span class="code-comment"># 4. On installe les dépendances</span>
+<span class="code-keyword">RUN</span> npm install
+
+<span class="code-comment"># 5. On copie le reste du code</span>
+<span class="code-keyword">COPY</span> . .
+
+<span class="code-comment"># 6. On compile si nécessaire</span>
+<span class="code-keyword">RUN</span> npm run build
+
+<span class="code-comment"># 7. On expose le port</span>
+<span class="code-keyword">EXPOSE</span> 3000
+
+<span class="code-comment"># 8. On dit comment démarrer l'app</span>
+<span class="code-keyword">CMD</span> [<span class="code-string">"npm"</span>, <span class="code-string">"start"</span>]
+                    </code>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📸</div>
+                    <div>
+                        <h3 style="margin: 0;">Image Docker</h3>
+                        <p style="margin: 0; font-size: 0.9rem;">La photo/snapshot</p>
+                    </div>
+                </div>
+                <p>Une image est le <strong>résultat de la construction du Dockerfile</strong>. C'est une "photo" figée de ton application avec tout son environnement.</p>
+
+                <div class="highlight">
+                    <p>💡 <strong>Analogie :</strong> Si le Dockerfile est une recette de gâteau, l'image est le gâteau terminé et emballé, prêt à être livré.</p>
+                </div>
+
+                <p>Les images sont composées de <strong>layers</strong> (couches) superposées :</p>
+
+                <div class="docker-architecture">
+                    <div class="arch-layer">
+                        <div class="arch-layer-title">Couche 5 - Ton code</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box container">📁 src/, package.json, etc.</div>
+                        </div>
+                    </div>
+                    <div class="arch-arrow">↓</div>
+                    <div class="arch-layer">
+                        <div class="arch-layer-title">Couche 4 - Dépendances</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box image">📦 node_modules/</div>
+                        </div>
+                    </div>
+                    <div class="arch-arrow">↓</div>
+                    <div class="arch-layer">
+                        <div class="arch-layer-title">Couche 3 - Runtime</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box engine">⚙️ Node.js 18</div>
+                        </div>
+                    </div>
+                    <div class="arch-arrow">↓</div>
+                    <div class="arch-layer">
+                        <div class="arch-layer-title">Couche 2 - OS minimal</div>
+                        <div class="arch-boxes">
+                            <div class="arch-box os">🐧 Alpine Linux</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📦</div>
+                    <div>
+                        <h3 style="margin: 0;">Container</h3>
+                        <p style="margin: 0; font-size: 0.9rem;">L'instance en cours d'exécution</p>
+                    </div>
+                </div>
+                <p>Un container est une <strong>image qui tourne</strong>. Tu peux lancer plusieurs containers à partir de la même image.</p>
+
+                <div class="highlight">
+                    <p>💡 <strong>Analogie :</strong> L'image est comme un moule à gâteau. Tu peux faire autant de gâteaux (containers) que tu veux avec le même moule !</p>
+                </div>
+
+                <div class="docker-architecture">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <strong>Une image → Plusieurs containers</strong>
+                    </div>
+                    <div class="arch-boxes">
+                        <div class="arch-box image" style="flex: 0 0 auto;">📸 Image<br>"mon-app:v1"</div>
+                        <div style="display: flex; align-items: center; color: var(--accent);">→</div>
+                        <div class="arch-box container">🐳 Container 1<br>(port 3000)</div>
+                        <div class="arch-box container">🐳 Container 2<br>(port 3001)</div>
+                        <div class="arch-box container">🐳 Container 3<br>(port 3002)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: VM vs Container -->
+        <section id="vm-vs-container">
+            <h2>VM vs Container : la différence clé</h2>
+
+            <p>Les containers sont souvent comparés aux machines virtuelles (VM), mais ils sont fondamentalement différents :</p>
+
+            <div class="vm-container-comparison">
+                <div class="stack-diagram">
+                    <div class="stack-title">🖥️ Machine Virtuelle (VM)</div>
+                    <div class="stack-layers">
+                        <div class="stack-apps">
+                            <div class="stack-app-group">
+                                <div class="stack-layer app">App A</div>
+                                <div class="stack-layer bins">Bins/Libs</div>
+                                <div class="stack-layer guest-os">Guest OS</div>
+                            </div>
+                            <div class="stack-app-group">
+                                <div class="stack-layer app">App B</div>
+                                <div class="stack-layer bins">Bins/Libs</div>
+                                <div class="stack-layer guest-os">Guest OS</div>
+                            </div>
+                        </div>
+                        <div class="stack-layer hypervisor">Hypervisor (VMware, VirtualBox)</div>
+                        <div class="stack-layer host-os">Host OS (Windows/Mac/Linux)</div>
+                        <div class="stack-layer hardware">Hardware (ton PC)</div>
+                    </div>
+                    <p style="margin-top: 16px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                        Chaque VM a son propre OS complet<br>
+                        <strong>~10-20 Go par VM, démarrage en minutes</strong>
+                    </p>
+                </div>
+
+                <div class="stack-diagram">
+                    <div class="stack-title">🐳 Container Docker</div>
+                    <div class="stack-layers">
+                        <div class="stack-apps">
+                            <div class="stack-app-group">
+                                <div class="stack-layer app">App A</div>
+                                <div class="stack-layer bins">Bins/Libs</div>
+                            </div>
+                            <div class="stack-app-group">
+                                <div class="stack-layer app">App B</div>
+                                <div class="stack-layer bins">Bins/Libs</div>
+                            </div>
+                            <div class="stack-app-group">
+                                <div class="stack-layer app">App C</div>
+                                <div class="stack-layer bins">Bins/Libs</div>
+                            </div>
+                        </div>
+                        <div class="stack-layer docker-engine">Docker Engine</div>
+                        <div class="stack-layer host-os">Host OS (Windows/Mac/Linux)</div>
+                        <div class="stack-layer hardware">Hardware (ton PC)</div>
+                    </div>
+                    <p style="margin-top: 16px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+                        Containers partagent le kernel de l'OS hôte<br>
+                        <strong>~100 Mo par container, démarrage en secondes</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Critère</th>
+                            <th>Machine Virtuelle</th>
+                            <th>Container Docker</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Taille</strong></td>
+                            <td>Gigaoctets (OS complet)</td>
+                            <td>Megaoctets (juste l'app)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Démarrage</strong></td>
+                            <td>Minutes</td>
+                            <td>Secondes</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Performance</strong></td>
+                            <td>Overhead de virtualisation</td>
+                            <td>Quasi-native</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Isolation</strong></td>
+                            <td>Complète (OS séparé)</td>
+                            <td>Au niveau processus</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Portabilité</strong></td>
+                            <td>Limitée</td>
+                            <td>Excellente</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ressources</strong></td>
+                            <td>Gourmand</td>
+                            <td>Léger</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 5: Commandes -->
+        <section id="commandes">
+            <h2>Les commandes essentielles</h2>
+
+            <p>Voici les commandes Docker que tu utiliseras le plus souvent :</p>
+
+            <h3>🏗️ Construction</h3>
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-code">docker build -t nom:tag .</div>
+                    <div class="command-desc">Construit une image à partir du Dockerfile dans le dossier courant</div>
+                </div>
+            </div>
+
+            <h3>🚀 Exécution</h3>
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-code">docker run nom:tag</div>
+                    <div class="command-desc">Lance un container à partir d'une image</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker run -p 3000:3000 nom</div>
+                    <div class="command-desc">Lance avec mapping de port (host:container)</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker run -d nom</div>
+                    <div class="command-desc">Lance en arrière-plan (detached mode)</div>
+                </div>
+            </div>
+
+            <h3>📊 Monitoring</h3>
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-code">docker ps</div>
+                    <div class="command-desc">Liste les containers en cours d'exécution</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker ps -a</div>
+                    <div class="command-desc">Liste tous les containers (même arrêtés)</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker images</div>
+                    <div class="command-desc">Liste toutes les images locales</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker logs &lt;id&gt;</div>
+                    <div class="command-desc">Affiche les logs d'un container</div>
+                </div>
+            </div>
+
+            <h3>🛑 Gestion</h3>
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-code">docker stop &lt;id&gt;</div>
+                    <div class="command-desc">Arrête un container</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker rm &lt;id&gt;</div>
+                    <div class="command-desc">Supprime un container</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker rmi &lt;image&gt;</div>
+                    <div class="command-desc">Supprime une image</div>
+                </div>
+            </div>
+
+            <h3>🌐 Registry</h3>
+            <div class="command-list">
+                <div class="command-item">
+                    <div class="command-code">docker pull nom:tag</div>
+                    <div class="command-desc">Télécharge une image depuis Docker Hub</div>
+                </div>
+                <div class="command-item">
+                    <div class="command-code">docker push nom:tag</div>
+                    <div class="command-desc">Envoie une image vers un registry</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Workflow -->
+        <section id="workflow">
+            <h2>Workflow typique</h2>
+
+            <p>Voici le cycle de vie typique d'un projet avec Docker :</p>
+
+            <div class="workflow">
+                <div class="workflow-step">
+                    <div class="workflow-step-icon">📝</div>
+                    <div class="workflow-step-label">Écrire<br>Dockerfile</div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="workflow-step-icon">🏗️</div>
+                    <div class="workflow-step-label">Build<br>Image</div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="workflow-step-icon">🧪</div>
+                    <div class="workflow-step-label">Test<br>Local</div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="workflow-step-icon">📤</div>
+                    <div class="workflow-step-label">Push<br>Registry</div>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step active">
+                    <div class="workflow-step-icon">🚀</div>
+                    <div class="workflow-step-label">Deploy<br>Production</div>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <code>
+<span class="code-comment"># 1. Écrire le Dockerfile (une seule fois)</span>
+vim Dockerfile
+
+<span class="code-comment"># 2. Construire l'image</span>
+docker build -t mon-app:v1 .
+
+<span class="code-comment"># 3. Tester localement</span>
+docker run -p 3000:3000 mon-app:v1
+
+<span class="code-comment"># 4. Taguer pour le registry</span>
+docker tag mon-app:v1 monregistry.azurecr.io/mon-app:v1
+
+<span class="code-comment"># 5. Pousser vers le registry</span>
+docker push monregistry.azurecr.io/mon-app:v1
+
+<span class="code-comment"># 6. Déployer en production (ex: Kubernetes, Azure, AWS...)</span>
+kubectl apply -f deployment.yaml
+                </code>
+            </div>
+        </section>
+
+        <!-- Section 7: Ton app -->
+        <section id="ton-app">
+            <h2>Docker pour ton app Apigee-Template</h2>
+
+            <div class="app-section">
+                <h3>📱 Contexte de ton application</h3>
+                <p>Ton app est un générateur de proxies Apigee avec <strong>deux modes</strong> :</p>
+                <ul style="color: var(--text-secondary); margin-left: 20px;">
+                    <li><strong>Mode Web</strong> : React + Vite (port 5173) + Proxy Express (port 3001)</li>
+                    <li><strong>Mode Desktop</strong> : Tauri (Rust backend + WebView)</li>
+                </ul>
+            </div>
+
+            <h3>🤔 Est-ce que Docker est utile pour toi ?</h3>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scénario</th>
+                            <th>Docker utile ?</th>
+                            <th>Explication</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Développement local seul</td>
+                            <td style="color: var(--warning);">⚠️ Optionnel</td>
+                            <td>Tu utilises déjà Tauri qui fonctionne bien</td>
+                        </tr>
+                        <tr>
+                            <td>Partager avec d'autres devs</td>
+                            <td style="color: var(--success);">✅ Très utile</td>
+                            <td>Garantit le même environnement pour tous</td>
+                        </tr>
+                        <tr>
+                            <td>Déployer le mode web</td>
+                            <td style="color: var(--success);">✅ Recommandé</td>
+                            <td>Facilite le déploiement sur serveur/cloud</td>
+                        </tr>
+                        <tr>
+                            <td>App Desktop (Tauri)</td>
+                            <td style="color: var(--danger);">❌ Pas adapté</td>
+                            <td>Tauri génère des installateurs natifs (.exe, .msi)</td>
+                        </tr>
+                        <tr>
+                            <td>CI/CD (tests, builds)</td>
+                            <td style="color: var(--success);">✅ Très utile</td>
+                            <td>Environnement reproductible pour les pipelines</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>📦 Exemple de Dockerfile pour ton app (mode web)</h3>
+
+            <div class="code-block">
+                <code>
+<span class="code-comment"># Dockerfile pour apigee-react-generator (mode web)</span>
+
+<span class="code-comment"># Étape 1: Build</span>
+<span class="code-keyword">FROM</span> node:18-alpine <span class="code-keyword">AS</span> builder
+
+<span class="code-keyword">WORKDIR</span> /app
+
+<span class="code-comment"># Copier les fichiers de dépendances</span>
+<span class="code-keyword">COPY</span> package*.json ./
+
+<span class="code-comment"># Installer les dépendances</span>
+<span class="code-keyword">RUN</span> npm ci
+
+<span class="code-comment"># Copier le code source</span>
+<span class="code-keyword">COPY</span> . .
+
+<span class="code-comment"># Build de production</span>
+<span class="code-keyword">RUN</span> npm run build
+
+<span class="code-comment"># Étape 2: Production (image légère)</span>
+<span class="code-keyword">FROM</span> nginx:alpine
+
+<span class="code-comment"># Copier le build dans nginx</span>
+<span class="code-keyword">COPY</span> --from=builder /app/dist /usr/share/nginx/html
+
+<span class="code-comment"># Exposer le port 80</span>
+<span class="code-keyword">EXPOSE</span> 80
+
+<span class="code-comment"># Démarrer nginx</span>
+<span class="code-keyword">CMD</span> [<span class="code-string">"nginx"</span>, <span class="code-string">"-g"</span>, <span class="code-string">"daemon off;"</span>]
+                </code>
+            </div>
+
+            <h3>⚖️ Avantages et Inconvénients pour ton projet</h3>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✅ Avantages</h3>
+                    <ul>
+                        <li>Environnement identique pour tous les développeurs</li>
+                        <li>Déploiement simplifié sur n'importe quel cloud (Azure, AWS, GCP)</li>
+                        <li>Isolation des dépendances (Node, npm) sans polluer ta machine</li>
+                        <li>CI/CD plus fiable avec GitHub Actions</li>
+                        <li>Facile à scaler si besoin (plusieurs instances)</li>
+                        <li>Documentation implicite de l'environnement (le Dockerfile)</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>❌ Inconvénients</h3>
+                    <ul>
+                        <li>Complexité ajoutée (un outil de plus à apprendre)</li>
+                        <li>Pas adapté pour le mode Desktop/Tauri</li>
+                        <li>Overhead pour le dev local (tu as déjà un setup qui marche)</li>
+                        <li>Nécessite Docker Desktop sur Windows (licence payante en entreprise)</li>
+                        <li>Hot reload plus complexe à configurer en dev</li>
+                        <li>Taille d'image à optimiser (peut devenir lourd)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Conclusion -->
+        <section id="conclusion">
+            <h2>Conclusion</h2>
+
+            <div class="verdict">
+                <div class="verdict-title">
+                    <span>🎯</span> Mon verdict pour ton app
+                </div>
+                <p><strong>Pour le développement local avec Tauri :</strong> Docker n'est pas nécessaire. Tu as déjà un excellent setup avec <code>npm run tauri:dev</code>.</p>
+                <p style="margin-top: 16px;"><strong>Pour déployer le mode web :</strong> Docker serait un excellent choix si tu veux héberger une version web de ton app sur un serveur.</p>
+                <p style="margin-top: 16px;"><strong>Pour la CI/CD :</strong> Tu utilises déjà GitHub Actions pour les builds Tauri. Docker pourrait être utile pour les tests automatisés.</p>
+            </div>
+
+            <h3>🚀 Par où commencer si tu veux essayer ?</h3>
+
+            <ol style="color: var(--text-secondary); margin-left: 20px; line-height: 2;">
+                <li>Installe <a href="https://www.docker.com/products/docker-desktop/" style="color: var(--accent-light);">Docker Desktop</a></li>
+                <li>Crée un fichier <code>Dockerfile</code> dans <code>apigee-react-generator/</code></li>
+                <li>Lance <code>docker build -t apigee-generator:dev .</code></li>
+                <li>Teste avec <code>docker run -p 8080:80 apigee-generator:dev</code></li>
+                <li>Ouvre <a href="http://localhost:8080" style="color: var(--accent-light);">http://localhost:8080</a></li>
+            </ol>
+
+            <div class="highlight" style="margin-top: 32px;">
+                <p>💡 <strong>Conseil :</strong> Ne te force pas à utiliser Docker si ton workflow actuel fonctionne bien. Docker brille surtout quand tu travailles en équipe ou que tu déploies sur des serveurs. Pour un outil desktop comme le tien, Tauri est parfait !</p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>Documentation créée pour le projet Apigee-Template</p>
+            <p style="margin-top: 8px;">🐳 Docker • 📦 Containers • 🚀 DevOps</p>
+        </footer>
+    </div>
+</body>
+</html>

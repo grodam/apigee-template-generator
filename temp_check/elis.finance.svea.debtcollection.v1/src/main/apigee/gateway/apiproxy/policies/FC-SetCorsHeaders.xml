@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<FlowCallout continueOnError="false" enabled="true" name="FC-SetCorsHeaders">
+    <DisplayName>FC-SetCorsHeaders</DisplayName>
+    <FaultRules/>
+    <Properties/>
+    <SharedFlowBundle>sf-set_cors_headers</SharedFlowBundle>
+</FlowCallout>

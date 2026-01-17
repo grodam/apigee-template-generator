@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "orgConfig": {
+    "specs": [],
+    "apiProducts": [
+      {
+        "name": "elis.finance.svea.debtcollection.v1.dev",
+        "displayName": "debtcollection-v1-dev",
+        "description": "API Product for debtcollection (v1) - DEV environment.",
+        "approvalType": "manual",
+        "attributes": [
+          {
+            "name": "access",
+            "value": "private"
+          }
+        ],
+        "environments": [
+          "dev1"
+        ],
+        "operationGroup": {
+          "operationConfigs": [
+            {
+              "apiSource": "elis.finance.svea.debtcollection.v1",
+              "operations": [
+                {
+                  "resource": "/api"
+                }
+              ]
+            },
+            {
+              "apiSource": "elis.finance.svea.debtcollection.v1",
+              "operations": [
+                {
+                  "resource": "/api/**"
+                }
+              ]
+            }
+          ],
+          "operationConfigType": "proxy"
+        }
+      }
+    ],
+    "userroles": [],
+    "reports": [],
+    "developers": [],
+    "developerApps": {},
+    "importKeys": {}
+  }
+}

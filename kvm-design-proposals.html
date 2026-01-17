@@ -1,0 +1,3107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KVM Manager - 10 Design Proposals</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================
+       BASE SWISS THEME VARIABLES
+       ======================================== */
+    :root {
+      --swiss-black: #000000;
+      --swiss-white: #FFFFFF;
+      --swiss-gray-50: #FAFAFA;
+      --swiss-gray-100: #F3F4F6;
+      --swiss-gray-200: #E5E7EB;
+      --swiss-gray-300: #D1D5DB;
+      --swiss-gray-400: #9CA3AF;
+      --swiss-gray-500: #6B7280;
+      --swiss-gray-600: #4B5563;
+      --swiss-gray-700: #374151;
+      --swiss-gray-800: #1F2937;
+      --swiss-gray-900: #111827;
+      --swiss-bg-canvas: #D4DAE2;
+
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.1), 0 2px 6px -2px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 24px -4px rgba(0,0,0,0.14), 0 4px 8px -2px rgba(0,0,0,0.08);
+      --shadow-xl: 0 20px 40px -8px rgba(0,0,0,0.18), 0 8px 16px -4px rgba(0,0,0,0.1);
+
+      --console-bg: #0a0a0a;
+      --console-success: #4ADE80;
+      --console-warning: #FBBF24;
+      --console-error: #F87171;
+      --console-info: #60A5FA;
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--swiss-bg-canvas);
+      color: var(--swiss-black);
+      line-height: 1.5;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      padding: 16px 32px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav h1 {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: transparent;
+      border: 1px solid var(--swiss-gray-700);
+      color: var(--swiss-gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      border-color: var(--swiss-white);
+    }
+
+    /* Sections */
+    .section {
+      display: none;
+      min-height: 100vh;
+      padding: 100px 32px 32px;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--swiss-gray-600);
+      max-width: 600px;
+    }
+
+    /* Preview Container */
+    .preview {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      height: 600px;
+    }
+
+    /* ========================================
+       TEMPLATE 1: CLASSIC SWISS
+       Border-top cards, clean lines
+       ======================================== */
+    .t1-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      background: var(--swiss-gray-100);
+    }
+
+    .t1-header {
+      grid-column: 1 / -1;
+      background: var(--swiss-white);
+      border-bottom: 1px solid var(--swiss-gray-200);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t1-header-title {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .t1-header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .t1-input {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--swiss-black);
+      padding: 8px 0;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      width: 200px;
+    }
+
+    .t1-input:focus {
+      outline: none;
+      border-color: var(--swiss-gray-400);
+    }
+
+    .t1-btn {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      border: none;
+      padding: 10px 24px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .t1-btn:hover {
+      background: var(--swiss-gray-800);
+    }
+
+    .t1-btn-outline {
+      background: transparent;
+      border: 2px solid var(--swiss-black);
+      color: var(--swiss-black);
+    }
+
+    .t1-btn-outline:hover {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t1-sidebar {
+      background: var(--swiss-white);
+      border-right: 1px solid var(--swiss-gray-200);
+      overflow-y: auto;
+    }
+
+    .t1-sidebar-section {
+      border-top: 2px solid var(--swiss-black);
+    }
+
+    .t1-sidebar-header {
+      padding: 16px 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .t1-sidebar-header:hover {
+      background: var(--swiss-gray-50);
+    }
+
+    .t1-env-list {
+      padding: 0 12px 12px;
+    }
+
+    .t1-env-item {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s;
+    }
+
+    .t1-env-item:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    .t1-env-item.selected {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t1-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: var(--swiss-gray-200);
+      color: var(--swiss-gray-600);
+    }
+
+    .t1-env-item.selected .t1-badge {
+      background: var(--swiss-gray-700);
+      color: var(--swiss-white);
+    }
+
+    .t1-main {
+      display: flex;
+      flex-direction: column;
+      background: var(--swiss-white);
+      margin: 16px;
+      border-top: 2px solid var(--swiss-black);
+    }
+
+    .t1-main-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--swiss-gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t1-main-title {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .t1-table {
+      flex: 1;
+      overflow: auto;
+    }
+
+    .t1-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .t1-table th {
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-400);
+      border-bottom: 1px solid var(--swiss-gray-200);
+    }
+
+    .t1-table td {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .t1-table tr:hover {
+      background: var(--swiss-gray-50);
+    }
+
+    .t1-console {
+      grid-column: 1 / -1;
+      background: var(--console-bg);
+      color: var(--swiss-gray-300);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 12px 20px;
+      height: 100px;
+      overflow-y: auto;
+    }
+
+    .t1-console-line {
+      display: flex;
+      gap: 16px;
+      padding: 2px 0;
+    }
+
+    .t1-console-time {
+      color: var(--swiss-gray-600);
+    }
+
+    .t1-console-success { color: var(--console-success); }
+    .t1-console-error { color: var(--console-error); }
+    .t1-console-warning { color: var(--console-warning); }
+
+    /* ========================================
+       TEMPLATE 2: FLOATING SHADOW
+       Deep shadows, elevated cards
+       ======================================== */
+    .t2-container {
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+      background: #E8ECF1;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .t2-header {
+      grid-column: 1 / -1;
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .t2-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--swiss-black);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--swiss-white);
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .t2-search {
+      flex: 1;
+      background: var(--swiss-gray-100);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      font-size: 13px;
+    }
+
+    .t2-search:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--swiss-black);
+    }
+
+    .t2-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--swiss-gray-600);
+    }
+
+    .t2-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--console-success);
+    }
+
+    .t2-sidebar {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t2-sidebar-title {
+      padding: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+      border-bottom: 1px solid var(--swiss-gray-100);
+    }
+
+    .t2-env-group {
+      padding: 12px;
+    }
+
+    .t2-env-header {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--swiss-gray-700);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .t2-env-header svg {
+      width: 16px;
+      height: 16px;
+      color: var(--swiss-gray-400);
+    }
+
+    .t2-kvm-list {
+      margin-left: 24px;
+      border-left: 2px solid var(--swiss-gray-200);
+      padding-left: 12px;
+    }
+
+    .t2-kvm-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .t2-kvm-item:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    .t2-kvm-item.selected {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      box-shadow: var(--shadow-md);
+    }
+
+    .t2-main {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .t2-main-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t2-main-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .t2-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--swiss-gray-100);
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+
+    .t2-tab {
+      padding: 6px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+
+    .t2-tab.active {
+      background: var(--swiss-white);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .t2-content {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .t2-entry {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid var(--swiss-gray-200);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      transition: all 0.15s;
+    }
+
+    .t2-entry:hover {
+      border-color: var(--swiss-gray-300);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .t2-entry-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .t2-entry-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--swiss-gray-600);
+    }
+
+    .t2-panel {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .t2-panel-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+    }
+
+    .t2-console {
+      flex: 1;
+      background: var(--console-bg);
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--swiss-gray-400);
+      overflow-y: auto;
+    }
+
+    /* ========================================
+       TEMPLATE 3: TERMINAL FIRST
+       Dark theme, console-centric
+       ======================================== */
+    .t3-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+      background: #0D1117;
+      color: #C9D1D9;
+    }
+
+    .t3-header {
+      grid-column: 1 / -1;
+      background: #161B22;
+      border-bottom: 1px solid #30363D;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .t3-header-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #58A6FF;
+    }
+
+    .t3-header-input {
+      background: #0D1117;
+      border: 1px solid #30363D;
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #C9D1D9;
+      width: 240px;
+    }
+
+    .t3-header-input:focus {
+      outline: none;
+      border-color: #58A6FF;
+    }
+
+    .t3-btn {
+      background: #238636;
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .t3-btn:hover {
+      background: #2EA043;
+    }
+
+    .t3-btn-danger {
+      background: #DA3633;
+    }
+
+    .t3-btn-danger:hover {
+      background: #F85149;
+    }
+
+    .t3-sidebar {
+      background: #161B22;
+      border-right: 1px solid #30363D;
+      overflow-y: auto;
+    }
+
+    .t3-nav-item {
+      padding: 10px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .t3-nav-item:hover {
+      background: #21262D;
+    }
+
+    .t3-nav-item.selected {
+      background: #21262D;
+      border-left-color: #58A6FF;
+      color: #F0F6FC;
+    }
+
+    .t3-nav-icon {
+      width: 16px;
+      height: 16px;
+      color: #8B949E;
+    }
+
+    .t3-nav-item.selected .t3-nav-icon {
+      color: #58A6FF;
+    }
+
+    .t3-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t3-toolbar {
+      background: #161B22;
+      border-bottom: 1px solid #30363D;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t3-toolbar-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .t3-toolbar-badge {
+      background: #30363D;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: #8B949E;
+    }
+
+    .t3-content {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 16px 20px;
+      overflow: auto;
+    }
+
+    .t3-row {
+      display: grid;
+      grid-template-columns: 200px 1fr auto;
+      gap: 20px;
+      padding: 8px 0;
+      border-bottom: 1px solid #21262D;
+    }
+
+    .t3-row:hover {
+      background: #161B22;
+    }
+
+    .t3-key {
+      color: #79C0FF;
+    }
+
+    .t3-value {
+      color: #A5D6FF;
+    }
+
+    .t3-action {
+      color: #8B949E;
+      cursor: pointer;
+    }
+
+    .t3-action:hover {
+      color: #F85149;
+    }
+
+    /* ========================================
+       TEMPLATE 4: COMPACT SIDEBAR
+       Icon-based navigation, maximized content
+       ======================================== */
+    .t4-container {
+      display: grid;
+      grid-template-columns: 56px 220px 1fr;
+      height: 100%;
+      background: var(--swiss-gray-100);
+    }
+
+    .t4-rail {
+      background: var(--swiss-black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
+      gap: 8px;
+    }
+
+    .t4-rail-item {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      color: var(--swiss-gray-500);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .t4-rail-item:hover {
+      background: var(--swiss-gray-800);
+      color: var(--swiss-white);
+    }
+
+    .t4-rail-item.active {
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+    }
+
+    .t4-rail-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .t4-sidebar {
+      background: var(--swiss-white);
+      border-right: 1px solid var(--swiss-gray-200);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t4-sidebar-header {
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--swiss-gray-200);
+    }
+
+    .t4-sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+      margin-bottom: 12px;
+    }
+
+    .t4-sidebar-search {
+      width: 100%;
+      background: var(--swiss-gray-100);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .t4-sidebar-search:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 1px var(--swiss-black);
+    }
+
+    .t4-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .t4-tree-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .t4-tree-item:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    .t4-tree-item.selected {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t4-tree-indent {
+      margin-left: 20px;
+    }
+
+    .t4-main {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    .t4-card {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .t4-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t4-card-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .t4-card-content {
+      padding: 16px 20px;
+    }
+
+    .t4-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .t4-stat {
+      background: var(--swiss-gray-50);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .t4-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .t4-stat-label {
+      font-size: 11px;
+      color: var(--swiss-gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       TEMPLATE 5: CARD GRID
+       KVMs as cards, visual overview
+       ======================================== */
+    .t5-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    }
+
+    .t5-header {
+      background: var(--swiss-white);
+      border-bottom: 1px solid var(--swiss-gray-200);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .t5-header-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .t5-header-env {
+      display: flex;
+      gap: 8px;
+    }
+
+    .t5-env-chip {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--swiss-gray-100);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .t5-env-chip:hover {
+      background: var(--swiss-gray-200);
+    }
+
+    .t5-env-chip.active {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t5-search-bar {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    .t5-search {
+      background: var(--swiss-gray-100);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      font-size: 13px;
+      width: 280px;
+    }
+
+    .t5-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .t5-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .t5-card {
+      background: var(--swiss-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .t5-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .t5-card-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+    }
+
+    .t5-card-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .t5-card-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--swiss-gray-500);
+    }
+
+    .t5-card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--swiss-gray-100);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+    }
+
+    .t5-card-badge.encrypted {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .t5-card-content {
+      padding: 16px 20px;
+    }
+
+    .t5-card-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .t5-card-entry {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .t5-card-entry-key {
+      color: var(--swiss-gray-700);
+    }
+
+    .t5-card-entry-value {
+      color: var(--swiss-gray-400);
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .t5-card-footer {
+      padding: 12px 20px;
+      background: var(--swiss-gray-50);
+      font-size: 11px;
+      color: var(--swiss-gray-500);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ========================================
+       TEMPLATE 6: SPLIT PANELS
+       Resizable panels, IDE-style
+       ======================================== */
+    .t6-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #1E1E1E;
+      color: #D4D4D4;
+    }
+
+    .t6-header {
+      background: #3C3C3C;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .t6-header-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .t6-header-breadcrumb span {
+      color: #808080;
+    }
+
+    .t6-header-breadcrumb span:last-child {
+      color: #D4D4D4;
+    }
+
+    .t6-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .t6-panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+    }
+
+    .t6-panel-header {
+      background: #252526;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #BBBBBB;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t6-panel-content {
+      flex: 1;
+      background: #1E1E1E;
+      overflow-y: auto;
+    }
+
+    .t6-divider {
+      width: 4px;
+      background: #3C3C3C;
+      cursor: col-resize;
+    }
+
+    .t6-divider:hover {
+      background: #007ACC;
+    }
+
+    .t6-tree-item {
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .t6-tree-item:hover {
+      background: #2A2D2E;
+    }
+
+    .t6-tree-item.selected {
+      background: #094771;
+    }
+
+    .t6-tree-icon {
+      width: 16px;
+      height: 16px;
+      color: #808080;
+    }
+
+    .t6-editor {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t6-editor-tabs {
+      background: #252526;
+      display: flex;
+      border-bottom: 1px solid #3C3C3C;
+    }
+
+    .t6-editor-tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      background: #2D2D2D;
+      border-right: 1px solid #3C3C3C;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .t6-editor-tab.active {
+      background: #1E1E1E;
+      border-bottom: 1px solid #1E1E1E;
+      margin-bottom: -1px;
+    }
+
+    .t6-editor-content {
+      flex: 1;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow: auto;
+    }
+
+    .t6-line {
+      display: flex;
+    }
+
+    .t6-line-number {
+      width: 40px;
+      color: #858585;
+      text-align: right;
+      padding-right: 16px;
+      user-select: none;
+    }
+
+    .t6-line-content {
+      flex: 1;
+    }
+
+    .t6-key { color: #9CDCFE; }
+    .t6-string { color: #CE9178; }
+    .t6-bracket { color: #FFD700; }
+
+    .t6-status {
+      background: #007ACC;
+      padding: 4px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #FFFFFF;
+    }
+
+    /* ========================================
+       TEMPLATE 7: TAB NAVIGATION
+       Horizontal tabs, full-width content
+       ======================================== */
+    .t7-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--swiss-white);
+    }
+
+    .t7-header {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t7-header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .t7-logo {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .t7-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--swiss-gray-400);
+    }
+
+    .t7-status-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--console-success);
+      border-radius: 50%;
+    }
+
+    .t7-tabs {
+      background: var(--swiss-gray-100);
+      padding: 0 24px;
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--swiss-gray-200);
+    }
+
+    .t7-tab {
+      padding: 14px 24px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--swiss-gray-600);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      background: transparent;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .t7-tab:hover {
+      color: var(--swiss-black);
+      background: var(--swiss-white);
+    }
+
+    .t7-tab.active {
+      color: var(--swiss-black);
+      background: var(--swiss-white);
+      border-bottom-color: var(--swiss-black);
+    }
+
+    .t7-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .t7-section {
+      margin-bottom: 32px;
+    }
+
+    .t7-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .t7-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+    }
+
+    .t7-table {
+      width: 100%;
+      border: 1px solid var(--swiss-gray-200);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .t7-table-header {
+      display: grid;
+      grid-template-columns: 200px 1fr 100px 80px;
+      background: var(--swiss-gray-50);
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+    }
+
+    .t7-table-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 100px 80px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--swiss-gray-100);
+      font-size: 13px;
+      align-items: center;
+    }
+
+    .t7-table-row:hover {
+      background: var(--swiss-gray-50);
+    }
+
+    .t7-table-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    .t7-table-value {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--swiss-gray-600);
+    }
+
+    .t7-table-status {
+      font-size: 11px;
+    }
+
+    .t7-badge-new {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #DCFCE7;
+      color: #166534;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .t7-badge-modified {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #FEF3C7;
+      color: #92400E;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+    }
+
+    .t7-table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .t7-icon-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--swiss-gray-200);
+      border-radius: var(--radius-sm);
+      background: var(--swiss-white);
+      cursor: pointer;
+      color: var(--swiss-gray-500);
+      transition: all 0.15s;
+    }
+
+    .t7-icon-btn:hover {
+      border-color: var(--swiss-black);
+      color: var(--swiss-black);
+    }
+
+    /* ========================================
+       TEMPLATE 8: BRUTALIST
+       Bold typography, minimal decoration
+       ======================================== */
+    .t8-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100%;
+      background: var(--swiss-white);
+    }
+
+    .t8-sidebar {
+      border-right: 4px solid var(--swiss-black);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t8-sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 4px solid var(--swiss-black);
+    }
+
+    .t8-sidebar-title {
+      font-size: 32px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .t8-sidebar-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--swiss-gray-500);
+      margin-top: 8px;
+    }
+
+    .t8-sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .t8-env-section {
+      border-bottom: 2px solid var(--swiss-black);
+    }
+
+    .t8-env-header {
+      padding: 16px 24px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t8-env-list {
+      padding: 8px 0;
+    }
+
+    .t8-env-item {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      border-left: 4px solid transparent;
+      transition: all 0.1s;
+    }
+
+    .t8-env-item:hover {
+      background: var(--swiss-gray-100);
+      border-left-color: var(--swiss-gray-300);
+    }
+
+    .t8-env-item.selected {
+      background: var(--swiss-gray-100);
+      border-left-color: var(--swiss-black);
+      font-weight: 700;
+    }
+
+    .t8-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .t8-main-header {
+      padding: 32px;
+      border-bottom: 4px solid var(--swiss-black);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .t8-main-title {
+      font-size: 48px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .t8-main-meta {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--swiss-gray-500);
+    }
+
+    .t8-main-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .t8-btn {
+      padding: 16px 32px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      border: 4px solid var(--swiss-black);
+      background: var(--swiss-white);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .t8-btn:hover {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t8-btn-primary {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .t8-btn-primary:hover {
+      background: var(--swiss-gray-800);
+    }
+
+    .t8-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    .t8-entry {
+      border-bottom: 2px solid var(--swiss-gray-200);
+      padding: 24px 0;
+      display: grid;
+      grid-template-columns: 200px 1fr auto;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .t8-entry:hover {
+      background: var(--swiss-gray-50);
+      margin: 0 -32px;
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    .t8-entry-key {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .t8-entry-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--swiss-gray-700);
+    }
+
+    .t8-entry-actions {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .t8-entry-action {
+      color: var(--swiss-gray-400);
+      cursor: pointer;
+      transition: color 0.1s;
+    }
+
+    .t8-entry-action:hover {
+      color: var(--swiss-black);
+    }
+
+    /* ========================================
+       TEMPLATE 9: SOFT UI
+       Rounded corners, gentle shadows
+       ======================================== */
+    .t9-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100%;
+      background: #F0F4F8;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .t9-sidebar {
+      background: var(--swiss-white);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .t9-sidebar-header {
+      padding: 24px;
+      background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+      color: var(--swiss-white);
+    }
+
+    .t9-sidebar-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .t9-sidebar-subtitle {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .t9-sidebar-search {
+      margin: 16px;
+      background: var(--swiss-gray-100);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+
+    .t9-sidebar-search:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    .t9-sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 12px;
+    }
+
+    .t9-env-group {
+      margin-bottom: 16px;
+    }
+
+    .t9-env-header {
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--swiss-gray-500);
+    }
+
+    .t9-kvm-item {
+      padding: 12px 16px;
+      font-size: 13px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .t9-kvm-item:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    .t9-kvm-item.selected {
+      background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+      color: var(--swiss-white);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .t9-kvm-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--swiss-gray-100);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .t9-kvm-item.selected .t9-kvm-icon {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .t9-main {
+      background: var(--swiss-white);
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .t9-main-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--swiss-gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t9-main-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .t9-main-badges {
+      display: flex;
+      gap: 8px;
+    }
+
+    .t9-badge {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 20px;
+      background: var(--swiss-gray-100);
+      color: var(--swiss-gray-600);
+    }
+
+    .t9-badge.success {
+      background: #DCFCE7;
+      color: #166534;
+    }
+
+    .t9-main-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .t9-btn {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .t9-btn-primary {
+      background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+      color: var(--swiss-white);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .t9-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .t9-btn-secondary {
+      background: var(--swiss-gray-100);
+      color: var(--swiss-gray-700);
+    }
+
+    .t9-btn-secondary:hover {
+      background: var(--swiss-gray-200);
+    }
+
+    .t9-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .t9-entry-card {
+      background: var(--swiss-gray-50);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: all 0.2s;
+    }
+
+    .t9-entry-card:hover {
+      background: var(--swiss-gray-100);
+      transform: translateX(4px);
+    }
+
+    .t9-entry-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--swiss-white);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .t9-entry-content {
+      flex: 1;
+    }
+
+    .t9-entry-key {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .t9-entry-value {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--swiss-gray-500);
+    }
+
+    /* ========================================
+       TEMPLATE 10: DASHBOARD
+       Metrics, stats, visual overview
+       ======================================== */
+    .t10-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #0F172A;
+      color: #E2E8F0;
+    }
+
+    .t10-header {
+      background: #1E293B;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+
+    .t10-header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .t10-logo {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .t10-logo-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+      border-radius: 6px;
+    }
+
+    .t10-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .t10-nav-item {
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #94A3B8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .t10-nav-item:hover {
+      color: #E2E8F0;
+      background: #334155;
+    }
+
+    .t10-nav-item.active {
+      color: #FFFFFF;
+      background: #3B82F6;
+    }
+
+    .t10-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .t10-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .t10-stat-card {
+      background: #1E293B;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #334155;
+    }
+
+    .t10-stat-label {
+      font-size: 12px;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .t10-stat-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .t10-stat-change {
+      font-size: 12px;
+      color: #22C55E;
+      margin-top: 4px;
+    }
+
+    .t10-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    .t10-card {
+      background: #1E293B;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      overflow: hidden;
+    }
+
+    .t10-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .t10-card-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .t10-card-action {
+      font-size: 12px;
+      color: #3B82F6;
+      cursor: pointer;
+    }
+
+    .t10-card-action:hover {
+      color: #60A5FA;
+    }
+
+    .t10-card-content {
+      padding: 16px 20px;
+    }
+
+    .t10-kvm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .t10-kvm-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #0F172A;
+      border-radius: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .t10-kvm-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    .t10-kvm-env {
+      padding: 4px 10px;
+      background: #334155;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+
+    .t10-kvm-count {
+      color: #64748B;
+    }
+
+    .t10-kvm-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22C55E;
+    }
+
+    .t10-activity {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .t10-activity-item {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .t10-activity-time {
+      color: #64748B;
+      font-size: 11px;
+      width: 60px;
+    }
+
+    .t10-activity-text {
+      flex: 1;
+    }
+
+    .t10-activity-text strong {
+      color: #3B82F6;
+    }
+
+    /* ========================================
+       UTILITY CLASSES
+       ======================================== */
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .gap-2 { gap: 8px; }
+    .gap-4 { gap: 16px; }
+
+    .ml-auto {
+      margin-left: auto;
+    }
+
+    /* Icons (simple SVG placeholders) */
+    .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .icon-folder::before { content: "📁"; }
+    .icon-key::before { content: "🔑"; }
+    .icon-lock::before { content: "🔒"; }
+    .icon-check::before { content: "✓"; }
+    .icon-edit::before { content: "✏️"; }
+    .icon-trash::before { content: "🗑"; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <h1>KVM Manager Designs</h1>
+    <div class="nav-links">
+      <button class="nav-link active" data-target="t1">1. Classic Swiss</button>
+      <button class="nav-link" data-target="t2">2. Floating Shadow</button>
+      <button class="nav-link" data-target="t3">3. Terminal First</button>
+      <button class="nav-link" data-target="t4">4. Compact Sidebar</button>
+      <button class="nav-link" data-target="t5">5. Card Grid</button>
+      <button class="nav-link" data-target="t6">6. Split Panels</button>
+      <button class="nav-link" data-target="t7">7. Tab Navigation</button>
+      <button class="nav-link" data-target="t8">8. Brutalist</button>
+      <button class="nav-link" data-target="t9">9. Soft UI</button>
+      <button class="nav-link" data-target="t10">10. Dashboard</button>
+    </div>
+  </nav>
+
+  <!-- Template 1: Classic Swiss -->
+  <section id="t1" class="section active">
+    <div class="section-header">
+      <h2 class="section-title">1. Classic Swiss</h2>
+      <p class="section-desc">Design epure avec border-top cards, lignes nettes et typographie forte. Fidele au theme Swiss actuel avec des ameliorations subtiles.</p>
+    </div>
+    <div class="preview">
+      <div class="t1-container">
+        <div class="t1-header">
+          <span class="t1-header-title">KVM Manager</span>
+          <div class="t1-header-actions">
+            <input type="text" class="t1-input" placeholder="Organization ID">
+            <input type="password" class="t1-input" placeholder="Access Token">
+            <button class="t1-btn">Connect</button>
+          </div>
+        </div>
+        <div class="t1-sidebar">
+          <div class="t1-sidebar-section">
+            <div class="t1-sidebar-header">
+              <span>Environments</span>
+              <span>▼</span>
+            </div>
+            <div class="t1-env-list">
+              <div class="t1-env-item">
+                <span>dev1</span>
+                <span class="t1-badge">3</span>
+              </div>
+              <div class="t1-env-item selected">
+                <span>uat1</span>
+                <span class="t1-badge">5</span>
+              </div>
+              <div class="t1-env-item">
+                <span>staging</span>
+                <span class="t1-badge">2</span>
+              </div>
+              <div class="t1-env-item">
+                <span>prod1</span>
+                <span class="t1-badge">8</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="t1-main">
+          <div class="t1-main-header">
+            <span class="t1-main-title">config-api-keys</span>
+            <div class="flex gap-2">
+              <button class="t1-btn-outline t1-btn">Add Entry</button>
+              <button class="t1-btn">Save</button>
+            </div>
+          </div>
+          <div class="t1-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>API_KEY_PROD</td>
+                  <td>sk-prod-xxxxx...xxxxx</td>
+                  <td><span class="icon-edit"></span></td>
+                </tr>
+                <tr>
+                  <td>API_SECRET</td>
+                  <td>************************</td>
+                  <td><span class="icon-edit"></span></td>
+                </tr>
+                <tr>
+                  <td>WEBHOOK_URL</td>
+                  <td>https://api.example.com/hook</td>
+                  <td><span class="icon-edit"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="t1-console">
+          <div class="t1-console-line">
+            <span class="t1-console-time">14:32:01</span>
+            <span class="t1-console-success">Connected to organization elis-dev</span>
+          </div>
+          <div class="t1-console-line">
+            <span class="t1-console-time">14:32:03</span>
+            <span>Loaded 18 KVMs across 4 environments</span>
+          </div>
+          <div class="t1-console-line">
+            <span class="t1-console-time">14:32:15</span>
+            <span class="t1-console-warning">Entry "API_KEY_PROD" modified (unsaved)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 2: Floating Shadow -->
+  <section id="t2" class="section">
+    <div class="section-header">
+      <h2 class="section-title">2. Floating Shadow</h2>
+      <p class="section-desc">Cards flottantes avec ombres profondes, effet de profondeur. Ideal pour le dark mode avec l'esthetique "Shadow-style".</p>
+    </div>
+    <div class="preview">
+      <div class="t2-container">
+        <div class="t2-header">
+          <div class="t2-logo">K</div>
+          <input type="text" class="t2-search" placeholder="Search KVMs, entries...">
+          <div class="t2-status">
+            <span class="t2-status-dot"></span>
+            <span>Connected to elis-dev</span>
+          </div>
+        </div>
+        <div class="t2-sidebar">
+          <div class="t2-sidebar-title">Environments</div>
+          <div class="t2-env-group">
+            <div class="t2-env-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+              dev1
+            </div>
+            <div class="t2-kvm-list">
+              <div class="t2-kvm-item">config-api</div>
+              <div class="t2-kvm-item">secrets</div>
+            </div>
+          </div>
+          <div class="t2-env-group">
+            <div class="t2-env-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+              uat1
+            </div>
+            <div class="t2-kvm-list">
+              <div class="t2-kvm-item selected">config-api-keys</div>
+              <div class="t2-kvm-item">feature-flags</div>
+              <div class="t2-kvm-item">endpoints</div>
+            </div>
+          </div>
+        </div>
+        <div class="t2-main">
+          <div class="t2-main-header">
+            <div>
+              <div class="t2-main-title">config-api-keys</div>
+              <div style="font-size: 12px; color: var(--swiss-gray-500); margin-top: 4px;">uat1 · 3 entries · encrypted</div>
+            </div>
+            <div class="t2-tabs">
+              <button class="t2-tab active">Table</button>
+              <button class="t2-tab">JSON</button>
+            </div>
+          </div>
+          <div class="t2-content">
+            <div class="t2-entry">
+              <div class="t2-entry-key">API_KEY_PROD</div>
+              <div class="t2-entry-value">sk-prod-xxxxx...xxxxx</div>
+              <button style="background: none; border: none; cursor: pointer;">✏️</button>
+            </div>
+            <div class="t2-entry">
+              <div class="t2-entry-key">API_SECRET</div>
+              <div class="t2-entry-value">************************</div>
+              <button style="background: none; border: none; cursor: pointer;">✏️</button>
+            </div>
+            <div class="t2-entry">
+              <div class="t2-entry-key">WEBHOOK_URL</div>
+              <div class="t2-entry-value">https://api.example.com/webhook</div>
+              <button style="background: none; border: none; cursor: pointer;">✏️</button>
+            </div>
+          </div>
+        </div>
+        <div class="t2-panel">
+          <div class="t2-panel-header">Console Output</div>
+          <div class="t2-console">
+            <div style="color: var(--console-success);">✓ Connected successfully</div>
+            <div style="margin-top: 8px;">Loaded config-api-keys (3 entries)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 3: Terminal First -->
+  <section id="t3" class="section">
+    <div class="section-header">
+      <h2 class="section-title">3. Terminal First</h2>
+      <p class="section-desc">Design sombre oriente terminal/console. Interface type IDE avec coloration syntaxique et navigation par clavier.</p>
+    </div>
+    <div class="preview">
+      <div class="t3-container">
+        <div class="t3-header">
+          <span class="t3-header-title">kvm://elis-dev/uat1</span>
+          <input type="text" class="t3-header-input" placeholder="$ filter entries...">
+          <button class="t3-btn">+ Add</button>
+          <button class="t3-btn t3-btn-danger">Disconnect</button>
+        </div>
+        <div class="t3-sidebar">
+          <div class="t3-nav-item selected">
+            <span class="t3-nav-icon">📁</span>
+            <span>dev1/</span>
+          </div>
+          <div class="t3-nav-item" style="padding-left: 32px;">
+            <span class="t3-nav-icon">🔑</span>
+            <span>config-api</span>
+          </div>
+          <div class="t3-nav-item" style="padding-left: 32px;">
+            <span class="t3-nav-icon">🔒</span>
+            <span>secrets</span>
+          </div>
+          <div class="t3-nav-item">
+            <span class="t3-nav-icon">📁</span>
+            <span>uat1/</span>
+          </div>
+          <div class="t3-nav-item selected" style="padding-left: 32px;">
+            <span class="t3-nav-icon">🔑</span>
+            <span>config-api-keys</span>
+          </div>
+          <div class="t3-nav-item" style="padding-left: 32px;">
+            <span class="t3-nav-icon">🔑</span>
+            <span>feature-flags</span>
+          </div>
+        </div>
+        <div class="t3-main">
+          <div class="t3-toolbar">
+            <div class="t3-toolbar-title">
+              config-api-keys
+              <span class="t3-toolbar-badge">3 entries</span>
+              <span class="t3-toolbar-badge">🔒 encrypted</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="t3-btn" style="background: transparent; border: 1px solid #30363D; color: #C9D1D9;">Export</button>
+              <button class="t3-btn">Save Changes</button>
+            </div>
+          </div>
+          <div class="t3-content">
+            <div class="t3-row">
+              <span class="t3-key">API_KEY_PROD</span>
+              <span class="t3-value">"sk-prod-xxxxx...xxxxx"</span>
+              <span class="t3-action">×</span>
+            </div>
+            <div class="t3-row">
+              <span class="t3-key">API_SECRET</span>
+              <span class="t3-value">"************************"</span>
+              <span class="t3-action">×</span>
+            </div>
+            <div class="t3-row">
+              <span class="t3-key">WEBHOOK_URL</span>
+              <span class="t3-value">"https://api.example.com/hook"</span>
+              <span class="t3-action">×</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 4: Compact Sidebar -->
+  <section id="t4" class="section">
+    <div class="section-header">
+      <h2 class="section-title">4. Compact Sidebar</h2>
+      <p class="section-desc">Navigation par icones sur rail lateral, sidebar secondaire pliable. Maximise l'espace de contenu principal.</p>
+    </div>
+    <div class="preview">
+      <div class="t4-container">
+        <div class="t4-rail">
+          <div class="t4-rail-item active">
+            <span class="t4-rail-icon">🔑</span>
+          </div>
+          <div class="t4-rail-item">
+            <span class="t4-rail-icon">⚙️</span>
+          </div>
+          <div class="t4-rail-item">
+            <span class="t4-rail-icon">📊</span>
+          </div>
+          <div class="t4-rail-item" style="margin-top: auto;">
+            <span class="t4-rail-icon">❓</span>
+          </div>
+        </div>
+        <div class="t4-sidebar">
+          <div class="t4-sidebar-header">
+            <div class="t4-sidebar-title">KVM Explorer</div>
+            <input type="text" class="t4-sidebar-search" placeholder="Search...">
+          </div>
+          <div class="t4-tree">
+            <div class="t4-tree-item">📁 dev1</div>
+            <div class="t4-tree-item t4-tree-indent">🔑 config-api</div>
+            <div class="t4-tree-item t4-tree-indent">🔒 secrets</div>
+            <div class="t4-tree-item">📁 uat1</div>
+            <div class="t4-tree-item t4-tree-indent selected">🔑 config-api-keys</div>
+            <div class="t4-tree-item t4-tree-indent">🔑 feature-flags</div>
+            <div class="t4-tree-item">📁 prod1</div>
+          </div>
+        </div>
+        <div class="t4-main">
+          <div class="t4-card">
+            <div class="t4-card-header">
+              <span class="t4-card-title">Overview</span>
+            </div>
+            <div class="t4-card-content">
+              <div class="t4-grid">
+                <div class="t4-stat">
+                  <div class="t4-stat-value">18</div>
+                  <div class="t4-stat-label">Total KVMs</div>
+                </div>
+                <div class="t4-stat">
+                  <div class="t4-stat-value">4</div>
+                  <div class="t4-stat-label">Environments</div>
+                </div>
+                <div class="t4-stat">
+                  <div class="t4-stat-value">47</div>
+                  <div class="t4-stat-label">Entries</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="t4-card" style="flex: 1;">
+            <div class="t4-card-header">
+              <span class="t4-card-title">config-api-keys</span>
+              <span style="font-size: 12px; color: var(--swiss-gray-500);">uat1 · 3 entries</span>
+            </div>
+            <div class="t4-card-content">
+              <table style="width: 100%; font-size: 13px;">
+                <tr>
+                  <td style="padding: 8px 0; font-family: 'JetBrains Mono', monospace;">API_KEY_PROD</td>
+                  <td style="color: var(--swiss-gray-500);">sk-prod-xxxxx...xxxxx</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-family: 'JetBrains Mono', monospace;">API_SECRET</td>
+                  <td style="color: var(--swiss-gray-500);">************************</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 5: Card Grid -->
+  <section id="t5" class="section">
+    <div class="section-header">
+      <h2 class="section-title">5. Card Grid</h2>
+      <p class="section-desc">Vue en grille de cards pour les KVMs. Apercu visuel rapide de tous les KVMs avec leurs entries principales.</p>
+    </div>
+    <div class="preview">
+      <div class="t5-container">
+        <div class="t5-header">
+          <span class="t5-header-title">KVM Manager</span>
+          <div class="t5-header-env">
+            <span class="t5-env-chip active">All</span>
+            <span class="t5-env-chip">dev1</span>
+            <span class="t5-env-chip">uat1</span>
+            <span class="t5-env-chip">staging</span>
+            <span class="t5-env-chip">prod1</span>
+          </div>
+          <div class="t5-search-bar">
+            <input type="text" class="t5-search" placeholder="Search KVMs...">
+          </div>
+        </div>
+        <div class="t5-main">
+          <div class="t5-grid">
+            <div class="t5-card">
+              <div class="t5-card-header">
+                <div class="t5-card-title">config-api-keys</div>
+                <div class="t5-card-meta">
+                  <span class="t5-card-badge">uat1</span>
+                  <span class="t5-card-badge encrypted">🔒 Encrypted</span>
+                </div>
+              </div>
+              <div class="t5-card-content">
+                <div class="t5-card-entries">
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">API_KEY_PROD</span>
+                    <span class="t5-card-entry-value">sk-prod-xxx...</span>
+                  </div>
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">API_SECRET</span>
+                    <span class="t5-card-entry-value">************</span>
+                  </div>
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">WEBHOOK_URL</span>
+                    <span class="t5-card-entry-value">https://api...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="t5-card-footer">
+                <span>3 entries</span>
+                <span>Modified 2h ago</span>
+              </div>
+            </div>
+            <div class="t5-card">
+              <div class="t5-card-header">
+                <div class="t5-card-title">feature-flags</div>
+                <div class="t5-card-meta">
+                  <span class="t5-card-badge">uat1</span>
+                </div>
+              </div>
+              <div class="t5-card-content">
+                <div class="t5-card-entries">
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">DARK_MODE</span>
+                    <span class="t5-card-entry-value">true</span>
+                  </div>
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">NEW_CHECKOUT</span>
+                    <span class="t5-card-entry-value">false</span>
+                  </div>
+                </div>
+              </div>
+              <div class="t5-card-footer">
+                <span>2 entries</span>
+                <span>Modified 1d ago</span>
+              </div>
+            </div>
+            <div class="t5-card">
+              <div class="t5-card-header">
+                <div class="t5-card-title">secrets</div>
+                <div class="t5-card-meta">
+                  <span class="t5-card-badge">dev1</span>
+                  <span class="t5-card-badge encrypted">🔒 Encrypted</span>
+                </div>
+              </div>
+              <div class="t5-card-content">
+                <div class="t5-card-entries">
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">DB_PASSWORD</span>
+                    <span class="t5-card-entry-value">************</span>
+                  </div>
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">JWT_SECRET</span>
+                    <span class="t5-card-entry-value">************</span>
+                  </div>
+                </div>
+              </div>
+              <div class="t5-card-footer">
+                <span>2 entries</span>
+                <span>Modified 3d ago</span>
+              </div>
+            </div>
+            <div class="t5-card">
+              <div class="t5-card-header">
+                <div class="t5-card-title">endpoints</div>
+                <div class="t5-card-meta">
+                  <span class="t5-card-badge">prod1</span>
+                </div>
+              </div>
+              <div class="t5-card-content">
+                <div class="t5-card-entries">
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">API_BASE_URL</span>
+                    <span class="t5-card-entry-value">https://api...</span>
+                  </div>
+                  <div class="t5-card-entry">
+                    <span class="t5-card-entry-key">CDN_URL</span>
+                    <span class="t5-card-entry-value">https://cdn...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="t5-card-footer">
+                <span>5 entries</span>
+                <span>Modified 5h ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 6: Split Panels -->
+  <section id="t6" class="section">
+    <div class="section-header">
+      <h2 class="section-title">6. Split Panels</h2>
+      <p class="section-desc">Interface style IDE avec panneaux redimensionnables. Vue code JSON avec coloration syntaxique.</p>
+    </div>
+    <div class="preview">
+      <div class="t6-container">
+        <div class="t6-header">
+          <div class="t6-header-breadcrumb">
+            <span>elis-dev</span>
+            <span>/</span>
+            <span>uat1</span>
+            <span>/</span>
+            <span>config-api-keys</span>
+          </div>
+        </div>
+        <div class="t6-body">
+          <div class="t6-panel" style="width: 220px;">
+            <div class="t6-panel-header">
+              Explorer
+              <span>−</span>
+            </div>
+            <div class="t6-panel-content">
+              <div class="t6-tree-item">
+                <span class="t6-tree-icon">📁</span>
+                dev1
+              </div>
+              <div class="t6-tree-item" style="padding-left: 24px;">
+                <span class="t6-tree-icon">🔑</span>
+                config-api
+              </div>
+              <div class="t6-tree-item">
+                <span class="t6-tree-icon">📁</span>
+                uat1
+              </div>
+              <div class="t6-tree-item selected" style="padding-left: 24px;">
+                <span class="t6-tree-icon">🔑</span>
+                config-api-keys
+              </div>
+              <div class="t6-tree-item" style="padding-left: 24px;">
+                <span class="t6-tree-icon">🔑</span>
+                feature-flags
+              </div>
+            </div>
+          </div>
+          <div class="t6-divider"></div>
+          <div class="t6-editor">
+            <div class="t6-editor-tabs">
+              <div class="t6-editor-tab active">
+                config-api-keys.json
+                <span style="color: #808080;">×</span>
+              </div>
+            </div>
+            <div class="t6-editor-content">
+              <div class="t6-line">
+                <span class="t6-line-number">1</span>
+                <span class="t6-line-content"><span class="t6-bracket">{</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">2</span>
+                <span class="t6-line-content">  <span class="t6-key">"name"</span>: <span class="t6-string">"config-api-keys"</span>,</span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">3</span>
+                <span class="t6-line-content">  <span class="t6-key">"encrypted"</span>: true,</span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">4</span>
+                <span class="t6-line-content">  <span class="t6-key">"entry"</span>: <span class="t6-bracket">[</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">5</span>
+                <span class="t6-line-content">    <span class="t6-bracket">{</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">6</span>
+                <span class="t6-line-content">      <span class="t6-key">"name"</span>: <span class="t6-string">"API_KEY_PROD"</span>,</span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">7</span>
+                <span class="t6-line-content">      <span class="t6-key">"value"</span>: <span class="t6-string">"sk-prod-xxxxx"</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">8</span>
+                <span class="t6-line-content">    <span class="t6-bracket">}</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">9</span>
+                <span class="t6-line-content">  <span class="t6-bracket">]</span></span>
+              </div>
+              <div class="t6-line">
+                <span class="t6-line-number">10</span>
+                <span class="t6-line-content"><span class="t6-bracket">}</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="t6-status">
+          <span>JSON</span>
+          <span>UTF-8</span>
+          <span>Ln 6, Col 12</span>
+          <span style="margin-left: auto;">Connected</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 7: Tab Navigation -->
+  <section id="t7" class="section">
+    <div class="section-header">
+      <h2 class="section-title">7. Tab Navigation</h2>
+      <p class="section-desc">Navigation horizontale par onglets, contenu pleine largeur. Interface claire et organisee par environnement.</p>
+    </div>
+    <div class="preview">
+      <div class="t7-container">
+        <div class="t7-header">
+          <div class="t7-header-left">
+            <span class="t7-logo">KVM Manager</span>
+            <div class="t7-status-bar">
+              <span class="t7-status-indicator"></span>
+              <span>elis-dev</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="t1-btn-outline t1-btn">Disconnect</button>
+          </div>
+        </div>
+        <div class="t7-tabs">
+          <button class="t7-tab">dev1 (3)</button>
+          <button class="t7-tab active">uat1 (5)</button>
+          <button class="t7-tab">staging (2)</button>
+          <button class="t7-tab">prod1 (8)</button>
+        </div>
+        <div class="t7-content">
+          <div class="t7-section">
+            <div class="t7-section-header">
+              <span class="t7-section-title">config-api-keys</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="t1-btn-outline t1-btn">Add Entry</button>
+                <button class="t1-btn">Save</button>
+              </div>
+            </div>
+            <div class="t7-table">
+              <div class="t7-table-header">
+                <span>Key</span>
+                <span>Value</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
+              <div class="t7-table-row">
+                <span class="t7-table-key">API_KEY_PROD</span>
+                <span class="t7-table-value">sk-prod-xxxxx...xxxxx</span>
+                <span class="t7-table-status"><span class="t7-badge-modified">Modified</span></span>
+                <span class="t7-table-actions">
+                  <button class="t7-icon-btn">✏️</button>
+                  <button class="t7-icon-btn">🗑</button>
+                </span>
+              </div>
+              <div class="t7-table-row">
+                <span class="t7-table-key">API_SECRET</span>
+                <span class="t7-table-value">************************</span>
+                <span class="t7-table-status"></span>
+                <span class="t7-table-actions">
+                  <button class="t7-icon-btn">✏️</button>
+                  <button class="t7-icon-btn">🗑</button>
+                </span>
+              </div>
+              <div class="t7-table-row">
+                <span class="t7-table-key">WEBHOOK_URL</span>
+                <span class="t7-table-value">https://api.example.com/hook</span>
+                <span class="t7-table-status"><span class="t7-badge-new">New</span></span>
+                <span class="t7-table-actions">
+                  <button class="t7-icon-btn">✏️</button>
+                  <button class="t7-icon-btn">🗑</button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 8: Brutalist -->
+  <section id="t8" class="section">
+    <div class="section-header">
+      <h2 class="section-title">8. Brutalist</h2>
+      <p class="section-desc">Design brutaliste avec typographie imposante, bordures epaisses et decoration minimale. Impact visuel fort.</p>
+    </div>
+    <div class="preview">
+      <div class="t8-container">
+        <div class="t8-sidebar">
+          <div class="t8-sidebar-header">
+            <div class="t8-sidebar-title">KVM</div>
+            <div class="t8-sidebar-subtitle">Key Value Maps</div>
+          </div>
+          <div class="t8-sidebar-content">
+            <div class="t8-env-section">
+              <div class="t8-env-header">DEV1</div>
+              <div class="t8-env-list">
+                <div class="t8-env-item">config-api</div>
+                <div class="t8-env-item">secrets</div>
+              </div>
+            </div>
+            <div class="t8-env-section">
+              <div class="t8-env-header">UAT1</div>
+              <div class="t8-env-list">
+                <div class="t8-env-item selected">config-api-keys</div>
+                <div class="t8-env-item">feature-flags</div>
+              </div>
+            </div>
+            <div class="t8-env-section">
+              <div class="t8-env-header">PROD1</div>
+              <div class="t8-env-list">
+                <div class="t8-env-item">endpoints</div>
+                <div class="t8-env-item">secrets</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="t8-main">
+          <div class="t8-main-header">
+            <div>
+              <div class="t8-main-title">CONFIG-API-KEYS</div>
+              <div class="t8-main-meta">UAT1 · 3 ENTRIES · ENCRYPTED</div>
+            </div>
+            <div class="t8-main-actions">
+              <button class="t8-btn">+ ADD</button>
+              <button class="t8-btn t8-btn-primary">SAVE</button>
+            </div>
+          </div>
+          <div class="t8-content">
+            <div class="t8-entry">
+              <div class="t8-entry-key">API_KEY_PROD</div>
+              <div class="t8-entry-value">sk-prod-xxxxx...xxxxx</div>
+              <div class="t8-entry-actions">
+                <span class="t8-entry-action">EDIT</span>
+                <span class="t8-entry-action">DELETE</span>
+              </div>
+            </div>
+            <div class="t8-entry">
+              <div class="t8-entry-key">API_SECRET</div>
+              <div class="t8-entry-value">************************</div>
+              <div class="t8-entry-actions">
+                <span class="t8-entry-action">EDIT</span>
+                <span class="t8-entry-action">DELETE</span>
+              </div>
+            </div>
+            <div class="t8-entry">
+              <div class="t8-entry-key">WEBHOOK_URL</div>
+              <div class="t8-entry-value">https://api.example.com/webhook</div>
+              <div class="t8-entry-actions">
+                <span class="t8-entry-action">EDIT</span>
+                <span class="t8-entry-action">DELETE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 9: Soft UI -->
+  <section id="t9" class="section">
+    <div class="section-header">
+      <h2 class="section-title">9. Soft UI</h2>
+      <p class="section-desc">Design moderne avec coins arrondis, gradients subtils et ombres douces. Interface accueillante et contemporaine.</p>
+    </div>
+    <div class="preview">
+      <div class="t9-container">
+        <div class="t9-sidebar">
+          <div class="t9-sidebar-header">
+            <div class="t9-sidebar-title">KVM Manager</div>
+            <div class="t9-sidebar-subtitle">elis-dev organization</div>
+          </div>
+          <input type="text" class="t9-sidebar-search" placeholder="Search KVMs...">
+          <div class="t9-sidebar-content">
+            <div class="t9-env-group">
+              <div class="t9-env-header">Development</div>
+              <div class="t9-kvm-item">
+                <div class="t9-kvm-icon">🔑</div>
+                <span>config-api</span>
+              </div>
+              <div class="t9-kvm-item">
+                <div class="t9-kvm-icon">🔒</div>
+                <span>secrets</span>
+              </div>
+            </div>
+            <div class="t9-env-group">
+              <div class="t9-env-header">UAT</div>
+              <div class="t9-kvm-item selected">
+                <div class="t9-kvm-icon">🔑</div>
+                <span>config-api-keys</span>
+              </div>
+              <div class="t9-kvm-item">
+                <div class="t9-kvm-icon">🚩</div>
+                <span>feature-flags</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="t9-main">
+          <div class="t9-main-header">
+            <div>
+              <div class="t9-main-title">config-api-keys</div>
+              <div class="t9-main-badges">
+                <span class="t9-badge">uat1</span>
+                <span class="t9-badge">🔒 encrypted</span>
+                <span class="t9-badge success">✓ synced</span>
+              </div>
+            </div>
+            <div class="t9-main-actions">
+              <button class="t9-btn t9-btn-secondary">+ Add Entry</button>
+              <button class="t9-btn t9-btn-primary">Save Changes</button>
+            </div>
+          </div>
+          <div class="t9-content">
+            <div class="t9-entry-card">
+              <div class="t9-entry-icon">🔑</div>
+              <div class="t9-entry-content">
+                <div class="t9-entry-key">API_KEY_PROD</div>
+                <div class="t9-entry-value">sk-prod-xxxxx...xxxxx</div>
+              </div>
+              <button class="t9-btn t9-btn-secondary" style="padding: 8px 12px;">Edit</button>
+            </div>
+            <div class="t9-entry-card">
+              <div class="t9-entry-icon">🔐</div>
+              <div class="t9-entry-content">
+                <div class="t9-entry-key">API_SECRET</div>
+                <div class="t9-entry-value">************************</div>
+              </div>
+              <button class="t9-btn t9-btn-secondary" style="padding: 8px 12px;">Edit</button>
+            </div>
+            <div class="t9-entry-card">
+              <div class="t9-entry-icon">🔗</div>
+              <div class="t9-entry-content">
+                <div class="t9-entry-key">WEBHOOK_URL</div>
+                <div class="t9-entry-value">https://api.example.com/webhook</div>
+              </div>
+              <button class="t9-btn t9-btn-secondary" style="padding: 8px 12px;">Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Template 10: Dashboard -->
+  <section id="t10" class="section">
+    <div class="section-header">
+      <h2 class="section-title">10. Dashboard</h2>
+      <p class="section-desc">Vue tableau de bord avec metriques, statistiques et activite recente. Vision globale de l'etat des KVMs.</p>
+    </div>
+    <div class="preview">
+      <div class="t10-container">
+        <div class="t10-header">
+          <div class="t10-header-left">
+            <div class="t10-logo">
+              <div class="t10-logo-icon"></div>
+              <span>KVM Dashboard</span>
+            </div>
+            <div class="t10-nav">
+              <div class="t10-nav-item active">Overview</div>
+              <div class="t10-nav-item">KVMs</div>
+              <div class="t10-nav-item">Settings</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 13px; color: #94A3B8;">elis-dev</span>
+            <div style="width: 32px; height: 32px; background: #334155; border-radius: 50%;"></div>
+          </div>
+        </div>
+        <div class="t10-main">
+          <div class="t10-stats">
+            <div class="t10-stat-card">
+              <div class="t10-stat-label">Total KVMs</div>
+              <div class="t10-stat-value">18</div>
+              <div class="t10-stat-change">+2 this week</div>
+            </div>
+            <div class="t10-stat-card">
+              <div class="t10-stat-label">Environments</div>
+              <div class="t10-stat-value">4</div>
+            </div>
+            <div class="t10-stat-card">
+              <div class="t10-stat-label">Total Entries</div>
+              <div class="t10-stat-value">47</div>
+              <div class="t10-stat-change">+5 this week</div>
+            </div>
+            <div class="t10-stat-card">
+              <div class="t10-stat-label">Encrypted</div>
+              <div class="t10-stat-value">12</div>
+            </div>
+          </div>
+          <div class="t10-grid">
+            <div class="t10-card">
+              <div class="t10-card-header">
+                <span class="t10-card-title">Recent KVMs</span>
+                <span class="t10-card-action">View All →</span>
+              </div>
+              <div class="t10-card-content">
+                <div class="t10-kvm-list">
+                  <div class="t10-kvm-row">
+                    <span class="t10-kvm-name">config-api-keys</span>
+                    <span class="t10-kvm-env">uat1</span>
+                    <span class="t10-kvm-count">3 entries</span>
+                    <span class="t10-kvm-status"></span>
+                  </div>
+                  <div class="t10-kvm-row">
+                    <span class="t10-kvm-name">feature-flags</span>
+                    <span class="t10-kvm-env">uat1</span>
+                    <span class="t10-kvm-count">8 entries</span>
+                    <span class="t10-kvm-status"></span>
+                  </div>
+                  <div class="t10-kvm-row">
+                    <span class="t10-kvm-name">secrets</span>
+                    <span class="t10-kvm-env">prod1</span>
+                    <span class="t10-kvm-count">5 entries</span>
+                    <span class="t10-kvm-status"></span>
+                  </div>
+                  <div class="t10-kvm-row">
+                    <span class="t10-kvm-name">endpoints</span>
+                    <span class="t10-kvm-env">dev1</span>
+                    <span class="t10-kvm-count">12 entries</span>
+                    <span class="t10-kvm-status"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="t10-card">
+              <div class="t10-card-header">
+                <span class="t10-card-title">Recent Activity</span>
+              </div>
+              <div class="t10-card-content">
+                <div class="t10-activity">
+                  <div class="t10-activity-item">
+                    <span class="t10-activity-time">2m ago</span>
+                    <span class="t10-activity-text">Entry <strong>API_KEY</strong> modified in config-api-keys</span>
+                  </div>
+                  <div class="t10-activity-item">
+                    <span class="t10-activity-time">15m ago</span>
+                    <span class="t10-activity-text">New KVM <strong>webhooks</strong> created in uat1</span>
+                  </div>
+                  <div class="t10-activity-item">
+                    <span class="t10-activity-time">1h ago</span>
+                    <span class="t10-activity-text">Entry deleted from <strong>feature-flags</strong></span>
+                  </div>
+                  <div class="t10-activity-item">
+                    <span class="t10-activity-time">3h ago</span>
+                    <span class="t10-activity-text">Connected to <strong>elis-dev</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Navigation logic
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        // Update active nav link
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        // Show corresponding section
+        const targetId = link.dataset.target;
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(targetId).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

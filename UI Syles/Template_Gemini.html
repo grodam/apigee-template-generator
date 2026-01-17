@@ -1,0 +1,327 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Upload, 
+  Package, 
+  ShieldCheck, 
+  Target, 
+  ChevronDown, 
+  ChevronUp, 
+  Terminal, 
+  CheckCircle2, 
+  Activity,
+  ExternalLink,
+  Save,
+  CloudUpload,
+  ArrowRight
+} from 'lucide-react';
+
+const App = () => {
+  // --- ÉTATS (Considérés comme persistants) ---
+  const [activeCard, setActiveCard] = useState('product');
+  const [isLogOpen, setIsLogOpen] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [specLoaded, setSpecLoaded] = useState(false);
+
+  const [formData, setFormData] = useState({
+    product: { name: '', version: '1.0.0', owner: '', completion: 0 },
+    proxy: { basepath: '', security: 'OAuth2', completion: 50 },
+    target: { url: '', timeout: 30, health: 'unknown', completion: 50 }
+  });
+
+  // --- LOGIQUE ---
+  const addLog = (message, type = 'info') => {
+    const time = new Date().toLocaleTimeString();
+    setLogs(prev => [...prev, { time, message, type }]);
+  };
+
+  const calculateCompletion = (section, data) => {
+    const fields = Object.keys(data).filter(key => key !== 'completion' && key !== 'health');
+    const filledFields = fields.filter(key => data[key] && data[key].toString().trim() !== '');
+    return Math.round((filledFields.length / fields.length) * 100);
+  };
+
+  const handleInputChange = (section, field, value) => {
+    setFormData(prev => {
+      const updatedSection = { ...prev[section], [field]: value };
+      const newCompletion = calculateCompletion(section, updatedSection);
+      return {
+        ...prev,
+        [section]: { ...updatedSection, completion: newCompletion }
+      };
+    });
+  };
+
+  const simulateImport = () => {
+    setSpecLoaded(true);
+    addLog("ANALYSE OPENAPI :: DÉBUT", "info");
+    setTimeout(() => {
+      const importedData = {
+        product: { name: 'PROJET_ALPHA_CORE', version: '2.4.1', owner: 'Architecture Dept.', completion: 100 },
+        proxy: { basepath: '/v1/core', security: 'API Key', completion: 100 },
+        target: { url: 'https://internal.api.enterprise/backend', timeout: 60, health: 'healthy', completion: 100 }
+      };
+      setFormData(importedData);
+      addLog("IMPORTATION RÉUSSIE : 3 MODULES SYNCHRONISÉS", "success");
+    }, 800);
+  };
+
+  const triggerPushAzure = () => {
+    setIsLogOpen(true);
+    setIsDeploying(true);
+    addLog("INITIALISATION DÉPLOIEMENT AZURE...", "info");
+    setTimeout(() => {
+      addLog("SUCCESS :: PRODUCTION MISE À JOUR", "success");
+      setIsDeploying(false);
+    }, 3000);
+  };
+
+  // --- COMPOSANTS UI STYLE SUISSE ---
+
+  const SwissProgressBar = ({ percent }) => (
+    <div className="w-full h-1 bg-gray-100 mt-2">
+      <div 
+        className="h-full bg-black transition-all duration-700 ease-in-out" 
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  );
+
+  const SectionHeader = ({ number, title }) => (
+    <div className="border-b-2 border-black pb-2 mb-8 flex items-baseline gap-4">
+      <span className="text-4xl font-black tracking-tighter">{number}</span>
+      <h2 className="text-xl font-bold uppercase tracking-widest">{title}</h2>
+    </div>
+  );
+
+  const Card = ({ title, icon: Icon, type, children, progress }) => {
+    const isExpanded = activeCard === type;
+    return (
+      <div className={`group transition-all duration-300 border-b border-gray-200 ${isExpanded ? 'bg-gray-50/50 pb-8' : 'hover:bg-gray-50'}`}>
+        <div 
+          className="py-6 flex items-center justify-between cursor-pointer"
+          onClick={() => setActiveCard(isExpanded ? null : type)}
+        >
+          <div className="flex items-center gap-6">
+            <div className={`transition-colors ${isExpanded ? 'text-black' : 'text-gray-300'}`}>
+              <Icon size={24} strokeWidth={isExpanded ? 2.5 : 1.5} />
+            </div>
+            <div>
+              <h3 className={`text-lg uppercase tracking-tight font-bold ${isExpanded ? 'text-black' : 'text-gray-400'}`}>
+                {title}
+              </h3>
+              {isExpanded && <SwissProgressBar percent={progress} />}
+            </div>
+          </div>
+          <div className="flex items-center gap-8">
+            {!isExpanded && <span className="text-xs font-mono text-gray-400">{progress}%</span>}
+            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} className="text-gray-300" />}
+          </div>
+        </div>
+        
+        {isExpanded && (
+          <div className="pl-[48px] pr-4 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-4">
+              {children}
+            </div>
+            <div className="mt-12 flex justify-start">
+              <button className="group flex items-center gap-2 text-xs font-black uppercase tracking-widest border-b-2 border-black pb-1 hover:gap-4 transition-all">
+                <Save size={14} /> Enregistrer les modifications <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col font-sans text-black selection:bg-black selection:text-white">
+      {/* Barre de navigation ultra-minimaliste */}
+      <header className="h-20 border-b border-black px-10 flex items-center justify-between sticky top-0 bg-white z-50">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-black tracking-tighter">ARCH.</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-gray-400">Canvas v2.0</span>
+        </div>
+        
+        <div className="flex items-center gap-10">
+          <button 
+            onClick={triggerPushAzure}
+            disabled={!specLoaded || isDeploying}
+            className={`text-xs font-black uppercase tracking-widest px-6 py-3 transition-all
+              ${!specLoaded ? 'text-gray-300 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}`}
+          >
+            {isDeploying ? 'Sync en cours...' : 'Push to Azure APIM'}
+          </button>
+          <button onClick={() => setIsLogOpen(!isLogOpen)} className="relative p-1">
+            <Terminal size={22} strokeWidth={2} />
+            {logs.length > 0 && <div className="absolute -top-1 -right-1 w-2 h-2 bg-black rounded-full"></div>}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex">
+        {/* Zone principale */}
+        <main className="flex-1 px-10 py-16 max-w-5xl mx-auto w-full">
+          
+          {/* 0. INITIALISATION */}
+          <section className="mb-24">
+            <SectionHeader number="00" title="Source Specification" />
+            <div 
+              onClick={simulateImport}
+              className={`group h-48 border-2 border-black flex flex-col items-center justify-center cursor-pointer transition-all
+                ${specLoaded ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
+            >
+              {specLoaded ? (
+                <div className="flex flex-col items-center gap-2">
+                  <CheckCircle2 size={32} />
+                  <span className="text-sm font-bold uppercase tracking-widest">YAML LOADED: PETSTORE_PROD.V2</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <Upload size={32} strokeWidth={1} />
+                  <span className="text-xs font-bold uppercase tracking-[0.2em]">Déposer le fichier OpenAPI</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* 1. CONFIGURATION */}
+          <section>
+            <SectionHeader number="01" title="Core Architecture" />
+            <div className="border-t-2 border-black mt-4">
+              <Card title="Product Metadata" icon={Package} type="product" progress={formData.product.completion}>
+                <div className="space-y-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">API Name</label>
+                    <input 
+                      type="text" 
+                      value={formData.product.name} 
+                      onChange={(e) => handleInputChange('product', 'name', e.target.value)}
+                      placeholder="EX: SYSTEM_GATEWAY"
+                      className="text-xl font-bold bg-transparent border-b border-gray-200 focus:border-black outline-none pb-2"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Version</label>
+                    <input 
+                      type="text" 
+                      value={formData.product.version} 
+                      onChange={(e) => handleInputChange('product', 'version', e.target.value)}
+                      className="text-lg font-medium bg-transparent border-b border-gray-200 focus:border-black outline-none pb-1"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Responsible Owner</label>
+                  <input 
+                    type="text" 
+                    value={formData.product.owner} 
+                    onChange={(e) => handleInputChange('product', 'owner', e.target.value)}
+                    className="text-lg font-medium bg-transparent border-b border-gray-200 focus:border-black outline-none pb-1"
+                  />
+                  <p className="text-[10px] text-gray-400 italic mt-2">Définit les droits de gouvernance dans le portail Azure.</p>
+                </div>
+              </Card>
+
+              <Card title="Security & Proxy" icon={ShieldCheck} type="proxy" progress={formData.proxy.completion}>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Gateway Basepath</label>
+                  <div className="flex items-baseline">
+                    <span className="text-xl font-bold text-gray-300">/</span>
+                    <input 
+                      type="text" 
+                      value={formData.proxy.basepath} 
+                      onChange={(e) => handleInputChange('proxy', 'basepath', e.target.value)}
+                      className="text-xl font-bold bg-transparent border-b border-gray-200 focus:border-black outline-none pb-2 w-full"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Auth Mechanism</label>
+                  <select 
+                    value={formData.proxy.security}
+                    onChange={(e) => handleInputChange('proxy', 'security', e.target.value)}
+                    className="text-lg font-bold bg-transparent border-b border-gray-200 focus:border-black outline-none pb-2 appearance-none"
+                  >
+                    <option value="OAuth2">OAUTH 2.0 (RECOMMENDED)</option>
+                    <option value="API Key">API KEY</option>
+                    <option value="OpenID Connect">OPENID CONNECT</option>
+                  </select>
+                </div>
+              </Card>
+
+              <Card title="Backend Definition" icon={Target} type="target" progress={formData.target.completion}>
+                <div className="flex flex-col gap-2 col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target Endpoint URL</label>
+                  <input 
+                    type="text" 
+                    value={formData.target.url} 
+                    onChange={(e) => handleInputChange('target', 'url', e.target.value)}
+                    className="text-xl font-bold bg-transparent border-b border-gray-200 focus:border-black outline-none pb-2 w-full font-mono text-sm"
+                  />
+                </div>
+                {formData.target.health === 'healthy' && (
+                  <div className="flex items-center gap-2 mt-4 text-[10px] font-black uppercase tracking-widest">
+                    <div className="w-2 h-2 bg-black"></div>
+                    <span>Status: Healthy & Responsive</span>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </section>
+        </main>
+
+        {/* Console Latérale (Swiss Style) */}
+        <div className={`fixed inset-y-0 right-0 w-[450px] bg-black text-white z-50 transform transition-transform duration-500 ease-in-out ${isLogOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="flex flex-col h-full p-10">
+            <div className="flex justify-between items-baseline border-b border-gray-800 pb-6 mb-8">
+              <h4 className="text-xl font-black uppercase tracking-tighter">System Log</h4>
+              <button onClick={() => setIsLogOpen(false)} className="text-[10px] font-bold uppercase tracking-widest hover:text-gray-400">Close [ESC]</button>
+            </div>
+            
+            <div className="flex-1 font-mono text-[11px] space-y-4 overflow-y-auto pr-4">
+              {logs.map((log, idx) => (
+                <div key={idx} className="flex gap-4 border-l border-gray-800 pl-4">
+                  <span className="text-gray-600 shrink-0">{log.time}</span>
+                  <span className={`${log.type === 'success' ? 'text-white' : 'text-gray-400'}`}>
+                    {log.message}
+                  </span>
+                </div>
+              ))}
+              {isDeploying && <div className="animate-pulse text-white underline underline-offset-4">PROCESSUS EN COURS...</div>}
+            </div>
+
+            <div className="mt-10 pt-6 border-t border-gray-800 grid grid-cols-2 gap-4">
+               <div className="space-y-1">
+                 <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Environment</p>
+                 <p className="text-sm font-bold">AZURE_PROD_EU_01</p>
+               </div>
+               <div className="space-y-1">
+                 <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">Status</p>
+                 <p className="text-sm font-bold text-green-500 uppercase tracking-widest">Connected</p>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Status Bar (Noir) */}
+      <footer className="h-10 bg-black text-white px-10 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-8">
+          <span className="flex items-center gap-2">
+            <Activity size={12} strokeWidth={3} /> AZURE APIM ACTIVE
+          </span>
+          <span className="text-gray-500">USER: {formData.product.owner || 'ANONYMOUS_ARCHITECT'}</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <span>{formData.product.name || 'UNNAMED_ENTITY'}</span>
+          <span className="text-gray-600">/</span>
+          <span>REL_{formData.product.version}</span>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<KeyValueMapOperations async="false" continueOnError="false" enabled="true" name="KVM-GetBackendInfos" mapIdentifier="svea.v1.backend">
+    <DisplayName>KVM-GetBackendInfos</DisplayName>
+    <Properties/>
+    <ExclusiveCache>false</ExclusiveCache>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="private.backend_api_key">
+        <Key><Parameter>backend_api_key</Parameter></Key>
+    </Get>
+    <Scope>environment</Scope>
+</KeyValueMapOperations>

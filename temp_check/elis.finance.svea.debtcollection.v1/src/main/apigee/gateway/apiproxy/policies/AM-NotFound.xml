@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage name="AM-NotFound" enabled="true" continueOnError="false" async="false">
+    <DisplayName>AM-NotFound</DisplayName>
+    <Properties/>
+    <Set>
+        <Payload contentType="application/json">
+            {
+                "error":"not_found",
+                "error_description":"Resource not Found"
+            }
+        </Payload>
+        <StatusCode>404</StatusCode>
+        <ReasonPhrase>NOT FOUND</ReasonPhrase>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>
