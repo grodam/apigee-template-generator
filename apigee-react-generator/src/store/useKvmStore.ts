@@ -63,9 +63,10 @@ interface KvmState {
 
   // Actions - Connection
   setConnection: (conn: Partial<GcpConnection>) => void;
-  connect: (organizationId: string, accessToken: string) => void;
+  connect: (organizationId: string, accessToken: string, tokenExpiry?: Date | null) => void;
   disconnect: () => void;
   setConnecting: (connecting: boolean) => void;
+  setTokenExpiry: (expiry: Date | null) => void;
 
   // Actions - Navigation
   setSelectedEnvironment: (env: string | null) => void;
@@ -158,26 +159,27 @@ export const useKvmStore = create<KvmState>()(
           connection: { ...state.connection, ...conn },
         })),
 
-      connect: (organizationId, accessToken) => {
-        // Parse token expiry from JWT, or default to 1 hour for OAuth tokens
-        let tokenExpiry: Date | null = null;
-        try {
-          const parts = accessToken.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            if (payload.exp) {
-              tokenExpiry = new Date(payload.exp * 1000);
+      connect: (organizationId, accessToken, providedTokenExpiry) => {
+        // Use provided expiry if available, otherwise try to parse from JWT
+        let tokenExpiry: Date | null = providedTokenExpiry || null;
+
+        if (!tokenExpiry) {
+          // Try to parse token expiry from JWT
+          try {
+            const parts = accessToken.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              if (payload.exp) {
+                tokenExpiry = new Date(payload.exp * 1000);
+              }
             }
+          } catch {
+            // Token might not be a valid JWT, that's okay
           }
-        } catch {
-          // Token might not be a valid JWT, that's okay
         }
 
-        // If we couldn't parse expiry (e.g., GCP OAuth Playground tokens),
-        // default to 1 hour from now (typical OAuth token lifetime)
-        if (!tokenExpiry) {
-          tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
-        }
+        // If we still don't have expiry, it will be fetched from Google tokeninfo endpoint
+        // and updated via setTokenExpiry action
 
         set({
           connection: {
@@ -219,6 +221,11 @@ export const useKvmStore = create<KvmState>()(
       },
 
       setConnecting: (connecting) => set({ isConnecting: connecting }),
+
+      setTokenExpiry: (expiry) =>
+        set((state) => ({
+          connection: { ...state.connection, tokenExpiry: expiry },
+        })),
 
       // Navigation actions
       setSelectedEnvironment: (env) =>

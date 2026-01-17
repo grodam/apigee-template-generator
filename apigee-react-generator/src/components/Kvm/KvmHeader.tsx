@@ -18,6 +18,7 @@ import {
   validateGcpToken,
   getTokenRemainingTime,
   isTokenExpiringSoon,
+  getGoogleTokenInfo,
 } from '@/services/apigee';
 
 interface KvmHeaderProps {
@@ -39,6 +40,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     setEnvKvmsForEnvironment,
     toggleEnvironmentExpanded,
     expandedEnvironments,
+    setTokenExpiry,
   } = useKvmStore();
 
   const [orgId, setOrgId] = useState(connection.organizationId || '');
@@ -76,20 +78,43 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     addConsoleMessage({ type: 'info', message: `Connecting to organization: ${orgId}...` });
 
     try {
-      // Validate token
-      const validation = await validateGcpToken(token, orgId);
+      // Get token info from Google to get real expiry time
+      addConsoleMessage({ type: 'info', message: 'Validating token...' });
+      const tokenInfo = await getGoogleTokenInfo(token);
 
-      if (!validation.valid) {
+      if (tokenInfo.error) {
         addConsoleMessage({
           type: 'error',
-          message: validation.error || 'Token validation failed',
+          message: `Token validation failed: ${tokenInfo.error}`,
         });
         setConnecting(false);
         return;
       }
 
-      // Connect and fetch initial data
-      connect(orgId, token);
+      // Log real token expiry
+      if (tokenInfo.expiresIn !== null) {
+        const minutes = Math.floor(tokenInfo.expiresIn / 60);
+        const seconds = tokenInfo.expiresIn % 60;
+        addConsoleMessage({
+          type: 'info',
+          message: `Token valid for ${minutes}m ${seconds}s${tokenInfo.email ? ` (${tokenInfo.email})` : ''}`,
+        });
+      }
+
+      // Validate access to the organization
+      const validation = await validateGcpToken(token, orgId);
+
+      if (!validation.valid) {
+        addConsoleMessage({
+          type: 'error',
+          message: validation.error || 'Organization access validation failed',
+        });
+        setConnecting(false);
+        return;
+      }
+
+      // Connect with real token expiry
+      connect(orgId, token, tokenInfo.expiryDate);
 
       // Initialize service and fetch environments
       const client = new ApigeeClient({ organizationId: orgId, accessToken: token });

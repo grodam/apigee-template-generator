@@ -179,6 +179,92 @@ export function parseTokenExpiry(token: string): Date | null {
 }
 
 /**
+ * Token info response from Google OAuth tokeninfo endpoint
+ */
+export interface GoogleTokenInfo {
+  azp?: string;
+  aud?: string;
+  sub?: string;
+  scope?: string;
+  exp?: string;
+  expires_in?: string;
+  email?: string;
+  email_verified?: string;
+  access_type?: string;
+  error?: string;
+  error_description?: string;
+}
+
+/**
+ * Get token info from Google OAuth endpoint to retrieve real expiry time
+ * This works for all Google OAuth tokens, not just JWTs
+ */
+export async function getGoogleTokenInfo(token: string): Promise<{
+  expiresIn: number | null;
+  expiryDate: Date | null;
+  email?: string;
+  error?: string;
+}> {
+  try {
+    const url = `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`;
+
+    log.info('Fetching token info from Google OAuth endpoint');
+
+    const response = await tauriFetch<GoogleTokenInfo>(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    if (!response.ok || response.data.error) {
+      const errorMsg = response.data.error_description || response.data.error || 'Invalid token';
+      log.error('Token info error:', errorMsg);
+      return { expiresIn: null, expiryDate: null, error: errorMsg };
+    }
+
+    const data = response.data;
+
+    // expires_in is the number of seconds until the token expires
+    if (data.expires_in) {
+      const expiresInSeconds = parseInt(data.expires_in, 10);
+      const expiryDate = new Date(Date.now() + expiresInSeconds * 1000);
+
+      log.info(`Token expires in ${expiresInSeconds} seconds (${Math.floor(expiresInSeconds / 60)} minutes)`);
+
+      return {
+        expiresIn: expiresInSeconds,
+        expiryDate,
+        email: data.email,
+      };
+    }
+
+    // Fallback to exp field if expires_in is not present
+    if (data.exp) {
+      const expTimestamp = parseInt(data.exp, 10);
+      const expiryDate = new Date(expTimestamp * 1000);
+      const expiresInSeconds = Math.floor((expiryDate.getTime() - Date.now()) / 1000);
+
+      log.info(`Token expires at ${expiryDate.toISOString()} (${Math.floor(expiresInSeconds / 60)} minutes remaining)`);
+
+      return {
+        expiresIn: expiresInSeconds,
+        expiryDate,
+        email: data.email,
+      };
+    }
+
+    log.warn('Token info response did not contain expiry information');
+    return { expiresIn: null, expiryDate: null };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error('Failed to fetch token info:', message);
+    return { expiresIn: null, expiryDate: null, error: message };
+  }
+}
+
+/**
  * Check if token is expired or expiring soon
  */
 export function isTokenExpiringSoon(expiry: Date | null, bufferMinutes: number = 5): boolean {

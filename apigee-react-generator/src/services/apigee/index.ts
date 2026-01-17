@@ -2,7 +2,7 @@
  * Apigee Services - Barrel Export
  */
 
-export { ApigeeClient, validateGcpToken, parseTokenExpiry, isTokenExpiringSoon, getTokenRemainingTime } from './apigeeClient';
+export { ApigeeClient, validateGcpToken, parseTokenExpiry, isTokenExpiringSoon, getTokenRemainingTime, getGoogleTokenInfo } from './apigeeClient';
 export { KvmService } from './kvmService';
 export type {
   ApigeeKvm,
