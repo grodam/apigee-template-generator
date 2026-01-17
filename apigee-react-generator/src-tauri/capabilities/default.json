@@ -14,7 +14,8 @@
         { "url": "https://*.visualstudio.com/*" },
         { "url": "https://dev.azure.com/*" },
         { "url": "https://*.dev.azure.com/*" },
-        { "url": "https://apigee.googleapis.com/*" }
+        { "url": "https://apigee.googleapis.com/*" },
+        { "url": "https://oauth2.googleapis.com/*" }
       ]
     }
   ]
