@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<APIProxy revision="1" name="elis.finance.svea.debtcollection.v1">
-    <DisplayName>debtcollection - v1</DisplayName>
-    <Description>Debt Collection API</Description>
-    <Basepaths>/debtcollection/v1</Basepaths>
-    <Policies/>
-    <ProxyEndpoints/>
-    <TargetEndpoints/>
-</APIProxy>
