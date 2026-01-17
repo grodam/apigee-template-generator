@@ -160,18 +160,35 @@ export class KvmService {
   }
 
   /**
-   * Create or update a KVM entry (environment-scoped)
+   * Create a new KVM entry (environment-scoped)
    */
-  async upsertEnvKvmEntry(
+  async createEnvKvmEntry(
     environment: string,
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Upserting entry: ${entry.name} in KVM: ${kvmName}`);
+    log.info(`Creating entry: ${entry.name} in KVM: ${kvmName}`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/environments/${environment}/keyvaluemaps/${kvmName}/entries`,
       'POST',
+      entry
+    );
+  }
+
+  /**
+   * Update an existing KVM entry (environment-scoped)
+   */
+  async updateEnvKvmEntry(
+    environment: string,
+    kvmName: string,
+    entry: UpsertKvmEntryRequest
+  ): Promise<ApigeeKvmEntry> {
+    log.info(`Updating entry: ${entry.name} in KVM: ${kvmName}`);
+
+    return this.client.request<ApigeeKvmEntry>(
+      `/organizations/${this.orgId}/environments/${environment}/keyvaluemaps/${kvmName}/entries/${entry.name}`,
+      'PUT',
       entry
     );
   }
@@ -283,18 +300,35 @@ export class KvmService {
   }
 
   /**
-   * Create or update a KVM entry (proxy-scoped)
+   * Create a new KVM entry (proxy-scoped)
    */
-  async upsertProxyKvmEntry(
+  async createProxyKvmEntry(
     proxyName: string,
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Upserting entry: ${entry.name} in proxy KVM: ${kvmName}`);
+    log.info(`Creating entry: ${entry.name} in proxy KVM: ${kvmName}`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/apis/${proxyName}/keyvaluemaps/${kvmName}/entries`,
       'POST',
+      entry
+    );
+  }
+
+  /**
+   * Update an existing KVM entry (proxy-scoped)
+   */
+  async updateProxyKvmEntry(
+    proxyName: string,
+    kvmName: string,
+    entry: UpsertKvmEntryRequest
+  ): Promise<ApigeeKvmEntry> {
+    log.info(`Updating entry: ${entry.name} in proxy KVM: ${kvmName}`);
+
+    return this.client.request<ApigeeKvmEntry>(
+      `/organizations/${this.orgId}/apis/${proxyName}/keyvaluemaps/${kvmName}/entries/${entry.name}`,
+      'PUT',
       entry
     );
   }
@@ -322,6 +356,7 @@ export class KvmService {
   /**
    * Save all modified entries to a KVM (environment-scoped)
    * Compares with original and only updates changed entries
+   * Uses POST for new entries, PUT for updates, DELETE for removals
    */
   async saveEnvKvmEntries(
     environment: string,
@@ -339,12 +374,12 @@ export class KvmService {
       const originalValue = originalMap.get(entry.name);
 
       if (originalValue === undefined) {
-        // New entry
-        await this.upsertEnvKvmEntry(environment, kvmName, entry);
+        // New entry - use POST
+        await this.createEnvKvmEntry(environment, kvmName, entry);
         stats.added++;
       } else if (originalValue !== entry.value) {
-        // Updated entry
-        await this.upsertEnvKvmEntry(environment, kvmName, entry);
+        // Updated entry - use PUT
+        await this.updateEnvKvmEntry(environment, kvmName, entry);
         stats.updated++;
       }
     }
@@ -362,6 +397,7 @@ export class KvmService {
 
   /**
    * Save all modified entries to a KVM (proxy-scoped)
+   * Uses POST for new entries, PUT for updates, DELETE for removals
    */
   async saveProxyKvmEntries(
     proxyName: string,
@@ -379,10 +415,12 @@ export class KvmService {
       const originalValue = originalMap.get(entry.name);
 
       if (originalValue === undefined) {
-        await this.upsertProxyKvmEntry(proxyName, kvmName, entry);
+        // New entry - use POST
+        await this.createProxyKvmEntry(proxyName, kvmName, entry);
         stats.added++;
       } else if (originalValue !== entry.value) {
-        await this.upsertProxyKvmEntry(proxyName, kvmName, entry);
+        // Updated entry - use PUT
+        await this.updateProxyKvmEntry(proxyName, kvmName, entry);
         stats.updated++;
       }
     }
