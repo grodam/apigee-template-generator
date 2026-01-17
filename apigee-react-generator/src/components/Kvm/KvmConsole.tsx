@@ -32,7 +32,7 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
   return (
     <div className={cn(
       'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-      'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+      'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
       'flex flex-col overflow-hidden',
       className
     )}>

@@ -124,7 +124,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
     return (
       <div className={cn(
         'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-        'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+        'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
         'p-5 flex items-center justify-center',
         className
       )}>
@@ -139,7 +139,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
     return (
       <div className={cn(
         'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-        'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+        'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
         'p-5 flex items-center justify-center',
         className
       )}>
@@ -154,7 +154,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
   return (
     <div className={cn(
       'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-      'rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
+      'rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
       'flex flex-col overflow-hidden',
       className
     )}>
@@ -174,7 +174,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
             className={cn(
               'w-full pl-9 pr-8 py-2 text-[12px]',
               'bg-[var(--swiss-gray-100)] dark:bg-[#252525]',
-              'border-none rounded-lg',
+              'border-none rounded-md',
               'text-[var(--swiss-black)] dark:text-[#E5E5E5]',
               'placeholder:text-[var(--swiss-gray-400)]',
               'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[#555]',
@@ -200,7 +200,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
             <button
               onClick={() => handleEnvironmentClick(env)}
               className={cn(
-                'w-full flex items-center gap-2 px-3 py-2.5 text-left rounded-lg',
+                'w-full flex items-center gap-2 px-3 py-2.5 text-left rounded-md',
                 'text-[12px] font-semibold',
                 'hover:bg-[var(--swiss-gray-100)] dark:hover:bg-[#333]',
                 'transition-all duration-150'
@@ -248,7 +248,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
                         key={kvmName}
                         onClick={() => handleKvmClick(env, kvmName)}
                         className={cn(
-                          'w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg mb-1',
+                          'w-full flex items-center gap-2 px-3 py-2 text-left rounded-md mb-1',
                           'transition-all duration-150',
                           isSelected
                             ? 'bg-[var(--swiss-black)] dark:bg-[#E5E5E5] text-[var(--swiss-white)] dark:text-[#1A1A1A] shadow-md'
@@ -285,7 +285,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
 
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-[var(--swiss-white)]/80 dark:bg-[#1A1A1A]/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+        <div className="absolute inset-0 bg-[var(--swiss-white)]/80 dark:bg-[#1A1A1A]/80 backdrop-blur-sm rounded-md flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--swiss-gray-500)]" />
         </div>
       )}

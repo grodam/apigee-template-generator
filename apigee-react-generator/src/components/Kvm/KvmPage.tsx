@@ -40,7 +40,7 @@ export const KvmPage: React.FC = () => {
                 'text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]',
                 'hover:border-[var(--swiss-black)] hover:text-[var(--swiss-black)]',
                 'dark:hover:border-[var(--swiss-gray-400)] dark:hover:text-[var(--swiss-white)]',
-                'rounded-lg transition-all duration-200',
+                'rounded-md transition-all duration-200',
                 'shadow-sm hover:shadow-md'
               )}
             >

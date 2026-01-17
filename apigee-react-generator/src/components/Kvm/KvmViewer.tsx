@@ -121,7 +121,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     return (
       <div className={cn(
         'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-        'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+        'rounded-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
         'flex flex-col items-center justify-center gap-4',
         className
       )}>
@@ -142,7 +142,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     return (
       <div className={cn(
         'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-        'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+        'rounded-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
         'flex flex-col items-center justify-center gap-4',
         className
       )}>
@@ -162,7 +162,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
   return (
     <div className={cn(
       'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-      'rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
+      'rounded-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]',
       'flex flex-col h-full overflow-hidden',
       className
     )}>
@@ -197,7 +197,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
         {/* Actions */}
         <div className="flex items-center gap-3">
           {/* View Toggle - Pill style */}
-          <div className="flex items-center h-9 bg-[var(--swiss-gray-100)] dark:bg-[#252525] rounded-lg p-1">
+          <div className="flex items-center h-9 bg-[var(--swiss-gray-100)] dark:bg-[#252525] rounded-md p-1">
             <button
               onClick={() => setViewMode('table')}
               className={cn(
@@ -232,7 +232,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
           <button
             onClick={onAddEntry}
             className={cn(
-              'flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg',
+              'flex items-center justify-center gap-1.5 h-9 px-4 rounded-md',
               'text-[11px] font-semibold',
               'bg-[var(--swiss-gray-100)] dark:bg-[#333]',
               'text-[var(--swiss-gray-700)] dark:text-[#E5E5E5]',
@@ -249,7 +249,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
             onClick={handleSave}
             disabled={!hasUnsavedChanges || isSaving}
             className={cn(
-              'flex items-center justify-center gap-1.5 h-9 px-5 rounded-lg',
+              'flex items-center justify-center gap-1.5 h-9 px-5 rounded-md',
               'text-[11px] font-semibold',
               'transition-all duration-150',
               hasUnsavedChanges && !isSaving
