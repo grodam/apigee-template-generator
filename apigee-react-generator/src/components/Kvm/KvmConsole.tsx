@@ -89,11 +89,6 @@ export const KvmConsole: React.FC<KvmConsoleProps> = ({ className }) => {
         </div>
       </div>
 
-      {/* Cursor line */}
-      <div className="px-4 py-2 bg-[#0a0a0a] border-t border-gray-800 font-mono text-[11px]">
-        <span className="text-green-400">$</span>
-        <span className="text-white animate-pulse ml-1">_</span>
-      </div>
     </div>
   );
 };
