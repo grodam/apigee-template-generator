@@ -36,10 +36,10 @@ export const KvmPage: React.FC = () => {
                 'w-full flex items-center justify-center gap-2 px-4 py-3',
                 'text-[10px] font-bold uppercase tracking-wider',
                 'bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-                'border-2 border-dashed border-[var(--swiss-gray-300)] dark:border-[var(--swiss-gray-600)]',
-                'text-[var(--swiss-gray-600)] dark:text-[var(--swiss-gray-400)]',
+                'border-2 border-dashed border-[var(--swiss-gray-300)] dark:border-[#555]',
+                'text-[var(--swiss-gray-600)] dark:text-[#999]',
                 'hover:border-[var(--swiss-black)] hover:text-[var(--swiss-black)]',
-                'dark:hover:border-[var(--swiss-gray-400)] dark:hover:text-[var(--swiss-white)]',
+                'dark:hover:border-[#888] dark:hover:text-[#E5E5E5]',
                 'transition-all duration-200',
                 'shadow-sm hover:shadow-md'
               )}

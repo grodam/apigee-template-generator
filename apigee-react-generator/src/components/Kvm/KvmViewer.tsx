@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FileJson,
@@ -8,12 +8,14 @@ import {
   Loader2,
   Database,
   Lock,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
 import { ApigeeClient, KvmService } from '@/services/apigee';
 import { KvmJsonView } from './KvmJsonView';
 import { KvmTableView } from './KvmTableView';
+import { DeleteKvmDialog } from './DeleteKvmDialog';
 
 interface KvmViewerProps {
   className?: string;
@@ -22,6 +24,7 @@ interface KvmViewerProps {
 
 export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) => {
   const { t } = useTranslation();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const {
     connection,
     currentKvm,
@@ -264,6 +267,22 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
             )}
             {t('kvm.viewer.save', 'Save')}
           </button>
+
+          {/* Delete KVM Button */}
+          <button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={isSaving}
+            className={cn(
+              'flex items-center justify-center h-9 w-9',
+              'text-[var(--swiss-gray-400)]',
+              'hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20',
+              'transition-all duration-150',
+              isSaving && 'opacity-50 cursor-not-allowed'
+            )}
+            title={t('kvm.viewer.deleteKvm', 'Delete KVM')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -275,6 +294,12 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
           <KvmTableView className="h-full" />
         )}
       </div>
+
+      {/* Delete KVM Dialog */}
+      <DeleteKvmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      />
     </div>
   );
 };
