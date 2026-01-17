@@ -38,9 +38,6 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     addConsoleMessage,
     resetData,
     setEnvKvmsForEnvironment,
-    toggleEnvironmentExpanded,
-    expandedEnvironments,
-    setTokenExpiry,
   } = useKvmStore();
 
   const [orgId, setOrgId] = useState(connection.organizationId || '');
@@ -136,7 +133,7 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
         message: `Found ${proxies.length} API proxy(ies)`,
       });
 
-      // Auto-load KVMs for all environments
+      // Auto-load KVMs for all environments (collapsed by default)
       addConsoleMessage({ type: 'info', message: 'Loading KVMs for all environments...' });
       let totalKvms = 0;
       for (const env of environments) {
@@ -144,10 +141,6 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
           const kvms = await service.listEnvKvms(env);
           setEnvKvmsForEnvironment(env, kvms);
           totalKvms += kvms.length;
-          // Expand the environment to show KVMs
-          if (!expandedEnvironments.has(env)) {
-            toggleEnvironmentExpanded(env);
-          }
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           addConsoleMessage({ type: 'warning', message: `Failed to load KVMs for ${env}: ${errorMsg}` });
