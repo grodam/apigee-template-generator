@@ -39,8 +39,6 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     setCurrentKvm,
     setHasUnsavedChanges,
     addConsoleMessage,
-    applyPendingDeletions,
-    clearEntriesMarkedForDeletion,
   } = useKvmStore();
 
   const handleSave = useCallback(async () => {
@@ -56,12 +54,12 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     addConsoleMessage({ type: 'info', message: `Saving changes to ${selectedKvmName}...` });
 
     try {
-      // Apply pending deletions first
-      applyPendingDeletions();
-
-      // Get entries after applying deletions
-      const storeState = useKvmStore.getState();
-      const newEntries = storeState.currentKvm?.keyValueEntries || [];
+      // Get current entries and filter out those marked for deletion
+      // (without modifying state - entries stay visible until refresh)
+      const allCurrentEntries = currentKvm.keyValueEntries || [];
+      const newEntries = allCurrentEntries.filter(
+        (entry) => !entriesMarkedForDeletion.has(entry.name)
+      );
       const oldEntries = originalKvm.keyValueEntries || [];
 
       let stats: { added: number; updated: number; deleted: number };
@@ -111,11 +109,11 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     selectedScope,
     selectedProxyName,
     selectedKvmName,
+    entriesMarkedForDeletion,
     setSaving,
     setCurrentKvm,
     setHasUnsavedChanges,
     addConsoleMessage,
-    applyPendingDeletions,
   ]);
 
   // Empty state when not connected or no KVM selected
