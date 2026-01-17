@@ -205,6 +205,11 @@ export async function getGoogleTokenInfo(token: string): Promise<{
   email?: string;
   error?: string;
 }> {
+  // Validate token format first
+  if (!token || token.length < 20) {
+    return { expiresIn: null, expiryDate: null, error: 'Invalid token format' };
+  }
+
   try {
     const url = `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`;
 
@@ -258,9 +263,23 @@ export async function getGoogleTokenInfo(token: string): Promise<{
     log.warn('Token info response did not contain expiry information');
     return { expiresIn: null, expiryDate: null };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    // Remove token from error message for security
+    const message = rawMessage.replace(/access_token=[^&\s]+/gi, 'access_token=***');
     log.error('Failed to fetch token info:', message);
-    return { expiresIn: null, expiryDate: null, error: message };
+
+    // Provide user-friendly error messages
+    if (message.includes('SSL') || message.includes('certificate')) {
+      return { expiresIn: null, expiryDate: null, error: 'SSL/Certificate error - Corporate proxy may be blocking the request' };
+    }
+    if (message.includes('timeout') || message.includes('timed out')) {
+      return { expiresIn: null, expiryDate: null, error: 'Request timeout - Check your network connection' };
+    }
+    if (message.includes('network') || message.includes('fetch') || message.includes('connect')) {
+      return { expiresIn: null, expiryDate: null, error: 'Network error - Unable to reach Google servers' };
+    }
+
+    return { expiresIn: null, expiryDate: null, error: 'Failed to validate token with Google' };
   }
 }
 

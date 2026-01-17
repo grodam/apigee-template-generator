@@ -78,30 +78,30 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
     addConsoleMessage({ type: 'info', message: `Connecting to organization: ${orgId}...` });
 
     try {
-      // Get token info from Google to get real expiry time
+      // Try to get token info from Google for real expiry time (optional - may fail due to network/proxy)
       addConsoleMessage({ type: 'info', message: 'Validating token...' });
+      let tokenExpiry: Date | null = null;
+
       const tokenInfo = await getGoogleTokenInfo(token);
 
       if (tokenInfo.error) {
+        // Token info fetch failed - this is not critical, we'll validate via Apigee API
         addConsoleMessage({
-          type: 'error',
-          message: `Token validation failed: ${tokenInfo.error}`,
+          type: 'warning',
+          message: `Could not fetch token info: ${tokenInfo.error}. Will validate via Apigee API.`,
         });
-        setConnecting(false);
-        return;
-      }
-
-      // Log real token expiry
-      if (tokenInfo.expiresIn !== null) {
+      } else if (tokenInfo.expiresIn !== null) {
+        // Log real token expiry
         const minutes = Math.floor(tokenInfo.expiresIn / 60);
         const seconds = tokenInfo.expiresIn % 60;
         addConsoleMessage({
           type: 'info',
           message: `Token valid for ${minutes}m ${seconds}s${tokenInfo.email ? ` (${tokenInfo.email})` : ''}`,
         });
+        tokenExpiry = tokenInfo.expiryDate;
       }
 
-      // Validate access to the organization
+      // Validate access to the organization (this is the critical validation)
       const validation = await validateGcpToken(token, orgId);
 
       if (!validation.valid) {
@@ -113,8 +113,8 @@ export const KvmHeader: React.FC<KvmHeaderProps> = ({ className }) => {
         return;
       }
 
-      // Connect with real token expiry
-      connect(orgId, token, tokenInfo.expiryDate);
+      // Connect with token expiry (real if available, otherwise will default to 1 hour in store)
+      connect(orgId, token, tokenExpiry);
 
       // Initialize service and fetch environments
       const client = new ApigeeClient({ organizationId: orgId, accessToken: token });
