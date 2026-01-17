@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "APIGEE TEMPLATE BUILDER",
+  "productName": "Apigee Workbench",
   "version": "0.1.18",
   "identifier": "com.elis.apigee-generator",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "APIGEE TEMPLATE BUILDER",
+        "title": "Apigee Workbench",
         "width": 1400,
         "height": 900,
         "resizable": true,

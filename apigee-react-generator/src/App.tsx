@@ -1,81 +1,21 @@
-import { useTranslation } from 'react-i18next';
-import { CanvasContainer } from './components/Canvas/CanvasContainer'
-import { Settings, RefreshCw } from 'lucide-react'
-import { AppIcon } from './components/AppIcon'
-import { SettingsModal } from './components/Settings/SettingsModal'
-import { ThemeToggle } from './components/ThemeToggle'
-import { useProjectStore } from './store/useProjectStore'
-import { useTemplateSync } from './hooks/useTemplateSync'
-import { version } from '../package.json'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Layout } from './components/Layout/Layout';
+import { HomePage } from './components/Home/HomePage';
+import { CanvasContainer } from './components/Canvas/CanvasContainer';
+import { KvmPage } from './components/Kvm/KvmPage';
 
 function App() {
-  const { t } = useTranslation();
-  const setSettingsModalOpen = useProjectStore((state) => state.setSettingsModalOpen)
-  const templateRepoConfig = useProjectStore((state) => state.templateRepoConfig)
-
-  // Initialize template sync on startup
-  const templateSyncState = useTemplateSync();
-
   return (
-    <div className="min-h-screen bg-[var(--swiss-gray-50)]">
-      {/* Header - Swiss Design Style */}
-      <header className="swiss-header">
-        <div className="swiss-header-inner">
-          <div className="flex items-center gap-4">
-            <div className="swiss-header-logo">
-              <AppIcon className="h-10 w-10" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black uppercase tracking-tight">
-                Apigee Template Builder
-              </h1>
-              <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[var(--swiss-gray-400)]">
-                {t('app.subtitle', 'Automate API Proxy Building')}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Template sync indicator */}
-            {templateRepoConfig.enabled && (
-              <div className="flex items-center gap-1.5">
-                {templateSyncState.isSyncing ? (
-                  <RefreshCw className="h-3.5 w-3.5 text-[var(--swiss-gray-500)] animate-spin" />
-                ) : templateSyncState.source === 'remote' ? (
-                  <span
-                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--swiss-gray-300)] text-[var(--swiss-gray-600)] cursor-help"
-                    title="Templates synchronized with Azure DevOps repository"
-                  >
-                    Synced
-                  </span>
-                ) : null}
-              </div>
-            )}
-            <ThemeToggle />
-            <button
-              onClick={() => setSettingsModalOpen(true)}
-              className="w-8 h-8 border border-[var(--swiss-gray-200)] flex items-center justify-center hover:bg-[var(--swiss-gray-50)] transition-colors"
-              title={t('common.settings')}
-            >
-              <Settings className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Settings Modal */}
-      <SettingsModal />
-
-      {/* Main Canvas Content */}
-      <CanvasContainer />
-
-      {/* Footer - Swiss Style */}
-      <footer className="swiss-footer">
-        <p className="swiss-footer-text">
-          Apigee Template Generator &mdash; v{version}
-        </p>
-      </footer>
-    </div>
-  )
+    <BrowserRouter>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/generator" element={<CanvasContainer />} />
+          <Route path="/kvm" element={<KvmPage />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
