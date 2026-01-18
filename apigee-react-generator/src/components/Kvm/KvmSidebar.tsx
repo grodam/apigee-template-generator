@@ -116,6 +116,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
         type: 'success',
         message: `Loaded KVM: ${kvmName} (${kvm.keyValueEntries?.length || 0} entries)`,
       });
+
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load KVM';
       addConsoleMessage({ type: 'error', message });

@@ -597,4 +597,43 @@ export class KvmService {
     log.info(`Mapping complete: ${kvmToProxy.size} KVM-to-Proxy associations found`);
     return kvmToProxy;
   }
+
+  /**
+   * Find all proxies that use a specific KVM in an environment
+   * This scans deployed proxy policies to find KVM references
+   */
+  async findProxiesUsingKvm(
+    environment: string,
+    kvmName: string,
+    onProgress?: (current: number, total: number, proxyName: string) => void
+  ): Promise<string[]> {
+    const proxiesUsingKvm: string[] = [];
+
+    log.info(`Finding proxies using KVM "${kvmName}" in environment: ${environment}`);
+
+    // Get deployed proxies in this environment
+    const deployedProxies = await this.getEnvironmentDeployments(environment);
+    log.info(`Scanning ${deployedProxies.length} deployed proxies...`);
+
+    let processed = 0;
+    for (const proxyName of deployedProxies) {
+      processed++;
+      onProgress?.(processed, deployedProxies.length, proxyName);
+
+      // Get the deployed revision
+      const revision = await this.getProxyDeployedRevision(environment, proxyName);
+      if (!revision) continue;
+
+      // Find KVMs used by this proxy
+      const kvms = await this.findKvmsUsedByProxy(proxyName, revision);
+
+      // Check if this proxy uses our target KVM
+      if (kvms.includes(kvmName)) {
+        proxiesUsingKvm.push(proxyName);
+      }
+    }
+
+    log.info(`Found ${proxiesUsingKvm.length} proxy(ies) using KVM "${kvmName}"`);
+    return proxiesUsingKvm;
+  }
 }

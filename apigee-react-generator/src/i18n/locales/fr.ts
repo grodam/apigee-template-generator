@@ -681,5 +681,11 @@ export default {
       discard: 'Abandonner',
       cancel: 'Retour',
     },
+    proxyUsage: {
+      scanning: 'Analyse des proxies...',
+      usedBy: 'Utilisée par {{count}} proxy(s)',
+      found: '{{count}} proxy(s) utilisant cette KVM : {{proxies}}',
+      none: 'Aucun proxy n\'utilise cette KVM',
+    },
   },
 };
