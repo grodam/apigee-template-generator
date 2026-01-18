@@ -17,9 +17,6 @@ import { logger } from '@/utils/logger';
 
 const log = logger.scope('KvmService');
 
-/** Scope type for KVM operations */
-type KvmScope = 'environment' | 'proxy';
-
 /** Generic save function type */
 type SaveEntryFn = (entry: UpsertKvmEntryRequest) => Promise<ApigeeKvmEntry>;
 type DeleteEntryFn = (entryName: string) => Promise<void>;

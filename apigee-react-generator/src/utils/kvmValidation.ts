@@ -280,7 +280,6 @@ export function validateKvmJson(jsonString: string): JsonValidationResult {
   }
 
   // Extract and validate entries
-  const entries: Array<{ name: string; value: string }> = [];
   const seenNames = new Map<string, number>();
   const duplicatesRemoved: string[] = [];
   const errors: string[] = [];
