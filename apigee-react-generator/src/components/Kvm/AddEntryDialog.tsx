@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -11,6 +11,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useKvmStore } from '@/store/useKvmStore';
+import {
+  validateEntryName,
+  validateEntryValue,
+  ENTRY_NAME_MAX_LENGTH,
+  ENTRY_VALUE_MAX_LENGTH,
+  formatBytes,
+} from '@/utils/kvmValidation';
 
 interface AddEntryDialogProps {
   open: boolean;
@@ -24,6 +31,7 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -31,33 +39,34 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
       setName('');
       setValue('');
       setError(null);
+      setWarning(null);
     }
   }, [open]);
 
-  const existingNames = new Set(currentKvm?.keyValueEntries?.map((e) => e.name) || []);
+  const existingNames = currentKvm?.keyValueEntries?.map((e) => e.name) || [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
     const trimmedName = name.trim();
 
-    if (!trimmedName) {
-      setError(t('kvm.addEntry.errorNameRequired', 'Entry name is required'));
+    // Validate entry name
+    const nameValidation = validateEntryName(trimmedName, { existingNames });
+    if (!nameValidation.valid) {
+      setError(t(nameValidation.errorKey || 'kvm.validation.error', nameValidation.error || 'Validation error'));
       return;
     }
 
-    if (existingNames.has(trimmedName)) {
-      setError(t('kvm.addEntry.errorNameExists', 'An entry with this name already exists'));
+    // Validate entry value
+    const valueValidation = validateEntryValue(value);
+    if (!valueValidation.valid) {
+      setError(t(valueValidation.errorKey || 'kvm.validation.error', valueValidation.error || 'Validation error'));
       return;
     }
 
-    // Validate name format (alphanumeric, dots, hyphens, underscores)
-    if (!/^[a-zA-Z0-9._-]+$/.test(trimmedName)) {
-      setError(
-        t('kvm.addEntry.errorNameFormat', 'Name can only contain letters, numbers, dots, hyphens, and underscores')
-      );
-      return;
+    // Show warning if any
+    if (valueValidation.warning) {
+      setWarning(t(valueValidation.warningKey || 'kvm.validation.warning', valueValidation.warning));
     }
 
     // Add entry
@@ -91,6 +100,14 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
             </div>
           )}
 
+          {/* Warning message */}
+          {warning && !error && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 text-yellow-700 text-xs dark:bg-yellow-900/20 dark:text-yellow-400">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              {warning}
+            </div>
+          )}
+
           {/* Name input */}
           <div>
             <label className="block text-[9px] font-bold uppercase tracking-wider text-[var(--swiss-gray-500)] mb-1">
@@ -103,7 +120,9 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
               onChange={(e) => {
                 setName(e.target.value);
                 setError(null);
+                setWarning(null);
               }}
+              maxLength={ENTRY_NAME_MAX_LENGTH}
               placeholder="my-entry-key"
               className={cn(
                 'w-full bg-transparent border-b-2 py-2 font-mono text-sm',
@@ -115,9 +134,17 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
               )}
               autoFocus
             />
-            <p className="text-[10px] text-[var(--swiss-gray-400)] mt-1">
-              {t('kvm.addEntry.nameHint', 'Letters, numbers, dots, hyphens, underscores only')}
-            </p>
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-[10px] text-[var(--swiss-gray-400)]">
+                {t('kvm.addEntry.nameHint', 'Letters, numbers, dots, hyphens, underscores only')}
+              </p>
+              <span className={cn(
+                'text-[9px] font-mono',
+                name.length > ENTRY_NAME_MAX_LENGTH * 0.9 ? 'text-yellow-500' : 'text-[var(--swiss-gray-400)]'
+              )}>
+                {name.length}/{ENTRY_NAME_MAX_LENGTH}
+              </span>
+            </div>
           </div>
 
           {/* Value input */}
@@ -127,16 +154,40 @@ export const AddEntryDialog: React.FC<AddEntryDialogProps> = ({ open, onOpenChan
             </label>
             <textarea
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError(null);
+                setWarning(null);
+              }}
               placeholder="Enter value..."
               rows={3}
               className={cn(
-                'w-full bg-transparent border-2 border-[var(--swiss-gray-300)] p-2 font-mono text-sm',
-                'focus:outline-none focus:border-[var(--swiss-black)] transition-colors',
+                'w-full bg-transparent border-2 p-2 font-mono text-sm',
+                'focus:outline-none transition-colors',
                 'placeholder:text-[var(--swiss-gray-400)]',
-                'resize-none'
+                'resize-none',
+                value.length > ENTRY_VALUE_MAX_LENGTH
+                  ? 'border-red-500'
+                  : value.length > 100000
+                    ? 'border-yellow-500'
+                    : 'border-[var(--swiss-gray-300)] focus:border-[var(--swiss-black)]'
               )}
             />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-[10px] text-[var(--swiss-gray-400)]">
+                {t('kvm.addEntry.valueHint', 'Max size: 512KB')}
+              </p>
+              <span className={cn(
+                'text-[9px] font-mono',
+                value.length > ENTRY_VALUE_MAX_LENGTH
+                  ? 'text-red-500'
+                  : value.length > 100000
+                    ? 'text-yellow-500'
+                    : 'text-[var(--swiss-gray-400)]'
+              )}>
+                {formatBytes(value.length)}
+              </span>
+            </div>
           </div>
 
           {/* Actions */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, AlertCircle, Lock, Loader2, Check, Server } from 'lucide-react';
+import { Plus, AlertCircle, AlertTriangle, Lock, Loader2, Check, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useKvmStore } from '@/store/useKvmStore';
 import { ApigeeClient, KvmService } from '@/services/apigee';
+import { validateKvmName, KVM_NAME_MAX_LENGTH } from '@/utils/kvmValidation';
 
 interface CreateKvmDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
   const [encrypted, setEncrypted] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -44,6 +46,7 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
       setSelectedEnvs(new Set());
       setEncrypted(true);
       setError(null);
+      setWarning(null);
       setIsCreating(false);
     }
   }, [open]);
@@ -60,6 +63,7 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
       return newSet;
     });
     setError(null);
+    setWarning(null);
   };
 
   // Check if KVM name already exists in any selected environment
@@ -74,20 +78,22 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
     const trimmedName = name.trim();
 
-    if (!trimmedName) {
-      setError(t('kvm.createKvm.errorNameRequired', 'KVM name is required'));
+    // Use centralized validation
+    const existingInEnvs = Array.from(selectedEnvs).flatMap(env => envKvmsByEnvironment[env] || []);
+    const validation = validateKvmName(trimmedName, {
+      checkReserved: true,
+      existingNames: existingInEnvs,
+    });
+
+    if (!validation.valid) {
+      setError(t(validation.errorKey || 'kvm.validation.error', validation.error || 'Validation error'));
       return;
     }
 
-    // Validate name format
-    if (!/^[a-zA-Z0-9._-]+$/.test(trimmedName)) {
-      setError(
-        t('kvm.createKvm.errorNameFormat', 'Name can only contain letters, numbers, dots, hyphens, and underscores')
-      );
-      return;
+    if (validation.warning) {
+      setWarning(t(validation.warningKey || 'kvm.validation.warning', validation.warning));
     }
 
     // Validate at least one environment selected (for environment scope)
@@ -96,7 +102,7 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
       return;
     }
 
-    // Check for existing KVMs in selected environments
+    // Check for existing KVMs in selected environments (more specific check per env)
     const existingEnvs = getExistingEnvsForName(trimmedName);
     if (existingEnvs.length > 0) {
       setError(
@@ -198,6 +204,14 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
             </div>
           )}
 
+          {/* Warning message */}
+          {warning && !error && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 text-yellow-700 text-xs dark:bg-yellow-900/20 dark:text-yellow-400">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              {warning}
+            </div>
+          )}
+
           {/* Name input */}
           <div className="space-y-2">
             <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--swiss-gray-500)]">
@@ -210,7 +224,9 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
               onChange={(e) => {
                 setName(e.target.value);
                 setError(null);
+                setWarning(null);
               }}
+              maxLength={KVM_NAME_MAX_LENGTH}
               placeholder="my-kvm-name"
               disabled={isCreating}
               className={cn(
@@ -219,14 +235,24 @@ export const CreateKvmDialog: React.FC<CreateKvmDialogProps> = ({ open, onOpenCh
                 'placeholder:text-[var(--swiss-gray-400)]',
                 error
                   ? 'border-red-500'
-                  : 'border-[var(--swiss-black)] focus:border-[var(--swiss-black)]',
+                  : warning
+                    ? 'border-yellow-500'
+                    : 'border-[var(--swiss-black)] focus:border-[var(--swiss-black)]',
                 isCreating && 'opacity-50'
               )}
               autoFocus
             />
-            <p className="text-[11px] text-[var(--swiss-gray-400)]">
-              {t('kvm.createKvm.nameHint', 'Letters, numbers, dots, hyphens, underscores only')}
-            </p>
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-[11px] text-[var(--swiss-gray-400)]">
+                {t('kvm.createKvm.nameHint', 'Letters, numbers, dots, hyphens, underscores only')}
+              </p>
+              <span className={cn(
+                'text-[10px] font-mono',
+                name.length > KVM_NAME_MAX_LENGTH * 0.9 ? 'text-yellow-500' : 'text-[var(--swiss-gray-400)]'
+              )}>
+                {name.length}/{KVM_NAME_MAX_LENGTH}
+              </span>
+            </div>
           </div>
 
           {/* Environment multi-select */}

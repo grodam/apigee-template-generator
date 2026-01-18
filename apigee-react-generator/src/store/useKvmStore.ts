@@ -348,6 +348,15 @@ export const useKvmStore = create<KvmState>()(
           if (!state.currentKvm) return state;
 
           const entries = state.currentKvm.keyValueEntries || [];
+
+          // Check if entry exists
+          const entryExists = entries.some((e) => e.name === name);
+          if (!entryExists) return state;
+
+          // Check if value actually changed
+          const currentEntry = entries.find((e) => e.name === name);
+          if (currentEntry?.value === value) return state;
+
           const updatedEntries = entries.map((entry) =>
             entry.name === name ? { ...entry, value } : entry
           );
@@ -366,6 +375,12 @@ export const useKvmStore = create<KvmState>()(
           if (!state.currentKvm) return state;
 
           const entries = state.currentKvm.keyValueEntries || [];
+
+          // Prevent duplicates - if entry with same name exists, don't add
+          if (entries.some((e) => e.name === name)) {
+            return state;
+          }
+
           const newEntries = [...entries, { name, value }];
 
           return {

@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
 import { ApigeeClient, KvmService } from '@/services/apigee';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 interface KvmSidebarProps {
   className?: string;
@@ -27,6 +28,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
     selectedKvmName,
     expandedEnvironments,
     isLoading,
+    hasUnsavedChanges,
     setSelectedEnvironment,
     setSelectedScope,
     setSelectedProxyName,
@@ -39,6 +41,8 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
   } = useKvmStore();
 
   const [searchFilter, setSearchFilter] = useState('');
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const pendingNavigationRef = useRef<{ env: string; kvmName: string } | null>(null);
 
   const getService = useCallback(() => {
     if (!connection.isConnected) return null;
@@ -95,7 +99,7 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
     }
   };
 
-  const handleKvmClick = async (env: string, kvmName: string) => {
+  const navigateToKvm = useCallback(async (env: string, kvmName: string) => {
     setSelectedEnvironment(env);
     setSelectedScope('environment');
     setSelectedProxyName(null);
@@ -118,7 +122,38 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getService, setSelectedEnvironment, setSelectedScope, setSelectedProxyName, setSelectedKvm, setLoading, setCurrentKvm, addConsoleMessage]);
+
+  const handleKvmClick = useCallback((env: string, kvmName: string) => {
+    // If same KVM, do nothing
+    if (env === selectedEnvironment && kvmName === selectedKvmName) {
+      return;
+    }
+
+    // If unsaved changes, show confirmation dialog
+    if (hasUnsavedChanges) {
+      pendingNavigationRef.current = { env, kvmName };
+      setShowUnsavedDialog(true);
+      return;
+    }
+
+    // Navigate directly
+    navigateToKvm(env, kvmName);
+  }, [selectedEnvironment, selectedKvmName, hasUnsavedChanges, navigateToKvm]);
+
+  const handleDiscardChanges = useCallback(() => {
+    setShowUnsavedDialog(false);
+    if (pendingNavigationRef.current) {
+      const { env, kvmName } = pendingNavigationRef.current;
+      pendingNavigationRef.current = null;
+      navigateToKvm(env, kvmName);
+    }
+  }, [navigateToKvm]);
+
+  const handleCancelNavigation = useCallback(() => {
+    setShowUnsavedDialog(false);
+    pendingNavigationRef.current = null;
+  }, []);
 
   if (!connection.isConnected) {
     return (
@@ -289,6 +324,14 @@ export const KvmSidebar: React.FC<KvmSidebarProps> = ({ className }) => {
           <Loader2 className="h-6 w-6 animate-spin text-[var(--swiss-gray-500)]" />
         </div>
       )}
+
+      {/* Unsaved changes confirmation */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onOpenChange={setShowUnsavedDialog}
+        onDiscard={handleDiscardChanges}
+        onCancel={handleCancelNavigation}
+      />
     </div>
   );
 };

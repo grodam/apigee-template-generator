@@ -1,8 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, AlertCircle, RotateCcw } from 'lucide-react';
+import { Trash2, AlertCircle, RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKvmStore } from '@/store/useKvmStore';
+import { ENTRY_VALUE_MAX_LENGTH, formatBytes } from '@/utils/kvmValidation';
 
 interface KvmTableViewProps {
   className?: string;
@@ -109,21 +110,52 @@ export const KvmTableView: React.FC<KvmTableViewProps> = ({ className }) => {
 
               {/* Value - editable */}
               <div className="flex-1">
-                <input
-                  type="text"
-                  value={entry.value}
-                  onChange={(e) => updateEntry(entry.name, e.target.value)}
-                  className={cn(
-                    'w-full bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
-                    'border border-[var(--swiss-gray-200)] dark:border-[#444]',
-                    ' px-3 py-2 font-mono text-sm',
-                    'text-[var(--swiss-gray-700)] dark:text-[#E5E5E5]',
-                    'focus:outline-none focus:ring-2 focus:ring-[var(--swiss-black)] dark:focus:ring-[#666]',
-                    'placeholder:text-[var(--swiss-gray-400)]',
-                    'transition-all duration-150'
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={entry.value}
+                    onChange={(e) => updateEntry(entry.name, e.target.value)}
+                    className={cn(
+                      'w-full bg-[var(--swiss-white)] dark:bg-[#1A1A1A]',
+                      'border px-3 py-2 font-mono text-sm',
+                      'text-[var(--swiss-gray-700)] dark:text-[#E5E5E5]',
+                      'focus:outline-none focus:ring-2',
+                      'placeholder:text-[var(--swiss-gray-400)]',
+                      'transition-all duration-150',
+                      entry.value.length > ENTRY_VALUE_MAX_LENGTH
+                        ? 'border-red-500 focus:ring-red-500'
+                        : entry.value.length > 100000
+                          ? 'border-yellow-500 focus:ring-yellow-500'
+                          : 'border-[var(--swiss-gray-200)] dark:border-[#444] focus:ring-[var(--swiss-black)] dark:focus:ring-[#666]'
+                    )}
+                    placeholder={t('kvm.table.enterValue', 'Enter value...')}
+                  />
+                  {/* Size indicator for large values */}
+                  {entry.value.length > 10000 && (
+                    <div
+                      className={cn(
+                        'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono',
+                        entry.value.length > ENTRY_VALUE_MAX_LENGTH
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                          : entry.value.length > 100000
+                            ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-[var(--swiss-gray-100)] text-[var(--swiss-gray-500)] dark:bg-[#333] dark:text-[#888]'
+                      )}
+                      title={entry.value.length > ENTRY_VALUE_MAX_LENGTH
+                        ? t('kvm.table.valueTooLarge', 'Value exceeds maximum size')
+                        : t('kvm.table.valueLarge', 'Large value may impact performance')
+                      }
+                    >
+                      {entry.value.length > ENTRY_VALUE_MAX_LENGTH && (
+                        <AlertCircle className="h-2.5 w-2.5" />
+                      )}
+                      {entry.value.length <= ENTRY_VALUE_MAX_LENGTH && entry.value.length > 100000 && (
+                        <AlertTriangle className="h-2.5 w-2.5" />
+                      )}
+                      {formatBytes(entry.value.length)}
+                    </div>
                   )}
-                  placeholder={t('kvm.table.enterValue', 'Enter value...')}
-                />
+                </div>
               </div>
 
               {/* Actions */}
