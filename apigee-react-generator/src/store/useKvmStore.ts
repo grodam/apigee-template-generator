@@ -46,8 +46,6 @@ interface KvmState {
   kvmToProxyMapping: Record<string, Record<string, string>>; // env -> kvm -> proxy
   currentKvm: Kvm | null;
   originalKvm: Kvm | null; // For tracking changes
-  currentKvmProxies: string[]; // Proxies using the current KVM
-  isLoadingProxies: boolean; // Loading state for proxy scan
 
   // UI state
   viewMode: 'json' | 'table';
@@ -84,8 +82,6 @@ interface KvmState {
   setProxyKvmsForProxy: (proxy: string, kvms: string[]) => void;
   setKvmToProxyMapping: (env: string, mapping: Map<string, string>) => void;
   setCurrentKvm: (kvm: Kvm | null) => void;
-  setCurrentKvmProxies: (proxies: string[]) => void;
-  setLoadingProxies: (loading: boolean) => void;
 
   // Actions - UI
   setViewMode: (mode: 'json' | 'table') => void;
@@ -149,8 +145,6 @@ export const useKvmStore = create<KvmState>()(
       kvmToProxyMapping: {},
       currentKvm: null,
       originalKvm: null,
-      currentKvmProxies: [],
-      isLoadingProxies: false,
 
       viewMode: 'table',
       isLoading: false,
@@ -217,8 +211,6 @@ export const useKvmStore = create<KvmState>()(
           kvmToProxyMapping: {},
           currentKvm: null,
           originalKvm: null,
-          currentKvmProxies: [],
-          isLoadingProxies: false,
           selectedEnvironment: null,
           selectedProxyName: null,
           selectedKvmName: null,
@@ -316,16 +308,10 @@ export const useKvmStore = create<KvmState>()(
       setCurrentKvm: (kvm) =>
         set({
           currentKvm: kvm,
-          originalKvm: kvm ? JSON.parse(JSON.stringify(kvm)) : null,
+          originalKvm: kvm ? structuredClone(kvm) : null,
           hasUnsavedChanges: false,
           entriesMarkedForDeletion: new Set<string>(),
-          currentKvmProxies: [], // Reset proxies when KVM changes
-          isLoadingProxies: false,
         }),
-
-      setCurrentKvmProxies: (proxies) => set({ currentKvmProxies: proxies }),
-
-      setLoadingProxies: (loading) => set({ isLoadingProxies: loading }),
 
       // UI actions
       setViewMode: (mode) => set({ viewMode: mode }),
@@ -504,8 +490,6 @@ export const useKvmStore = create<KvmState>()(
           kvmToProxyMapping: {},
           currentKvm: null,
           originalKvm: null,
-          currentKvmProxies: [],
-          isLoadingProxies: false,
           isLoading: false,
           isSaving: false,
           isConnecting: false,
@@ -525,8 +509,6 @@ export const useKvmStore = create<KvmState>()(
           kvmToProxyMapping: {},
           currentKvm: null,
           originalKvm: null,
-          currentKvmProxies: [],
-          isLoadingProxies: false,
           selectedEnvironment: null,
           selectedProxyName: null,
           selectedKvmName: null,

@@ -8,6 +8,7 @@ import {
   validateKvmJson,
   MAX_ENTRIES_PER_KVM,
   ENTRIES_WARNING_THRESHOLD,
+  JSON_VALIDATION_DEBOUNCE_MS,
 } from '@/utils/kvmValidation';
 
 interface KvmJsonViewProps {
@@ -109,7 +110,7 @@ export const KvmJsonView: React.FC<KvmJsonViewProps> = ({ className }) => {
           setValidationStatus('valid');
           setValidationMessage(null);
         }
-      }, 300); // 300ms debounce
+      }, JSON_VALIDATION_DEBOUNCE_MS);
     },
     [updateEntriesFromJson]
   );

@@ -16,6 +16,12 @@ export const ENTRY_NAME_MAX_LENGTH = 2048;
 /** Maximum length for entry value (Apigee limit ~512KB) */
 export const ENTRY_VALUE_MAX_LENGTH = 524288;
 
+/** Warning threshold for large entry values (100KB) */
+export const ENTRY_VALUE_WARNING_THRESHOLD = 100000;
+
+/** Threshold for showing size indicator in table view (10KB) */
+export const ENTRY_VALUE_SIZE_INDICATOR_THRESHOLD = 10000;
+
 /** Recommended maximum number of entries per KVM */
 export const MAX_ENTRIES_PER_KVM = 5000;
 
@@ -24,6 +30,9 @@ export const ENTRIES_WARNING_THRESHOLD = 4000;
 
 /** Pattern for valid KVM/Entry names */
 export const NAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
+
+/** Debounce delay for JSON validation (ms) */
+export const JSON_VALIDATION_DEBOUNCE_MS = 300;
 
 /** Reserved KVM names that should be avoided */
 export const RESERVED_KVM_NAMES = [
@@ -384,20 +393,4 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-/**
- * Check if a value looks like JSON
- */
-export function looksLikeJson(value: string): boolean {
-  const trimmed = value.trim();
-  return (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-         (trimmed.startsWith('[') && trimmed.endsWith(']'));
-}
-
-/**
- * Check if a value looks like a URL
- */
-export function looksLikeUrl(value: string): boolean {
-  return /^https?:\/\//i.test(value.trim());
 }

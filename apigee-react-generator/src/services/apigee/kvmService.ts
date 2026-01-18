@@ -17,6 +17,12 @@ import { logger } from '@/utils/logger';
 
 const log = logger.scope('KvmService');
 
+/** Scope type for KVM operations */
+type KvmScope = 'environment' | 'proxy';
+
+/** Generic save function type */
+type SaveEntryFn = (entry: UpsertKvmEntryRequest) => Promise<ApigeeKvmEntry>;
+type DeleteEntryFn = (entryName: string) => Promise<void>;
 
 export class KvmService {
   private client: ApigeeClient;
@@ -167,7 +173,7 @@ export class KvmService {
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Creating entry: ${entry.name} in KVM: ${kvmName}`);
+    log.info(`Creating entry in KVM: ${kvmName} (env: ${environment})`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/environments/${environment}/keyvaluemaps/${kvmName}/entries`,
@@ -184,7 +190,7 @@ export class KvmService {
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Updating entry: ${entry.name} in KVM: ${kvmName}`);
+    log.info(`Updating entry in KVM: ${kvmName} (env: ${environment})`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/environments/${environment}/keyvaluemaps/${kvmName}/entries/${entry.name}`,
@@ -201,7 +207,7 @@ export class KvmService {
     kvmName: string,
     entryName: string
   ): Promise<void> {
-    log.info(`Deleting entry: ${entryName} from KVM: ${kvmName}`);
+    log.info(`Deleting entry from KVM: ${kvmName} (env: ${environment})`);
 
     await this.client.request(
       `/organizations/${this.orgId}/environments/${environment}/keyvaluemaps/${kvmName}/entries/${entryName}`,
@@ -307,7 +313,7 @@ export class KvmService {
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Creating entry: ${entry.name} in proxy KVM: ${kvmName}`);
+    log.info(`Creating entry in proxy KVM: ${kvmName} (proxy: ${proxyName})`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/apis/${proxyName}/keyvaluemaps/${kvmName}/entries`,
@@ -324,7 +330,7 @@ export class KvmService {
     kvmName: string,
     entry: UpsertKvmEntryRequest
   ): Promise<ApigeeKvmEntry> {
-    log.info(`Updating entry: ${entry.name} in proxy KVM: ${kvmName}`);
+    log.info(`Updating entry in proxy KVM: ${kvmName} (proxy: ${proxyName})`);
 
     return this.client.request<ApigeeKvmEntry>(
       `/organizations/${this.orgId}/apis/${proxyName}/keyvaluemaps/${kvmName}/entries/${entry.name}`,
@@ -341,7 +347,7 @@ export class KvmService {
     kvmName: string,
     entryName: string
   ): Promise<void> {
-    log.info(`Deleting entry: ${entryName} from proxy KVM: ${kvmName}`);
+    log.info(`Deleting entry from proxy KVM: ${kvmName} (proxy: ${proxyName})`);
 
     await this.client.request(
       `/organizations/${this.orgId}/apis/${proxyName}/keyvaluemaps/${kvmName}/entries/${entryName}`,
@@ -354,9 +360,47 @@ export class KvmService {
   // ============================================
 
   /**
-   * Save all modified entries to a KVM (environment-scoped)
+   * Generic function to save KVM entries
    * Compares with original and only updates changed entries
-   * Uses POST for new entries, PUT for updates, DELETE for removals
+   */
+  private async saveKvmEntries(
+    newEntries: ApigeeKvmEntry[],
+    originalEntries: ApigeeKvmEntry[],
+    createFn: SaveEntryFn,
+    updateFn: SaveEntryFn,
+    deleteFn: DeleteEntryFn
+  ): Promise<{ added: number; updated: number; deleted: number }> {
+    const stats = { added: 0, updated: 0, deleted: 0 };
+
+    const originalMap = new Map(originalEntries.map((e) => [e.name, e.value]));
+    const newMap = new Map(newEntries.map((e) => [e.name, e.value]));
+
+    // Find entries to add or update
+    for (const entry of newEntries) {
+      const originalValue = originalMap.get(entry.name);
+
+      if (originalValue === undefined) {
+        await createFn(entry);
+        stats.added++;
+      } else if (originalValue !== entry.value) {
+        await updateFn(entry);
+        stats.updated++;
+      }
+    }
+
+    // Find entries to delete
+    for (const original of originalEntries) {
+      if (!newMap.has(original.name)) {
+        await deleteFn(original.name);
+        stats.deleted++;
+      }
+    }
+
+    return stats;
+  }
+
+  /**
+   * Save all modified entries to a KVM (environment-scoped)
    */
   async saveEnvKvmEntries(
     environment: string,
@@ -364,40 +408,17 @@ export class KvmService {
     newEntries: ApigeeKvmEntry[],
     originalEntries: ApigeeKvmEntry[]
   ): Promise<{ added: number; updated: number; deleted: number }> {
-    const stats = { added: 0, updated: 0, deleted: 0 };
-
-    const originalMap = new Map(originalEntries.map((e) => [e.name, e.value]));
-    const newMap = new Map(newEntries.map((e) => [e.name, e.value]));
-
-    // Find entries to add or update
-    for (const entry of newEntries) {
-      const originalValue = originalMap.get(entry.name);
-
-      if (originalValue === undefined) {
-        // New entry - use POST
-        await this.createEnvKvmEntry(environment, kvmName, entry);
-        stats.added++;
-      } else if (originalValue !== entry.value) {
-        // Updated entry - use PUT
-        await this.updateEnvKvmEntry(environment, kvmName, entry);
-        stats.updated++;
-      }
-    }
-
-    // Find entries to delete
-    for (const original of originalEntries) {
-      if (!newMap.has(original.name)) {
-        await this.deleteEnvKvmEntry(environment, kvmName, original.name);
-        stats.deleted++;
-      }
-    }
-
-    return stats;
+    return this.saveKvmEntries(
+      newEntries,
+      originalEntries,
+      (entry) => this.createEnvKvmEntry(environment, kvmName, entry),
+      (entry) => this.updateEnvKvmEntry(environment, kvmName, entry),
+      (entryName) => this.deleteEnvKvmEntry(environment, kvmName, entryName)
+    );
   }
 
   /**
    * Save all modified entries to a KVM (proxy-scoped)
-   * Uses POST for new entries, PUT for updates, DELETE for removals
    */
   async saveProxyKvmEntries(
     proxyName: string,
@@ -405,235 +426,12 @@ export class KvmService {
     newEntries: ApigeeKvmEntry[],
     originalEntries: ApigeeKvmEntry[]
   ): Promise<{ added: number; updated: number; deleted: number }> {
-    const stats = { added: 0, updated: 0, deleted: 0 };
-
-    const originalMap = new Map(originalEntries.map((e) => [e.name, e.value]));
-    const newMap = new Map(newEntries.map((e) => [e.name, e.value]));
-
-    // Find entries to add or update
-    for (const entry of newEntries) {
-      const originalValue = originalMap.get(entry.name);
-
-      if (originalValue === undefined) {
-        // New entry - use POST
-        await this.createProxyKvmEntry(proxyName, kvmName, entry);
-        stats.added++;
-      } else if (originalValue !== entry.value) {
-        // Updated entry - use PUT
-        await this.updateProxyKvmEntry(proxyName, kvmName, entry);
-        stats.updated++;
-      }
-    }
-
-    // Find entries to delete
-    for (const original of originalEntries) {
-      if (!newMap.has(original.name)) {
-        await this.deleteProxyKvmEntry(proxyName, kvmName, original.name);
-        stats.deleted++;
-      }
-    }
-
-    return stats;
-  }
-
-  // ============================================
-  // KVM-to-Proxy Mapping (Scan Policies)
-  // ============================================
-
-  /**
-   * Get deployments for an environment to find which proxies are deployed
-   */
-  async getEnvironmentDeployments(environment: string): Promise<string[]> {
-    log.info(`Getting deployments for environment: ${environment}`);
-
-    try {
-      const response = await this.client.request<{ deployments?: Array<{ apiProxy: string }> }>(
-        `/organizations/${this.orgId}/environments/${environment}/deployments`
-      );
-
-      const proxies = response.deployments?.map((d) => d.apiProxy) || [];
-      return [...new Set(proxies)]; // Remove duplicates
-    } catch (error) {
-      log.warn(`Failed to get deployments for ${environment}: ${error}`);
-      return [];
-    }
-  }
-
-  /**
-   * Get the latest deployed revision for a proxy in an environment
-   */
-  async getProxyDeployedRevision(environment: string, proxyName: string): Promise<string | null> {
-    try {
-      const response = await this.client.request<{ deployments?: Array<{ revision: string }> }>(
-        `/organizations/${this.orgId}/environments/${environment}/apis/${proxyName}/deployments`
-      );
-
-      if (response.deployments && response.deployments.length > 0) {
-        // Return the highest revision number
-        const revisions = response.deployments.map((d) => parseInt(d.revision, 10));
-        return Math.max(...revisions).toString();
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Get policies for a proxy revision
-   */
-  async getProxyPolicies(proxyName: string, revision: string): Promise<string[]> {
-    try {
-      const response = await this.client.request<string[]>(
-        `/organizations/${this.orgId}/apis/${proxyName}/revisions/${revision}/policies`
-      );
-      return Array.isArray(response) ? response : [];
-    } catch {
-      return [];
-    }
-  }
-
-  /**
-   * Get a specific policy content (XML)
-   */
-  async getPolicyContent(proxyName: string, revision: string, policyName: string): Promise<string | null> {
-    try {
-      // Request XML content using Accept header
-      const response = await this.client.request<string>(
-        `/organizations/${this.orgId}/apis/${proxyName}/revisions/${revision}/policies/${policyName}`,
-        'GET',
-        undefined,
-        { acceptXml: true }
-      );
-      return typeof response === 'string' ? response : JSON.stringify(response);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Extract KVM name from a KeyValueMapOperations policy XML
-   */
-  private extractKvmFromPolicy(policyContent: string): string | null {
-    // Look for <MapName> or mapIdentifier attribute
-    const mapNameMatch = policyContent.match(/<MapName[^>]*>([^<]+)<\/MapName>/i);
-    if (mapNameMatch) return mapNameMatch[1].trim();
-
-    const mapIdentifierMatch = policyContent.match(/mapIdentifier\s*=\s*["']([^"']+)["']/i);
-    if (mapIdentifierMatch) return mapIdentifierMatch[1].trim();
-
-    return null;
-  }
-
-  /**
-   * Find which KVMs a proxy uses by scanning its policies
-   */
-  async findKvmsUsedByProxy(proxyName: string, revision: string): Promise<string[]> {
-    const kvms: string[] = [];
-
-    try {
-      const policies = await this.getProxyPolicies(proxyName, revision);
-
-      // Filter for likely KVM policies (by naming convention)
-      const kvmPolicies = policies.filter(
-        (p) =>
-          p.toLowerCase().includes('kvm') ||
-          p.toLowerCase().includes('keyvalue') ||
-          p.toLowerCase().includes('kvmget') ||
-          p.toLowerCase().includes('kvmput')
-      );
-
-      for (const policyName of kvmPolicies) {
-        const content = await this.getPolicyContent(proxyName, revision, policyName);
-        if (content) {
-          const kvmName = this.extractKvmFromPolicy(content);
-          if (kvmName && !kvms.includes(kvmName)) {
-            kvms.push(kvmName);
-          }
-        }
-      }
-    } catch (error) {
-      log.warn(`Failed to scan policies for proxy ${proxyName}: ${error}`);
-    }
-
-    return kvms;
-  }
-
-  /**
-   * Build a mapping of KVM -> Proxy for an environment
-   * Returns a Map where key is KVM name and value is proxy name
-   */
-  async buildKvmToProxyMapping(
-    environment: string,
-    onProgress?: (current: number, total: number, proxyName: string) => void
-  ): Promise<Map<string, string>> {
-    const kvmToProxy = new Map<string, string>();
-
-    log.info(`Building KVM-to-Proxy mapping for environment: ${environment}`);
-
-    // Get deployed proxies in this environment
-    const deployedProxies = await this.getEnvironmentDeployments(environment);
-    log.info(`Found ${deployedProxies.length} deployed proxies`);
-
-    let processed = 0;
-    for (const proxyName of deployedProxies) {
-      processed++;
-      onProgress?.(processed, deployedProxies.length, proxyName);
-
-      // Get the deployed revision
-      const revision = await this.getProxyDeployedRevision(environment, proxyName);
-      if (!revision) continue;
-
-      // Find KVMs used by this proxy
-      const kvms = await this.findKvmsUsedByProxy(proxyName, revision);
-
-      for (const kvm of kvms) {
-        if (!kvmToProxy.has(kvm)) {
-          kvmToProxy.set(kvm, proxyName);
-        }
-      }
-    }
-
-    log.info(`Mapping complete: ${kvmToProxy.size} KVM-to-Proxy associations found`);
-    return kvmToProxy;
-  }
-
-  /**
-   * Find all proxies that use a specific KVM in an environment
-   * This scans deployed proxy policies to find KVM references
-   */
-  async findProxiesUsingKvm(
-    environment: string,
-    kvmName: string,
-    onProgress?: (current: number, total: number, proxyName: string) => void
-  ): Promise<string[]> {
-    const proxiesUsingKvm: string[] = [];
-
-    log.info(`Finding proxies using KVM "${kvmName}" in environment: ${environment}`);
-
-    // Get deployed proxies in this environment
-    const deployedProxies = await this.getEnvironmentDeployments(environment);
-    log.info(`Scanning ${deployedProxies.length} deployed proxies...`);
-
-    let processed = 0;
-    for (const proxyName of deployedProxies) {
-      processed++;
-      onProgress?.(processed, deployedProxies.length, proxyName);
-
-      // Get the deployed revision
-      const revision = await this.getProxyDeployedRevision(environment, proxyName);
-      if (!revision) continue;
-
-      // Find KVMs used by this proxy
-      const kvms = await this.findKvmsUsedByProxy(proxyName, revision);
-
-      // Check if this proxy uses our target KVM
-      if (kvms.includes(kvmName)) {
-        proxiesUsingKvm.push(proxyName);
-      }
-    }
-
-    log.info(`Found ${proxiesUsingKvm.length} proxy(ies) using KVM "${kvmName}"`);
-    return proxiesUsingKvm;
+    return this.saveKvmEntries(
+      newEntries,
+      originalEntries,
+      (entry) => this.createProxyKvmEntry(proxyName, kvmName, entry),
+      (entry) => this.updateProxyKvmEntry(proxyName, kvmName, entry),
+      (entryName) => this.deleteProxyKvmEntry(proxyName, kvmName, entryName)
+    );
   }
 }
