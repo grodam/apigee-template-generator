@@ -23,12 +23,12 @@ npm run tauri:build  # Build installateur Windows (.msi/.exe)
 ```
 apigee-react-generator/
 ├── src/
-│   ├── components/      # Composants React (Canvas, Cards, Settings, Help, ui/)
-│   ├── services/        # Logique metier (generators/, parsers/, exporters/, templates/, azure-devops/)
+│   ├── components/      # Composants React (Canvas, Cards, Settings, Help, Kvm/, ui/)
+│   ├── services/        # Logique metier (generators/, parsers/, exporters/, templates/, azure-devops/, apigee/)
 │   ├── store/           # Zustand state management
 │   ├── models/          # Interfaces TypeScript
 │   ├── types/           # Type definitions
-│   ├── utils/           # Utilitaires (constants.ts, config.ts, logger.ts, tauriHttp.ts)
+│   ├── utils/           # Utilitaires (constants.ts, config.ts, logger.ts, tauriHttp.ts, kvmGenerator.ts, kvmValidation.ts)
 │   ├── hooks/           # Custom React hooks
 │   ├── i18n/            # Internationalisation (EN/FR)
 │   └── styles/          # CSS global
@@ -103,6 +103,7 @@ Exemple: elis.finance.sap-salesforce.invoice.v1
 - **exporters/**: Creation de ZIP
 - **templates/**: Gestion, cache, sync des templates XML
 - **azure-devops/**: Auth, push repo, sync templates
+- **apigee/**: Gestion KVM (CRUD operations, batch sync)
 
 ### State Management (Zustand)
 ```typescript
@@ -128,6 +129,89 @@ const useProjectStore = create<ProjectState>()(
 ## Types d'Auth Southbound
 
 - None, Basic, OAuth2-ClientCredentials, ApiKey
+
+## Gestion KVM (Key-Value Maps)
+
+### Fonctionnalites
+
+Interface complete de gestion des KVMs Apigee:
+- **CRUD complet**: Creation, lecture, modification, suppression de KVMs
+- **Scopes**: KVMs environment-scoped et proxy-scoped
+- **Edition duale**: Vue tableau (editable) et vue JSON (Monaco Editor)
+- **Batch operations**: Synchronisation intelligente des modifications
+- **Generation backend-info**: Creation automatique de KVMs pour variabilisation URL
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│           KVM Management Page (KvmPage)             │
+├──────────────┬──────────────────┬──────────────────┤
+│  Sidebar     │  KVM Viewer      │  Console         │
+│ (Nav Tree)   │ (Table/JSON)     │ (Status Logs)    │
+├──────────────┼──────────────────┼──────────────────┤
+│ - Envs       │ - Add Entry      │ - Info messages  │
+│ - Proxies    │ - Edit Entry     │ - Success logs   │
+│ - KVMs       │ - Delete Entry   │ - Errors         │
+│ - Search     │ - Save Changes   │ - Warnings       │
+└──────────────┴──────────────────┴──────────────────┘
+              ↓              ↓              ↓
+         Zustand Store (useKvmStore)
+              ↓
+      KvmService (src/services/apigee/kvmService.ts)
+              ↓
+    Apigee Management API (HTTP)
+```
+
+### Fichiers cles
+
+| Fichier | Description |
+|---------|-------------|
+| `src/services/apigee/kvmService.ts` | Service CRUD + batch operations |
+| `src/services/apigee/types.ts` | Types API Apigee |
+| `src/utils/kvmGenerator.ts` | Generation KVM backend-info |
+| `src/utils/kvmValidation.ts` | Validation + constantes limites |
+| `src/store/useKvmStore.ts` | State management Zustand |
+| `src/components/Kvm/*.tsx` | Composants UI (Page, Sidebar, Viewer, Console, Dialogs) |
+
+### Limites Apigee X/hybrid
+
+| Contrainte | Limite | Seuil warning |
+|------------|--------|---------------|
+| Nom KVM | 255 chars | - |
+| Nom entry | 2048 chars | - |
+| Valeur entry | 512 KB | 100 KB |
+| Entries par KVM | 5000 | 4000 |
+
+### Conventions de nommage KVM
+
+```
+# KVM backend-info dedie
+{proxyName}.backend-info
+
+# KVM auto-genere (merge)
+[backendapp].[version].backend
+```
+
+### State Store (useKvmStore)
+
+```typescript
+interface KvmState {
+  connection: { orgId, token, expiry };
+  environments: string[];
+  proxies: string[];
+  envKvmsByEnvironment: Record<env, kvmNames[]>;
+  proxyKvmsByProxy: Record<proxy, kvmNames[]>;
+  currentKvm: Kvm | null;
+  originalKvm: Kvm | null;  // Snapshot pour change tracking
+  viewMode: 'json' | 'table';
+  hasUnsavedChanges: boolean;
+}
+```
+
+### Authentification
+
+Connexion via GCP OAuth2 (Google authentication). Le token est stocke dans le store avec expiration.
 
 ## Fichiers de Config Importants
 

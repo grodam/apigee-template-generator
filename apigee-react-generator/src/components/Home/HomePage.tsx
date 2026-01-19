@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex flex-col items-center justify-center bg-[var(--swiss-bg-canvas)]">
+    <div className="h-full flex flex-col items-center justify-center bg-[var(--swiss-bg-canvas)]">
       {/* Title */}
       <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--swiss-gray-400)] mb-12">
         SELECT A MODULE

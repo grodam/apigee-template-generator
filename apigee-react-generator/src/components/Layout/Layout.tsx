@@ -50,9 +50,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const headerContent = getHeaderContent();
 
   return (
-    <div className="min-h-screen bg-[var(--swiss-gray-50)]">
+    <div className="h-screen flex flex-col overflow-hidden bg-[var(--swiss-gray-50)]">
       {/* Header - Swiss Design Style */}
-      <header className="swiss-header">
+      <header className="swiss-header flex-shrink-0">
         <div className="swiss-header-inner">
           <div className="flex items-center gap-4">
             {/* Back button - only show when not on home page */}
@@ -112,10 +112,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <SettingsModal />
 
       {/* Main Content */}
-      {children}
+      <main className="flex-1 overflow-auto">
+        {children}
+      </main>
 
       {/* Footer - Swiss Style */}
-      <footer className="swiss-footer">
+      <footer className="swiss-footer flex-shrink-0">
         <p className="swiss-footer-text">
           Apigee Workbench &mdash; v{version}
         </p>

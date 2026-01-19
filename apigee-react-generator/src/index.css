@@ -221,6 +221,7 @@
   /* Smooth theme transition */
   html {
     transition: background-color 0.2s ease, color 0.2s ease;
+    overflow-y: auto; /* Show scrollbar only when needed */
   }
 
   body {

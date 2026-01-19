@@ -18,7 +18,7 @@ export const KvmPage: React.FC = () => {
   const [isCreateKvmOpen, setIsCreateKvmOpen] = useState(false);
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col bg-[#E8ECF1] dark:bg-[#2A2A2A] p-5 gap-5">
+    <div className="h-full flex flex-col bg-[#E8ECF1] dark:bg-[#2A2A2A] p-5 gap-5">
       {/* Header - Connection Panel */}
       <KvmHeader />
 
