@@ -334,16 +334,24 @@ export function validateKvmJson(jsonString: string): JsonValidationResult {
     };
   }
 
-  // Build deduplicated entries (keep last occurrence)
-  const finalEntries: Array<{ name: string; value: string }> = [];
-  const finalNamesSet = new Set<string>();
+  // Check for duplicate entry names - this is now an error, not a warning
+  if (duplicatesRemoved.length > 0) {
+    const uniqueDupes = [...new Set(duplicatesRemoved)];
+    return {
+      valid: false,
+      error: `Duplicate entry names found: ${uniqueDupes.join(', ')}`,
+      errorKey: 'kvm.validation.duplicateEntryNames',
+      duplicatesRemoved: uniqueDupes,
+    };
+  }
 
-  // Process in reverse to keep last occurrence
-  for (let i = obj.keyValueEntries.length - 1; i >= 0; i--) {
+  // Build entries list (no deduplication needed since we error on duplicates)
+  const finalEntries: Array<{ name: string; value: string }> = [];
+
+  for (let i = 0; i < obj.keyValueEntries.length; i++) {
     const entry = obj.keyValueEntries[i] as Record<string, unknown>;
-    if (entry && typeof entry.name === 'string' && !finalNamesSet.has(entry.name)) {
-      finalNamesSet.add(entry.name);
-      finalEntries.unshift({
+    if (entry && typeof entry.name === 'string') {
+      finalEntries.push({
         name: entry.name,
         value: String(entry.value ?? ''),
       });
@@ -365,16 +373,11 @@ export function validateKvmJson(jsonString: string): JsonValidationResult {
   if (finalEntries.length > ENTRIES_WARNING_THRESHOLD) {
     warning = `Large number of entries (${finalEntries.length}) may impact performance`;
     warningKey = 'kvm.validation.manyEntries';
-  } else if (duplicatesRemoved.length > 0) {
-    const uniqueDupes = [...new Set(duplicatesRemoved)];
-    warning = `${uniqueDupes.length} duplicate(s) merged: ${uniqueDupes.slice(0, 3).join(', ')}${uniqueDupes.length > 3 ? '...' : ''}`;
-    warningKey = 'kvm.validation.duplicatesMerged';
   }
 
   return {
     valid: true,
     entries: finalEntries,
-    duplicatesRemoved: [...new Set(duplicatesRemoved)],
     entriesCount: finalEntries.length,
     warning,
     warningKey,

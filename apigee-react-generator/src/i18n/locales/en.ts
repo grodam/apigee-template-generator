@@ -325,6 +325,7 @@ export default {
     title: 'Push to Azure DevOps',
     description: 'Create or update repository',
     repoHint: 'A new repository will be created if it does not exist.',
+    checking: 'Checking...',
     progress: {
       connecting: 'Connecting to Azure DevOps...',
       checking: 'Checking repository...',
@@ -333,6 +334,12 @@ export default {
       done: 'Push completed!',
       error: 'Error occurred',
       filesInfo: '{{files}} files total',
+    },
+    repoExists: {
+      title: 'Repository Already Exists',
+      message: 'The repository "{{repoName}}" already exists on Azure DevOps. Do you want to update it with the new files?',
+      confirm: 'Yes, Update Repository',
+      cancel: 'Cancel',
     },
   },
 
@@ -680,6 +687,13 @@ export default {
       message: 'Do you want to discard your changes and continue?',
       discard: 'Discard Changes',
       cancel: 'Go Back',
+    },
+    duplicateEntries: {
+      title: 'Duplicate Entry Names',
+      description: 'Cannot save KVM with duplicate entry names.',
+      message: 'The following entry names are duplicated:',
+      hint: 'Please rename or remove duplicate entries before saving.',
+      close: 'Close',
     },
   },
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, AlertTriangle, Cloud, CheckCircle2 } from 'lucide-react';
+import { Upload, AlertTriangle, Cloud, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ interface AzurePushModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPush: (repositoryName: string, onProgress: (progress: PushProgress) => void) => Promise<void>;
+  onCheckRepository: (repositoryName: string) => Promise<boolean>;
   isPushing: boolean;
 }
 
@@ -30,6 +31,7 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   isOpen,
   onClose,
   onPush,
+  onCheckRepository,
   isPushing,
 }) => {
   const { t } = useTranslation();
@@ -41,11 +43,18 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   // Progress state
   const [progress, setProgress] = useState<PushProgress | null>(null);
 
+  // Confirmation state for existing repository
+  const [isCheckingRepo, setIsCheckingRepo] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [repoExists, setRepoExists] = useState(false);
+
   // Sync local state with store when modal opens
   useEffect(() => {
     if (isOpen) {
       setRepositoryName(azureDevOpsConfig.repositoryName);
       setProgress(null); // Reset progress when modal opens
+      setShowConfirmation(false); // Reset confirmation state
+      setRepoExists(false);
     }
   }, [isOpen, azureDevOpsConfig.repositoryName]);
 
@@ -54,6 +63,39 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
   const isReadyToPush = isConfigured && repositoryName;
 
   const handlePush = async () => {
+    // First check if repository exists
+    setIsCheckingRepo(true);
+    try {
+      const exists = await onCheckRepository(repositoryName);
+      setRepoExists(exists);
+
+      if (exists) {
+        // Show confirmation dialog
+        setShowConfirmation(true);
+        setIsCheckingRepo(false);
+        return;
+      }
+
+      // Repository doesn't exist, proceed with push
+      await performPush();
+    } catch {
+      // If check fails, proceed anyway (will fail during push if there's an issue)
+      await performPush();
+    } finally {
+      setIsCheckingRepo(false);
+    }
+  };
+
+  const handleConfirmUpdate = async () => {
+    setShowConfirmation(false);
+    await performPush();
+  };
+
+  const handleCancelUpdate = () => {
+    setShowConfirmation(false);
+  };
+
+  const performPush = async () => {
     // Save repository name to store and pass it directly to onPush
     updateAzureDevOpsConfig({ repositoryName });
     await onPush(repositoryName, setProgress);
@@ -132,6 +174,39 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
                   >
                     {t('step5.openSettings', 'Open Settings')}
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Repository Exists Confirmation */}
+          {showConfirmation && repoExists && (
+            <div className="border-2 border-amber-500 bg-amber-50 dark:bg-amber-900/20 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wide mb-2">
+                    {t('azurePushModal.repoExists.title', 'Repository Already Exists')}
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                    {t('azurePushModal.repoExists.message', 'The repository "{{repoName}}" already exists on Azure DevOps. Do you want to update it with the new files?', { repoName: repositoryName })}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleConfirmUpdate}
+                      className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                    >
+                      {t('azurePushModal.repoExists.confirm', 'Yes, Update Repository')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelUpdate}
+                      className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    >
+                      {t('azurePushModal.repoExists.cancel', 'Cancel')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -226,7 +301,7 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            disabled={isPushing}
+            disabled={isPushing || isCheckingRepo}
             className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[var(--swiss-gray-600)] hover:text-[var(--swiss-black)] transition-colors disabled:opacity-50"
           >
             {t('common.cancel', 'Cancel')}
@@ -234,18 +309,24 @@ export const AzurePushModal: React.FC<AzurePushModalProps> = ({
           <button
             type="button"
             onClick={handlePush}
-            disabled={isPushing || !isReadyToPush}
+            disabled={isPushing || isCheckingRepo || !isReadyToPush || showConfirmation}
             className={cn(
               "px-6 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2",
-              isReadyToPush && !isPushing
+              isReadyToPush && !isPushing && !isCheckingRepo && !showConfirmation
                 ? "bg-[var(--swiss-black)] text-[var(--swiss-white)] hover:bg-[var(--swiss-gray-800)]"
                 : "bg-[var(--swiss-gray-300)] text-[var(--swiss-gray-500)] cursor-not-allowed"
             )}
           >
-            <Upload className={cn("h-4 w-4", isPushing && "animate-pulse")} />
-            {isPushing
-              ? t('step5.push.pushing', 'Pushing...')
-              : t('step5.push.button', 'Push to Azure DevOps')
+            {isCheckingRepo ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className={cn("h-4 w-4", isPushing && "animate-pulse")} />
+            )}
+            {isCheckingRepo
+              ? t('azurePushModal.checking', 'Checking...')
+              : isPushing
+                ? t('step5.push.pushing', 'Pushing...')
+                : t('step5.push.button', 'Push to Azure DevOps')
             }
           </button>
         </div>

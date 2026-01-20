@@ -269,6 +269,24 @@ export const CanvasContainer: React.FC = () => {
     }
   };
 
+  // Check if repository exists on Azure DevOps
+  const checkRepositoryExists = async (repositoryName: string): Promise<boolean> => {
+    if (!azureDevOpsConfig.organization || !azureDevOpsConfig.project || !azureDevOpsConfig.personalAccessToken) {
+      return false;
+    }
+
+    try {
+      const azureService = new AzureDevOpsService(
+        azureDevOpsConfig.organization,
+        azureDevOpsConfig.personalAccessToken,
+        true
+      );
+      return await azureService.repositoryExists(azureDevOpsConfig.project, repositoryName);
+    } catch {
+      return false;
+    }
+  };
+
   // Progress header steps
   const progressSteps = [
     { id: 'openapi', label: 'OpenAPI', status: getStepStatus('openapi') },
@@ -385,6 +403,7 @@ export const CanvasContainer: React.FC = () => {
         isOpen={isAzurePushModalOpen}
         onClose={() => setIsAzurePushModalOpen(false)}
         onPush={performPushToAzure}
+        onCheckRepository={checkRepositoryExists}
         isPushing={isPushing}
       />
     </div>

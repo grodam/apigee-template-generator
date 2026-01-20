@@ -325,6 +325,7 @@ export default {
     title: 'Pousser vers Azure DevOps',
     description: 'Créer ou mettre à jour le repository',
     repoHint: 'Un nouveau repository sera créé s\'il n\'existe pas.',
+    checking: 'Vérification...',
     progress: {
       connecting: 'Connexion à Azure DevOps...',
       checking: 'Vérification du repository...',
@@ -333,6 +334,12 @@ export default {
       done: 'Push terminé !',
       error: 'Erreur survenue',
       filesInfo: '{{files}} fichiers au total',
+    },
+    repoExists: {
+      title: 'Le repository existe déjà',
+      message: 'Le repository "{{repoName}}" existe déjà sur Azure DevOps. Voulez-vous le mettre à jour avec les nouveaux fichiers ?',
+      confirm: 'Oui, mettre à jour',
+      cancel: 'Annuler',
     },
   },
 
@@ -680,6 +687,13 @@ export default {
       message: 'Voulez-vous abandonner vos modifications et continuer ?',
       discard: 'Abandonner',
       cancel: 'Retour',
+    },
+    duplicateEntries: {
+      title: 'Noms d\'entrées en double',
+      description: 'Impossible de sauvegarder le KVM avec des noms d\'entrées en double.',
+      message: 'Les noms d\'entrées suivants sont dupliqués :',
+      hint: 'Veuillez renommer ou supprimer les entrées en double avant de sauvegarder.',
+      close: 'Fermer',
     },
   },
 };

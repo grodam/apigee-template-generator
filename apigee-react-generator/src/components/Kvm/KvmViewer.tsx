@@ -16,6 +16,7 @@ import { ApigeeClient, KvmService } from '@/services/apigee';
 import { KvmJsonView } from './KvmJsonView';
 import { KvmTableView } from './KvmTableView';
 import { DeleteKvmDialog } from './DeleteKvmDialog';
+import { DuplicateEntriesDialog } from './DuplicateEntriesDialog';
 
 interface KvmViewerProps {
   className?: string;
@@ -25,6 +26,7 @@ interface KvmViewerProps {
 export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) => {
   const { t } = useTranslation();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [duplicateNames, setDuplicateNames] = useState<string[]>([]);
   const {
     connection,
     currentKvm,
@@ -47,6 +49,28 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
   const handleSave = useCallback(async () => {
     if (!currentKvm || !originalKvm || !selectedEnvironment || !selectedKvmName) return;
 
+    // Get current entries and filter out those marked for deletion
+    const allCurrentEntries = currentKvm.keyValueEntries || [];
+    const activeEntries = allCurrentEntries.filter(
+      (entry) => !entriesMarkedForDeletion.has(entry.name)
+    );
+
+    // Check for duplicate entry names
+    const entryNames = activeEntries.map((entry) => entry.name);
+    const duplicates = entryNames.filter(
+      (name, index) => entryNames.indexOf(name) !== index
+    );
+    const uniqueDuplicates = [...new Set(duplicates)];
+
+    if (uniqueDuplicates.length > 0) {
+      setDuplicateNames(uniqueDuplicates);
+      addConsoleMessage({
+        type: 'error',
+        message: `Cannot save: duplicate entry names found (${uniqueDuplicates.join(', ')})`,
+      });
+      return;
+    }
+
     const client = new ApigeeClient({
       organizationId: connection.organizationId,
       accessToken: connection.accessToken,
@@ -57,12 +81,7 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
     addConsoleMessage({ type: 'info', message: `Saving changes to ${selectedKvmName}...` });
 
     try {
-      // Get current entries and filter out those marked for deletion
-      // (without modifying state - entries stay visible until refresh)
-      const allCurrentEntries = currentKvm.keyValueEntries || [];
-      const newEntries = allCurrentEntries.filter(
-        (entry) => !entriesMarkedForDeletion.has(entry.name)
-      );
+      const newEntries = activeEntries;
       const oldEntries = originalKvm.keyValueEntries || [];
 
       let stats: { added: number; updated: number; deleted: number };
@@ -299,6 +318,13 @@ export const KvmViewer: React.FC<KvmViewerProps> = ({ className, onAddEntry }) =
       <DeleteKvmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+
+      {/* Duplicate Entries Dialog */}
+      <DuplicateEntriesDialog
+        open={duplicateNames.length > 0}
+        onOpenChange={(open) => !open && setDuplicateNames([])}
+        duplicateNames={duplicateNames}
       />
     </div>
   );
